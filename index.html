@@ -1525,35 +1525,88 @@
       .playlist-layout {
         grid-template-columns: 1fr;
       }
+
+      .playlist-side {
+        max-height: none;
+      }
+
+      .courses-main-actions .video-open-btn {
+        width: 100%;
+      }
     }
 
     @media (max-width: 760px) {
       .navbar {
-        padding: 0 14px;
+        height: auto;
+        min-height: 64px;
+        padding: 10px 12px;
+        gap: 8px;
+      }
+
+      .navbar .title {
+        font-size: 0.92rem;
       }
 
       .layout {
         grid-template-columns: 1fr;
+        min-height: auto;
       }
 
       .sidebar {
         border-right: 0;
         border-bottom: 1px solid #1e293b;
+        padding: 10px;
       }
 
       .menu {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: thin;
       }
 
-      .menu .logout {
-        grid-column: 1 / -1;
+      .menu button {
+        white-space: nowrap;
+        min-width: max-content;
+        padding: 10px 12px;
       }
 
       .main {
-        padding: 14px;
+        padding: 12px;
       }
 
       .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .courses-wireframe {
+        padding: 8px;
+      }
+
+      .courses-main-panel,
+      .courses-right-panel {
+        padding: 10px;
+      }
+
+      #courses-focus-video {
+        min-height: 180px;
+        max-height: 240px;
+      }
+
+      .playlist-layout {
+        padding: 10px;
+      }
+
+      .playlist-head {
+        flex-wrap: wrap;
+      }
+
+      .playlist-head .video-open-btn {
+        width: 100%;
+      }
+
+      .role-request-actions {
         grid-template-columns: 1fr;
       }
 
@@ -1565,15 +1618,57 @@
         grid-template-columns: 1fr;
       }
 
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+
       th,
       td {
         padding: 11px 12px;
       }
 
-      .login-card {
-        padding: 24px;
+      .notifications-panel {
+        top: 74px;
+        right: 10px;
+        width: min(360px, calc(100vw - 20px));
       }
 
+      .login-card {
+        padding: 20px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .navbar-actions {
+        gap: 6px;
+      }
+
+      .nav-icon-btn,
+      .nav-menu-btn,
+      .nav-profile-btn {
+        width: 34px;
+        height: 34px;
+      }
+
+      .courses-main-head h2 {
+        font-size: 1rem;
+      }
+
+      .courses-progress-wrap,
+      .playlist-orange-progress {
+        gap: 8px;
+      }
+
+      .suggestions-row {
+        grid-auto-columns: minmax(150px, 170px);
+      }
+
+      .course-icon-grid {
+        gap: 8px;
+      }
     }
 
     .navbar-actions {
