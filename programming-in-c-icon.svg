@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Programming in C icon">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1f63"/>
+      <stop offset="100%" stop-color="#0f8f75"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#d8f2ef" stop-opacity="0.96"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="496" height="496" rx="96" fill="url(#bg)"/>
+  <g fill="url(#shine)">
+    <path d="M89 116h42v280H89c18 0 30-20 30-46V162c0-26-12-46-30-46z"/>
+    <path d="M423 116h-42v280h42c-18 0-30-20-30-46V162c0-26 12-46 30-46z"/>
+    <path d="M289 193c-20-25-49-40-82-40-61 0-109 48-109 109s48 109 109 109c33 0 62-14 82-40l32 30c-28 33-69 53-114 53-85 0-152-67-152-152s67-152 152-152c45 0 86 20 114 53z"/>
+  </g>
+  <g fill="#64dfc2" opacity="0.9">
+    <rect x="170" y="100" width="132" height="10" rx="5"/>
+    <rect x="170" y="118" width="94" height="10" rx="5"/>
+    <rect x="170" y="136" width="56" height="10" rx="5"/>
+    <rect x="170" y="366" width="132" height="10" rx="5"/>
+    <rect x="170" y="384" width="154" height="10" rx="5"/>
+    <rect x="170" y="402" width="104" height="10" rx="5"/>
+    <circle cx="335" cy="118" r="8"/>
+    <circle cx="335" cy="262" r="8"/>
+  </g>
+</svg>

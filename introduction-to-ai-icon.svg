@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Introduction to AI icon">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1f74"/>
+      <stop offset="100%" stop-color="#8b2bd4"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#72f7ff"/>
+      <stop offset="100%" stop-color="#9e7cff"/>
+    </linearGradient>
+    <linearGradient id="txt" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#c8fff9"/>
+      <stop offset="100%" stop-color="#6ee8ff"/>
+    </linearGradient>
+  </defs>
+  <rect x="10" y="10" width="492" height="492" rx="86" fill="url(#bg)"/>
+  <g fill="none" stroke="url(#glow)" stroke-width="8" stroke-linecap="round" opacity="0.95">
+    <path d="M145 190c20-44 65-72 115-72 72 0 130 58 130 130"/>
+    <path d="M124 240c0-74 60-134 134-134s134 60 134 134" opacity="0.6"/>
+    <path d="M178 270c0-45 37-82 82-82 45 0 82 37 82 82" opacity="0.7"/>
+  </g>
+  <g fill="#79f2ff">
+    <circle cx="168" cy="178" r="7"/>
+    <circle cx="224" cy="142" r="7"/>
+    <circle cx="292" cy="136" r="7"/>
+    <circle cx="350" cy="166" r="7"/>
+    <circle cx="378" cy="228" r="7"/>
+  </g>
+  <path d="M198 252l56 20-44 29" fill="none" stroke="url(#glow)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="96" y="334" width="320" height="104" rx="18" fill="#061659" opacity="0.55"/>
+  <text x="256" y="404" text-anchor="middle" font-size="72" font-family="Segoe UI, Arial, sans-serif" font-weight="800" fill="url(#txt)">AI 101</text>
+</svg>

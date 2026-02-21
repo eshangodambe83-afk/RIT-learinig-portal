@@ -1,0 +1,5257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RITP Learning Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-start: #0f766e;
+      --bg-end: #1d4ed8;
+      --surface: #f8fafc;
+      --card: #ffffff;
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #dbe5f2;
+      --accent: #0ea5a3;
+      --accent-2: #2563eb;
+      --shadow: 0 14px 36px rgba(2, 6, 23, 0.15);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Manrope", sans-serif;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.2), transparent 40%),
+        radial-gradient(circle at 85% 10%, rgba(255, 255, 255, 0.18), transparent 45%),
+        linear-gradient(145deg, var(--bg-start), var(--bg-end));
+      transition: background 300ms ease;
+    }
+
+    .auth-bg-video {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .auth-bg-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: linear-gradient(120deg, rgba(2, 6, 23, 0.45), rgba(15, 118, 110, 0.35));
+      pointer-events: none;
+    }
+
+    .screen {
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .login-wrap {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+
+    .login-card {
+      position: relative;
+      overflow: hidden;
+      width: min(430px, 100%);
+      background:
+        linear-gradient(160deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.12));
+      backdrop-filter: blur(18px) saturate(165%);
+      -webkit-backdrop-filter: blur(18px) saturate(165%);
+      border: 1px solid rgba(255, 255, 255, 0.44);
+      border-radius: 20px;
+      box-shadow:
+        0 22px 46px rgba(2, 6, 23, 0.33),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      padding: 34px;
+      animation: cardIn 380ms ease;
+    }
+
+    .login-card::before {
+      content: "";
+      position: absolute;
+      inset: -45% -10% auto;
+      height: 70%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0));
+      transform: rotate(-7deg);
+      pointer-events: none;
+    }
+
+    @keyframes cardIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .brand {
+      margin-bottom: 22px;
+      text-align: center;
+    }
+
+    .brand h1 {
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+      color: #e2e8f0;
+      text-shadow: 0 2px 10px rgba(2, 6, 23, 0.25);
+    }
+
+    .brand p {
+      color: #dbeafe;
+      font-size: 0.95rem;
+    }
+
+    .field {
+      margin-bottom: 12px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    input,
+    select,
+    button {
+      font: inherit;
+    }
+
+    input,
+    select {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      border-radius: 12px;
+      padding: 12px 13px;
+      color: #f8fafc;
+      background: linear-gradient(140deg, rgba(255, 255, 255, 0.19), rgba(255, 255, 255, 0.08));
+      backdrop-filter: blur(7px);
+      -webkit-backdrop-filter: blur(7px);
+      transition: 180ms ease;
+    }
+
+    input::placeholder {
+      color: rgba(226, 232, 240, 0.9);
+    }
+
+    option {
+      color: #0f172a;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: rgba(186, 230, 253, 0.92);
+      box-shadow:
+        0 0 0 4px rgba(125, 211, 252, 0.2),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+    }
+
+    .help {
+      margin-top: 4px;
+      min-height: 18px;
+      color: #fee2e2;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-shadow: 0 1px 3px rgba(2, 6, 23, 0.45);
+    }
+
+    .switch-line {
+      margin-top: 10px;
+      text-align: center;
+      color: #dbeafe;
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+
+    .switch-btn {
+      border: 0;
+      background: transparent;
+      color: #bfdbfe;
+      font-weight: 800;
+      cursor: pointer;
+      margin-left: 4px;
+      text-shadow: 0 1px 8px rgba(15, 23, 42, 0.32);
+    }
+
+    .btn {
+      width: 100%;
+      margin-top: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 12px;
+      padding: 12px;
+      font-weight: 700;
+      color: #f8fafc;
+      cursor: pointer;
+      background: linear-gradient(130deg, rgba(167, 243, 208, 0.45), rgba(147, 197, 253, 0.38));
+      box-shadow: 0 12px 22px rgba(30, 41, 59, 0.27);
+      transition: transform 160ms ease, filter 160ms ease;
+    }
+
+    .btn:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .dashboard {
+      position: relative;
+      z-index: 3;
+      background:
+        radial-gradient(circle at 85% -10%, rgba(37, 99, 235, 0.16), transparent 40%),
+        linear-gradient(180deg, #f8fbff, #f1f5f9);
+    }
+
+    .navbar {
+      height: 64px;
+      background: #0b1221;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid #1f2a44;
+    }
+
+    .navbar .title {
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .welcome {
+      color: #cbd5e1;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      min-height: calc(100vh - 64px);
+    }
+
+    .sidebar {
+      background: #0f172a;
+      color: #d2deef;
+      padding: 18px 12px;
+      border-right: 1px solid #1e293b;
+    }
+
+    .menu {
+      display: grid;
+      gap: 6px;
+    }
+
+    .menu button {
+      width: 100%;
+      border: 0;
+      text-align: left;
+      background: transparent;
+      color: inherit;
+      padding: 12px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 160ms ease;
+    }
+
+    .menu button:hover,
+    .menu button.active {
+      color: white;
+      background: rgba(148, 163, 184, 0.2);
+    }
+
+    .menu .logout {
+      margin-top: 8px;
+      color: #fecaca;
+    }
+
+    .main {
+      padding: 24px;
+    }
+
+    .section {
+      display: none;
+      animation: fadeIn 220ms ease;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 18px;
+      border-radius: var(--radius);
+      border: 1px solid #e4edf8;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+    }
+
+    .card h3 {
+      font-size: 1.55rem;
+      color: var(--accent-2);
+      margin-bottom: 4px;
+    }
+
+    .card span {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid #e4edf8;
+      border-radius: var(--radius);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 16px 18px;
+      border-bottom: 1px solid #e8eef7;
+    }
+
+    .panel-head h2 {
+      font-size: 1.08rem;
+      letter-spacing: -0.01em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 13px 18px;
+      text-align: left;
+      border-bottom: 1px solid #ecf1f8;
+      font-size: 0.93rem;
+    }
+
+    thead th {
+      background: #eff5ff;
+      color: #0f172a;
+      font-weight: 800;
+      border-bottom-color: #deebff;
+    }
+
+    tbody tr:hover {
+      background: #f8fbff;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.77rem;
+      font-weight: 800;
+    }
+
+    .ongoing {
+      color: #075985;
+      background: #dbeafe;
+    }
+
+    .completed {
+      color: #166534;
+      background: #dcfce7;
+    }
+
+    .pending {
+      color: #9a3412;
+      background: #ffedd5;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .list {
+      padding: 14px 18px 18px;
+      list-style: none;
+    }
+
+    .list li {
+      padding: 11px 0;
+      border-bottom: 1px dashed #d7e3f3;
+      color: #1e293b;
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+
+    .list li:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .upload-form {
+      padding: 16px 18px 20px;
+    }
+
+    .upload-form .btn {
+      max-width: 220px;
+    }
+
+    #profile-form .btn {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #ffffff;
+      border: 1px solid #0f172a;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.25);
+    }
+
+    #profile-form .btn:hover {
+      filter: brightness(1.06);
+    }
+
+    .success-msg {
+      margin-top: 10px;
+      color: #166534;
+      font-size: 0.86rem;
+      font-weight: 700;
+      min-height: 18px;
+    }
+
+    .video-open-btn {
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    .course-player {
+      margin-top: 16px;
+    }
+
+    .course-player video {
+      width: 100%;
+      border-radius: 12px;
+      background: #0f172a;
+      max-height: 360px;
+    }
+
+    .player-actions {
+      padding: 10px 18px 0;
+    }
+
+    .player-actions .video-open-btn {
+      margin-right: 8px;
+    }
+
+    .video-hint {
+      padding: 14px 18px 18px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    /* Global Liquid Glass Theme */
+    .dashboard {
+      background:
+        radial-gradient(circle at 18% 8%, rgba(147, 197, 253, 0.35), transparent 36%),
+        radial-gradient(circle at 88% 14%, rgba(186, 230, 253, 0.28), transparent 38%),
+        linear-gradient(160deg, #eaf4ff, #f5f9ff 48%, #ecf8f5);
+    }
+
+    .navbar {
+      height: 68px;
+      background: linear-gradient(140deg, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.24));
+      color: #0f172a;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(16px) saturate(165%);
+      -webkit-backdrop-filter: blur(16px) saturate(165%);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    }
+
+    .navbar .title {
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+
+    .welcome {
+      color: #334155;
+      font-weight: 700;
+    }
+
+    .layout {
+      min-height: calc(100vh - 68px);
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .sidebar {
+      border-radius: 22px;
+      background: linear-gradient(155deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.24));
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+      color: #1e293b;
+    }
+
+    .menu button {
+      border: 1px solid transparent;
+      color: #1e293b;
+      font-weight: 700;
+    }
+
+    .menu button:hover,
+    .menu button.active {
+      color: #0f172a;
+      background: linear-gradient(140deg, rgba(186, 230, 253, 0.46), rgba(255, 255, 255, 0.44));
+      border-color: rgba(148, 163, 184, 0.35);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    }
+
+    .menu .logout {
+      color: #b91c1c;
+    }
+
+    .main {
+      padding: 0;
+    }
+
+    .card,
+    .panel {
+      background: linear-gradient(150deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.28));
+      border: 1px solid rgba(255, 255, 255, 0.64);
+      backdrop-filter: blur(18px) saturate(160%);
+      -webkit-backdrop-filter: blur(18px) saturate(160%);
+      box-shadow:
+        0 16px 32px rgba(15, 23, 42, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .card h3 {
+      color: #1d4ed8;
+    }
+
+    .card span {
+      color: #334155;
+    }
+
+    .panel-head {
+      border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0));
+    }
+
+    .panel-head h2 {
+      color: #0f172a;
+      font-weight: 800;
+    }
+
+    table {
+      background: transparent;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      color: #1e293b;
+    }
+
+    thead th {
+      background: linear-gradient(180deg, rgba(224, 242, 254, 0.8), rgba(224, 242, 254, 0.45));
+      color: #0f172a;
+      border-bottom-color: rgba(125, 211, 252, 0.5);
+    }
+
+    tbody tr:hover {
+      background: rgba(219, 234, 254, 0.32);
+    }
+
+    .status {
+      border: 1px solid rgba(255, 255, 255, 0.62);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    }
+
+    .ongoing {
+      color: #075985;
+      background: rgba(186, 230, 253, 0.72);
+    }
+
+    .completed {
+      color: #166534;
+      background: rgba(187, 247, 208, 0.75);
+    }
+
+    .pending {
+      color: #9a3412;
+      background: rgba(254, 215, 170, 0.78);
+    }
+
+    .list li {
+      border-bottom: 1px dashed rgba(148, 163, 184, 0.4);
+      color: #1e293b;
+    }
+
+    .dashboard input,
+    .dashboard select {
+      color: #0f172a;
+      border-color: rgba(148, 163, 184, 0.35);
+      background: linear-gradient(150deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.48));
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .dashboard input::placeholder {
+      color: #64748b;
+    }
+
+    .dashboard .field label {
+      color: #0f172a;
+    }
+
+    .video-open-btn {
+      border: 1px solid rgba(147, 197, 253, 0.65);
+      background: linear-gradient(140deg, rgba(224, 242, 254, 0.75), rgba(219, 234, 254, 0.48));
+      color: #1d4ed8;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .course-player video {
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      box-shadow: 0 12px 22px rgba(15, 23, 42, 0.2);
+    }
+
+    .video-hint {
+      color: #334155;
+    }
+
+    .assignment-task {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .assignment-meta {
+      color: #475569;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .assignment-board-help {
+      padding: 0 18px 14px;
+      color: #0f766e;
+      font-size: 0.82rem;
+      font-weight: 700;
+      min-height: 18px;
+    }
+
+    .assignment-done-btn[disabled] {
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    .assignment-upload-input {
+      margin-top: 6px;
+      width: 100%;
+      font-size: 0.76rem;
+    }
+
+    .assignment-proof {
+      margin-top: 4px;
+      color: #0f766e;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .protected-video-wrap {
+      position: relative;
+    }
+
+    .protected-video {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .video-watermark {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 10px;
+      z-index: 2;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.45);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+      letter-spacing: 0.02em;
+    }
+
+    .video-watermark span:last-child {
+      align-self: flex-end;
+      transform: rotate(-6deg);
+    }
+
+    .course-icon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 14px;
+      padding: 16px 18px 20px;
+    }
+
+    .course-app {
+      border-radius: 16px;
+      padding: 10px;
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.32));
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      text-align: center;
+      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+    }
+
+    .course-app-icon {
+      width: 62px;
+      height: 62px;
+      margin: 0 auto 8px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      color: white;
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: 0.02em;
+      background: linear-gradient(135deg, #0ea5a3, #2563eb);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    }
+
+    .course-app-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .course-app-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.2;
+      min-height: 32px;
+    }
+
+    .course-app-status {
+      margin-top: 6px;
+    }
+
+    .course-app-click {
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    .course-app-click:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 24px rgba(15, 23, 42, 0.14);
+    }
+
+    .playlist-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .playlist-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .playlist-main video {
+      width: 100%;
+      border-radius: 14px;
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      box-shadow: 0 12px 22px rgba(15, 23, 42, 0.2);
+    }
+
+    .playlist-suggestions-wrap {
+      border-top: 1px solid rgba(148, 163, 184, 0.24);
+      padding: 12px 14px 14px;
+    }
+
+    .suggestions-row {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(160px, 190px);
+      gap: 10px;
+      overflow-x: auto;
+      padding: 2px 2px 8px;
+      margin-top: 8px;
+      scrollbar-width: thin;
+    }
+
+    .suggestions-row .course-app {
+      min-height: 86px;
+    }
+
+    .mini-quiz {
+      margin-top: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 14px;
+      background: linear-gradient(155deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.45));
+      overflow: hidden;
+    }
+
+    .mini-quiz-body {
+      padding: 12px 14px 14px;
+    }
+
+    .mini-quiz-form {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .quiz-item {
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.65);
+    }
+
+    .quiz-item p {
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+
+    .quiz-option {
+      display: block;
+      font-size: 0.85rem;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+
+    .profile-preview {
+      padding: 18px;
+    }
+
+    .profile-logout-btn {
+      margin-top: 14px;
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+    }
+
+    .role-request-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .role-request-actions .video-open-btn {
+      width: 100%;
+      font-size: 0.8rem;
+      padding: 10px;
+    }
+
+    .role-request-controls {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .role-request-controls .video-open-btn {
+      padding: 6px 10px;
+      font-size: 0.75rem;
+    }
+
+    .courses-wireframe {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) 290px;
+      gap: 14px;
+      border: 1px solid rgba(15, 23, 42, 0.22);
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.44);
+    }
+
+    .courses-main-panel,
+    .courses-right-panel {
+      border: 1px solid rgba(15, 23, 42, 0.18);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    #section-courses #my-courses-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 0;
+    }
+
+    #section-courses #my-courses-list .course-app {
+      border-radius: 10px;
+      text-align: left;
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      min-height: 44px;
+    }
+
+    #section-courses #my-courses-list .course-app-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      margin: 0;
+      font-size: 0.72rem;
+    }
+
+    #section-courses #my-courses-list .course-app-name {
+      min-height: 0;
+      font-size: 0.78rem;
+    }
+
+    #section-courses #my-courses-list .course-app-status {
+      grid-column: 1 / -1;
+      margin-top: 2px;
+    }
+
+    #section-courses #my-courses-list .status {
+      font-size: 0.68rem;
+      padding: 3px 8px;
+    }
+
+    .courses-main-panel {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .courses-main-head {
+      border-bottom: 1px solid rgba(15, 23, 42, 0.16);
+      padding-bottom: 8px;
+    }
+
+    .courses-kicker {
+      text-transform: uppercase;
+      font-weight: 800;
+      font-size: 0.72rem;
+      color: #64748b;
+      letter-spacing: 0.06em;
+    }
+
+    .courses-main-head h2 {
+      margin-top: 2px;
+      font-size: 1.15rem;
+      line-height: 1.25;
+    }
+
+    #courses-focus-video {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(15, 23, 42, 0.24);
+      background: #0b1221;
+      max-height: 360px;
+      min-height: 220px;
+    }
+
+    .courses-main-actions {
+      display: flex;
+      justify-content: flex-start;
+    }
+
+    .courses-progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .courses-progress-track {
+      flex: 1;
+      height: 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.24);
+      background: rgba(15, 23, 42, 0.1);
+      overflow: hidden;
+    }
+
+    .courses-progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #f97316, #ef4444);
+      transition: width 220ms ease;
+    }
+
+    .courses-progress-value {
+      min-width: 42px;
+      text-align: right;
+      font-weight: 800;
+      color: #dc2626;
+    }
+
+    .courses-todo {
+      border: 1px solid rgba(15, 23, 42, 0.18);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .courses-todo h3 {
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+
+    .courses-todo ul {
+      list-style: none;
+      display: grid;
+      gap: 6px;
+    }
+
+    .courses-todo li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .courses-todo li input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+    }
+
+    .playlist-orange-progress {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 0 2px;
+    }
+
+    .playlist-orange-track {
+      flex: 1;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.24);
+      background: rgba(15, 23, 42, 0.1);
+      overflow: hidden;
+    }
+
+    .playlist-orange-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #f97316, #ef4444);
+      transition: width 180ms linear;
+    }
+
+    .playlist-orange-value {
+      min-width: 42px;
+      text-align: right;
+      font-weight: 800;
+      color: #dc2626;
+      font-size: 0.82rem;
+    }
+
+    .courses-right-panel {
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .courses-badge-card,
+    .courses-next-card,
+    .courses-list-card {
+      border: 1px solid rgba(15, 23, 42, 0.18);
+      border-radius: 10px;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.66);
+    }
+
+    .courses-badge-icon {
+      font-size: 2.2rem;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .courses-badge-card p {
+      text-align: center;
+      font-weight: 800;
+      font-size: 0.84rem;
+    }
+
+    .courses-next-label {
+      text-transform: uppercase;
+      color: #64748b;
+      font-weight: 800;
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+
+    .courses-next-card h3 {
+      font-size: 1rem;
+      line-height: 1.25;
+      margin-bottom: 6px;
+    }
+
+    .courses-next-card p {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+
+    #courses-next-link {
+      margin-top: 6px;
+      display: inline-flex;
+      text-decoration: none;
+    }
+
+    @media (max-width: 1180px) {
+      .courses-wireframe {
+        grid-template-columns: 1fr;
+      }
+
+      #section-courses #my-courses-list {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .dashboard.theme-snap-blue {
+      background: radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.34), transparent 38%), linear-gradient(155deg, #e0f2fe, #dbeafe 45%, #eff6ff);
+    }
+
+    .dashboard.theme-snap-night {
+      background: radial-gradient(circle at 15% 8%, rgba(30, 41, 59, 0.5), transparent 42%), linear-gradient(160deg, #020617, #0f172a 46%, #111827);
+    }
+
+    .dashboard.theme-rose {
+      background: radial-gradient(circle at 14% 10%, rgba(244, 114, 182, 0.32), transparent 40%), linear-gradient(160deg, #fff1f2, #fce7f3 46%, #fdf2f8);
+    }
+
+    .dashboard.theme-ben10 {
+      background: radial-gradient(circle at 14% 10%, rgba(163, 230, 53, 0.34), transparent 42%), linear-gradient(160deg, #020b04, #0f2a12 46%, #1f4d1f);
+    }
+
+    .dashboard.theme-royal {
+      background: radial-gradient(circle at 16% 8%, rgba(234, 179, 8, 0.2), transparent 40%), linear-gradient(160deg, #050505, #0f0f0f 46%, #171717);
+    }
+
+
+.role-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  vertical-align: middle;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+}
+
+.badge-student {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-teacher {
+  background: #dcfce7;
+  color: #166534;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 2px 6px rgba(22, 101, 52, 0.2);
+}
+
+.badge-admin {
+  background: #fef3c7;
+  color: #a16207;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 2px 6px rgba(161, 98, 7, 0.2);
+}
+
+.badge-hod {
+  background: #e5e7eb;
+  color: #374151;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 2px 6px rgba(55, 65, 81, 0.2);
+}
+
+.badge-teacher::after,
+.badge-admin::after,
+.badge-hod::after {
+  content: "";
+  position: absolute;
+  top: -120%;
+  left: -60%;
+  width: 40%;
+  height: 280%;
+  transform: rotate(22deg);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.78),
+    rgba(255, 255, 255, 0)
+  );
+  animation: badgeShine 3.6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes badgeShine {
+  0% { left: -60%; }
+  100% { left: 130%; }
+}
+
+.connect-card {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.connect-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.connect-name {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+.connect-meta {
+  color: #475569;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+}
+
+#search-results.course-icon-grid {
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+}
+
+.search-profile-card {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.search-profile-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 22px rgba(15, 23, 42, 0.14);
+}
+
+.search-profile-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.search-profile-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #e2e8f0;
+}
+
+.search-profile-name {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.search-profile-handle {
+  color: #475569;
+  font-size: 0.82rem;
+}
+
+.search-profile-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.profile-open-view {
+  padding: 16px 18px;
+}
+
+.admin-demote-wrap {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.admin-demote-btn {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.admin-delete-btn {
+  border-color: #ef4444;
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.profile-card-detailed {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 14px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.profile-card-head {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.profile-card-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #e2e8f0;
+}
+
+.profile-card-name {
+  font-size: 1.03rem;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.profile-card-handle,
+.profile-card-email {
+  color: #475569;
+  font-size: 0.86rem;
+}
+
+.profile-card-bio {
+  margin-top: 10px;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.profile-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.profile-card-stat {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.profile-card-stat strong {
+  display: block;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.profile-card-stat span {
+  color: #475569;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.profile-card-courses {
+  margin-top: 12px;
+}
+
+.profile-card-courses h4 {
+  font-size: 0.85rem;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.profile-card-course-list {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.profile-card-course-list li {
+  padding: 7px 9px;
+  border-radius: 9px;
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+    .playlist-side {
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 14px;
+      background: linear-gradient(150deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.3));
+      max-height: 520px;
+      overflow: auto;
+    }
+
+    .playlist-list {
+      list-style: none;
+    }
+
+    .playlist-item {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      cursor: pointer;
+      transition: 140ms ease;
+    }
+
+    .playlist-item:hover,
+    .playlist-item.active {
+      background: rgba(219, 234, 254, 0.44);
+    }
+
+    .playlist-thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #0ea5a3, #2563eb);
+    }
+
+    .playlist-meta strong {
+      display: block;
+      color: #0f172a;
+      font-size: 0.86rem;
+      line-height: 1.2;
+      margin-bottom: 2px;
+    }
+
+    .playlist-meta span {
+      color: #475569;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    @media (max-width: 1040px) {
+      .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .playlist-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .navbar {
+        padding: 0 14px;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid #1e293b;
+      }
+
+      .menu {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .menu .logout {
+        grid-column: 1 / -1;
+      }
+
+      .main {
+        padding: 14px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      #search-results.course-icon-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .profile-card-head {
+        grid-template-columns: 1fr;
+      }
+
+      th,
+      td {
+        padding: 11px 12px;
+      }
+
+      .login-card {
+        padding: 24px;
+      }
+
+    }
+
+    .navbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-icon-btn {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: linear-gradient(140deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.36));
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 150ms ease, box-shadow 150ms ease;
+    }
+
+    .nav-icon-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.16);
+    }
+
+    .nav-menu-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: linear-gradient(140deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.36));
+      display: grid;
+      place-items: center;
+      gap: 4px;
+      padding: 8px;
+      cursor: pointer;
+      transition: transform 150ms ease, box-shadow 150ms ease;
+    }
+
+    .nav-menu-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.16);
+    }
+
+    .nav-menu-btn span {
+      width: 16px;
+      height: 2px;
+      border-radius: 999px;
+      background: #1e293b;
+      display: block;
+    }
+
+    .nav-profile-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      border: 2px solid rgba(148, 163, 184, 0.5);
+      background: #ffffff;
+      padding: 0;
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+    }
+
+    .nav-profile-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(59, 130, 246, 0.6);
+      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.16);
+    }
+
+    .nav-profile-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: 999px;
+      background: #e2e8f0;
+    }
+
+    .notif-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+      padding: 0 5px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+    }
+
+    .notifications-panel {
+      position: fixed;
+      top: 82px;
+      right: 22px;
+      z-index: 30;
+      width: min(360px, calc(100vw - 24px));
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.68));
+      border: 1px solid rgba(255, 255, 255, 0.66);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+      padding: 12px;
+      max-height: 70vh;
+      overflow: auto;
+    }
+
+    .notifications-head {
+      margin-bottom: 8px;
+    }
+
+    .notifications-list {
+      gap: 8px;
+    }
+
+    .notifications-list li {
+      border: 1px solid #dbe7f6;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .notifications-list li.unread {
+      border-color: #93c5fd;
+      background: #eff6ff;
+    }
+
+    .notifications-meta {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 4px;
+    }
+
+    .dashboard.theme-dark {
+      background: radial-gradient(circle at 15% 8%, rgba(30, 64, 175, 0.35), transparent 40%), linear-gradient(160deg, #0b1220, #111827 45%, #0f172a);
+    }
+
+    .dashboard.theme-dark .navbar,
+    .dashboard.theme-dark .sidebar,
+    .dashboard.theme-dark .panel,
+    .dashboard.theme-dark .card,
+    .dashboard.theme-dark .notifications-panel {
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.5));
+      border-color: rgba(100, 116, 139, 0.4);
+      color: #e2e8f0;
+    }
+
+    .dashboard.theme-dark .title,
+    .dashboard.theme-dark .welcome,
+    .dashboard.theme-dark .panel h2,
+    .dashboard.theme-dark .card span,
+    .dashboard.theme-dark .notifications-meta {
+      color: #cbd5e1;
+    }
+
+    .dashboard.theme-dark .menu button {
+      color: #cbd5e1;
+    }
+
+    .dashboard.theme-dark .menu button:hover,
+    .dashboard.theme-dark .menu button.active {
+      background: rgba(148, 163, 184, 0.2);
+      color: #f8fafc;
+    }
+
+    .dashboard.theme-crimson {
+      background: radial-gradient(circle at 15% 8%, rgba(251, 113, 133, 0.32), transparent 42%), linear-gradient(160deg, #2b0b14, #4a1020 48%, #7f1d1d);
+    }
+
+    .dashboard.theme-crimson .navbar,
+    .dashboard.theme-crimson .sidebar,
+    .dashboard.theme-crimson .panel,
+    .dashboard.theme-crimson .card,
+    .dashboard.theme-crimson .notifications-panel {
+      background: linear-gradient(145deg, rgba(127, 29, 29, 0.58), rgba(69, 10, 10, 0.56));
+      border-color: rgba(251, 113, 133, 0.38);
+      color: #ffe4e6;
+    }
+
+    .dashboard.theme-crimson .title,
+    .dashboard.theme-crimson .welcome,
+    .dashboard.theme-crimson .panel h2,
+    .dashboard.theme-crimson .card span,
+    .dashboard.theme-crimson .notifications-meta {
+      color: #fecdd3;
+    }
+
+    .dashboard.theme-crimson .menu button {
+      color: #fecdd3;
+    }
+
+    .dashboard.theme-crimson .menu button:hover,
+    .dashboard.theme-crimson .menu button.active {
+      background: rgba(244, 63, 94, 0.24);
+      color: #fff1f2;
+    }
+    .dashboard.theme-amber {
+      background: radial-gradient(circle at 15% 8%, rgba(251, 191, 36, 0.34), transparent 42%), linear-gradient(160deg, #fff7d6, #fef3c7 46%, #fde68a);
+    }
+
+    .dashboard.theme-amber .navbar,
+    .dashboard.theme-amber .sidebar,
+    .dashboard.theme-amber .panel,
+    .dashboard.theme-amber .card,
+    .dashboard.theme-amber .notifications-panel {
+      background: linear-gradient(145deg, rgba(255, 251, 235, 0.86), rgba(254, 243, 199, 0.72));
+      border-color: rgba(245, 158, 11, 0.42);
+      color: #422006;
+    }
+
+    .dashboard.theme-amber .title,
+    .dashboard.theme-amber .welcome,
+    .dashboard.theme-amber .panel h2,
+    .dashboard.theme-amber .card span,
+    .dashboard.theme-amber .field label,
+    .dashboard.theme-amber .video-hint,
+    .dashboard.theme-amber .assignment-meta,
+    .dashboard.theme-amber .course-app-name {
+      color: #422006;
+    }
+
+    .dashboard.theme-amber th,
+    .dashboard.theme-amber td {
+      color: #422006;
+      border-bottom-color: rgba(245, 158, 11, 0.28);
+    }
+
+    .dashboard.theme-amber thead th {
+      background: rgba(253, 230, 138, 0.8);
+      color: #3f2500;
+    }
+
+    .dashboard.theme-amber input,
+    .dashboard.theme-amber select {
+      color: #422006;
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(245, 158, 11, 0.45);
+    }
+
+    .dashboard.theme-amber input::placeholder {
+      color: #78716c;
+    }
+
+    .dashboard.theme-amber .video-open-btn,
+    .dashboard.theme-amber .nav-icon-btn {
+      color: #422006;
+      background: rgba(255, 237, 213, 0.86);
+      border-color: rgba(245, 158, 11, 0.45);
+    }
+
+    /* Readability upgrades for non-light themes */
+    .dashboard.theme-dark .panel-head h2,
+    .dashboard.theme-snap-night .panel-head h2,
+    .dashboard.theme-crimson .panel-head h2 {
+      color: #f8fafc;
+    }
+
+    .dashboard.theme-dark th,
+    .dashboard.theme-dark td,
+    .dashboard.theme-snap-night th,
+    .dashboard.theme-snap-night td,
+    .dashboard.theme-crimson th,
+    .dashboard.theme-crimson td {
+      color: #e5e7eb;
+      border-bottom-color: rgba(148, 163, 184, 0.28);
+    }
+
+    .dashboard.theme-dark thead th,
+    .dashboard.theme-snap-night thead th,
+    .dashboard.theme-crimson thead th {
+      background: rgba(15, 23, 42, 0.72);
+      color: #f8fafc;
+      border-bottom-color: rgba(148, 163, 184, 0.4);
+    }
+
+    .dashboard.theme-dark tbody tr:hover,
+    .dashboard.theme-snap-night tbody tr:hover,
+    .dashboard.theme-crimson tbody tr:hover {
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    .dashboard.theme-dark input,
+    .dashboard.theme-dark select,
+    .dashboard.theme-snap-night input,
+    .dashboard.theme-snap-night select,
+    .dashboard.theme-crimson input,
+    .dashboard.theme-crimson select {
+      color: #f8fafc;
+      background: rgba(15, 23, 42, 0.56);
+      border-color: rgba(148, 163, 184, 0.42);
+    }
+
+    .dashboard.theme-dark input::placeholder,
+    .dashboard.theme-snap-night input::placeholder,
+    .dashboard.theme-crimson input::placeholder {
+      color: #cbd5e1;
+    }
+
+    .dashboard.theme-dark .field label,
+    .dashboard.theme-snap-night .field label,
+    .dashboard.theme-crimson .field label,
+    .dashboard.theme-dark .list li,
+    .dashboard.theme-snap-night .list li,
+    .dashboard.theme-crimson .list li,
+    .dashboard.theme-dark .assignment-meta,
+    .dashboard.theme-snap-night .assignment-meta,
+    .dashboard.theme-crimson .assignment-meta,
+    .dashboard.theme-dark .video-hint,
+    .dashboard.theme-snap-night .video-hint,
+    .dashboard.theme-crimson .video-hint,
+    .dashboard.theme-dark .course-app-name,
+    .dashboard.theme-snap-night .course-app-name,
+    .dashboard.theme-crimson .course-app-name {
+      color: #e2e8f0;
+    }
+
+    .dashboard.theme-dark .notifications-list li,
+    .dashboard.theme-snap-night .notifications-list li,
+    .dashboard.theme-crimson .notifications-list li {
+      background: rgba(15, 23, 42, 0.58);
+      border-color: rgba(148, 163, 184, 0.34);
+      color: #e2e8f0;
+    }
+
+    .dashboard.theme-dark .notifications-list li.unread,
+    .dashboard.theme-snap-night .notifications-list li.unread,
+    .dashboard.theme-crimson .notifications-list li.unread {
+      background: rgba(30, 64, 175, 0.24);
+      border-color: rgba(147, 197, 253, 0.5);
+    }
+
+    .dashboard.theme-dark .video-open-btn,
+    .dashboard.theme-snap-night .video-open-btn,
+    .dashboard.theme-crimson .video-open-btn {
+      color: #e2e8f0;
+      background: rgba(15, 23, 42, 0.56);
+      border-color: rgba(148, 163, 184, 0.45);
+    }
+
+    .dashboard.theme-dark .nav-icon-btn,
+    .dashboard.theme-snap-night .nav-icon-btn,
+    .dashboard.theme-crimson .nav-icon-btn {
+      color: #f8fafc;
+      background: rgba(15, 23, 42, 0.5);
+      border-color: rgba(148, 163, 184, 0.4);
+    }
+
+    .dashboard.theme-snap-blue .navbar,
+    .dashboard.theme-snap-blue .sidebar,
+    .dashboard.theme-snap-blue .panel,
+    .dashboard.theme-snap-blue .card,
+    .dashboard.theme-snap-blue .notifications-panel {
+      background: linear-gradient(145deg, rgba(239, 246, 255, 0.82), rgba(219, 234, 254, 0.62));
+      border-color: rgba(125, 211, 252, 0.55);
+      color: #0f172a;
+    }
+
+    .dashboard.theme-snap-blue .panel-head h2,
+    .dashboard.theme-snap-blue .field label,
+    .dashboard.theme-snap-blue .video-hint,
+    .dashboard.theme-snap-blue .assignment-meta,
+    .dashboard.theme-snap-blue .course-app-name {
+      color: #0f172a;
+    }
+
+    .dashboard.theme-snap-blue th,
+    .dashboard.theme-snap-blue td {
+      color: #0f172a;
+      border-bottom-color: rgba(56, 189, 248, 0.26);
+    }
+
+    .dashboard.theme-snap-blue thead th {
+      background: rgba(186, 230, 253, 0.8);
+      color: #0b1220;
+    }
+
+    .dashboard.theme-snap-blue input,
+    .dashboard.theme-snap-blue select {
+      color: #0f172a;
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(56, 189, 248, 0.45);
+    }
+
+    .dashboard.theme-snap-blue input::placeholder {
+      color: #475569;
+    }
+
+    .dashboard.theme-snap-blue .video-open-btn,
+    .dashboard.theme-snap-blue .nav-icon-btn {
+      color: #0f172a;
+      background: rgba(224, 242, 254, 0.86);
+      border-color: rgba(56, 189, 248, 0.45);
+    }
+
+    .dashboard.theme-rose .navbar,
+    .dashboard.theme-rose .sidebar,
+    .dashboard.theme-rose .panel,
+    .dashboard.theme-rose .card,
+    .dashboard.theme-rose .notifications-panel {
+      background: linear-gradient(145deg, rgba(255, 241, 242, 0.88), rgba(252, 231, 243, 0.72));
+      border-color: rgba(236, 72, 153, 0.36);
+      color: #4a044e;
+    }
+
+    .dashboard.theme-rose .title,
+    .dashboard.theme-rose .welcome,
+    .dashboard.theme-rose .panel h2,
+    .dashboard.theme-rose .card span,
+    .dashboard.theme-rose .field label,
+    .dashboard.theme-rose .video-hint,
+    .dashboard.theme-rose .assignment-meta,
+    .dashboard.theme-rose .course-app-name {
+      color: #4a044e;
+    }
+
+    .dashboard.theme-rose th,
+    .dashboard.theme-rose td {
+      color: #4a044e;
+      border-bottom-color: rgba(236, 72, 153, 0.24);
+    }
+
+    .dashboard.theme-rose thead th {
+      background: rgba(251, 207, 232, 0.78);
+      color: #3b0764;
+    }
+
+    .dashboard.theme-rose input,
+    .dashboard.theme-rose select {
+      color: #4a044e;
+      background: rgba(255, 255, 255, 0.92);
+      border-color: rgba(236, 72, 153, 0.4);
+    }
+
+    .dashboard.theme-rose input::placeholder {
+      color: #6b7280;
+    }
+
+    .dashboard.theme-rose .video-open-btn,
+    .dashboard.theme-rose .nav-icon-btn {
+      color: #4a044e;
+      background: rgba(252, 231, 243, 0.9);
+      border-color: rgba(236, 72, 153, 0.4);
+    }
+
+    .dashboard.theme-ben10 .navbar,
+    .dashboard.theme-ben10 .sidebar,
+    .dashboard.theme-ben10 .panel,
+    .dashboard.theme-ben10 .card,
+    .dashboard.theme-ben10 .notifications-panel {
+      background: linear-gradient(145deg, rgba(6, 24, 8, 0.88), rgba(22, 54, 24, 0.72));
+      border-color: rgba(163, 230, 53, 0.45);
+      color: #dcfce7;
+    }
+
+    .dashboard.theme-ben10 .title,
+    .dashboard.theme-ben10 .welcome,
+    .dashboard.theme-ben10 .panel h2,
+    .dashboard.theme-ben10 .card span,
+    .dashboard.theme-ben10 .field label,
+    .dashboard.theme-ben10 .video-hint,
+    .dashboard.theme-ben10 .assignment-meta,
+    .dashboard.theme-ben10 .course-app-name {
+      color: #ecfccb;
+    }
+
+    .dashboard.theme-ben10 .menu button {
+      color: #d9f99d;
+    }
+
+    .dashboard.theme-ben10 .menu button:hover,
+    .dashboard.theme-ben10 .menu button.active {
+      background: rgba(132, 204, 22, 0.18);
+      color: #f7fee7;
+    }
+
+    .dashboard.theme-ben10 th,
+    .dashboard.theme-ben10 td {
+      color: #ecfccb;
+      border-bottom-color: rgba(163, 230, 53, 0.28);
+    }
+
+    .dashboard.theme-ben10 thead th {
+      background: rgba(22, 101, 52, 0.78);
+      color: #f0fdf4;
+    }
+
+    .dashboard.theme-ben10 tbody tr:hover {
+      background: rgba(132, 204, 22, 0.11);
+    }
+
+    .dashboard.theme-ben10 .list li,
+    .dashboard.theme-ben10 .notifications-list li {
+      color: #ecfccb;
+      background: rgba(3, 16, 6, 0.55);
+      border-color: rgba(163, 230, 53, 0.3);
+    }
+
+    .dashboard.theme-ben10 .notifications-list li.unread {
+      background: rgba(34, 197, 94, 0.24);
+      border-color: rgba(163, 230, 53, 0.5);
+    }
+
+    .dashboard.theme-ben10 input,
+    .dashboard.theme-ben10 select {
+      color: #f0fdf4;
+      background: rgba(3, 12, 5, 0.82);
+      border-color: rgba(163, 230, 53, 0.45);
+    }
+
+    .dashboard.theme-ben10 input::placeholder {
+      color: #bbf7d0;
+    }
+
+    .dashboard.theme-ben10 .video-open-btn,
+    .dashboard.theme-ben10 .nav-icon-btn {
+      color: #ecfccb;
+      background: rgba(6, 24, 8, 0.82);
+      border-color: rgba(163, 230, 53, 0.45);
+      box-shadow: 0 0 0 1px rgba(163, 230, 53, 0.12), 0 0 10px rgba(132, 204, 22, 0.14);
+    }
+
+    .dashboard.theme-royal .navbar,
+    .dashboard.theme-royal .sidebar,
+    .dashboard.theme-royal .panel,
+    .dashboard.theme-royal .card,
+    .dashboard.theme-royal .notifications-panel {
+      background: #171717;
+      border-color: #8a5a17;
+      color: #f5f5f4;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.28);
+    }
+
+    .dashboard.theme-royal .title,
+    .dashboard.theme-royal .welcome,
+    .dashboard.theme-royal .panel h2,
+    .dashboard.theme-royal .card span,
+    .dashboard.theme-royal .field label,
+    .dashboard.theme-royal .video-hint,
+    .dashboard.theme-royal .assignment-meta,
+    .dashboard.theme-royal .course-app-name {
+      color: #fcd34d;
+    }
+
+    .dashboard.theme-royal .menu button {
+      color: #fcd34d;
+    }
+
+    .dashboard.theme-royal .menu button:hover,
+    .dashboard.theme-royal .menu button.active {
+      background: #3f2a10;
+      color: #fef3c7;
+    }
+
+    .dashboard.theme-royal th,
+    .dashboard.theme-royal td {
+      color: #fef3c7;
+      border-bottom-color: rgba(217, 119, 6, 0.3);
+    }
+
+    .dashboard.theme-royal thead th {
+      background: #5b3a15;
+      color: #fffbeb;
+    }
+
+    .dashboard.theme-royal tbody tr:hover {
+      background: #2b2114;
+    }
+
+    .dashboard.theme-royal .list li,
+    .dashboard.theme-royal .notifications-list li {
+      background: #121212;
+      border-color: #6f4b1d;
+      color: #fef3c7;
+    }
+
+    .dashboard.theme-royal .notifications-list li.unread {
+      background: #3b2811;
+      border-color: #a56a1f;
+    }
+
+    .dashboard.theme-royal input,
+    .dashboard.theme-royal select {
+      color: #fffbeb;
+      background: #0d0d0d;
+      border-color: #8a5a17;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      box-shadow: none;
+    }
+
+    .dashboard.theme-royal input::placeholder {
+      color: #d6d3d1;
+    }
+
+    .dashboard.theme-royal .video-open-btn,
+    .dashboard.theme-royal .nav-icon-btn {
+      color: #fef3c7;
+      background: #161616;
+      border-color: #8a5a17;
+      box-shadow: none;
+    }
+
+    .dashboard.theme-royal .panel-head {
+      background: #1b1b1b;
+      border-bottom-color: #6f4b1d;
+    }
+  </style>
+</head>
+<body>
+  <video id="auth-bg-video" class="auth-bg-video" autoplay muted loop playsinline webkit-playsinline>
+    <source src="./auth-bg.mp4" type="video/mp4" />
+    <source src="./auth-bg.mov" type="video/quicktime" />
+  </video>
+  <div id="auth-bg-overlay" class="auth-bg-overlay"></div>
+
+  <main class="screen login-wrap" id="signup-screen" aria-label="Signup Screen">
+    <section class="login-card">
+      <div class="brand">
+        <h1>Create Account</h1>
+        <p>Signup to continue to RITP Portal</p>
+      </div>
+
+      <form id="signup-form" novalidate>
+        <div class="field">
+          <label for="signup-username">Gmail</label>
+          <input id="signup-username" type="email" placeholder="Enter Gmail (example@gmail.com)" autocomplete="email" required />
+        </div>
+
+        <div class="field">
+          <label for="signup-password">Password</label>
+          <input id="signup-password" type="password" placeholder="Create password" required />
+        </div>
+
+        <div class="field">
+          <label for="signup-confirm-password">Confirm Password</label>
+          <input id="signup-confirm-password" type="password" placeholder="Confirm password" required />
+        </div>
+
+        <p class="help" id="signup-help" aria-live="polite"></p>
+        <button class="btn" type="submit">Create Account</button>
+      </form>
+
+      <p class="switch-line">Already have an account?<button class="switch-btn" id="go-login-btn" type="button">Login</button></p>
+    </section>
+  </main>
+
+  <main class="screen login-wrap hidden" id="login-screen" aria-label="Login Screen">
+    <section class="login-card" id="login-card">
+      <div class="brand">
+        <h1>RITP Portal</h1>
+        <p>Learning Management System</p>
+      </div>
+
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label for="username">Gmail</label>
+          <input id="username" name="username" type="email" placeholder="Enter Gmail (example@gmail.com)" autocomplete="email" required />
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" placeholder="Enter password" autocomplete="current-password" required />
+        </div>
+
+        <p class="help" id="login-help" aria-live="polite"></p>
+        <button class="btn" type="submit">Login</button>
+      </form>
+
+      <p class="switch-line">New here?<button class="switch-btn" id="go-signup-btn" type="button">Signup</button></p>
+    </section>
+  </main>
+
+  <main class="screen dashboard hidden" id="dashboard-screen" aria-label="Dashboard Screen">
+    <header class="navbar">
+      <div class="title">RITP Learning Portal</div>
+      <div class="navbar-actions">
+        <button class="nav-icon-btn" id="notifications-toggle-btn" type="button" aria-label="Open notifications" title="Notifications">🔔
+          <span class="notif-badge hidden" id="notif-count">0</span>
+        </button>
+        <button class="nav-icon-btn hidden" id="profile-search-btn" type="button" aria-label="Search profiles" title="Search Profiles">🔍</button>
+        <button class="nav-profile-btn hidden" id="profile-nav-btn" type="button" aria-label="Open profile" title="Profile">
+          <img id="profile-nav-avatar" alt="Profile" />
+        </button>
+        <button class="nav-menu-btn hidden" id="settings-nav-btn" type="button" aria-label="Open settings" title="Settings">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <aside class="notifications-panel hidden" id="notifications-panel" aria-label="Notifications Panel">
+      <div class="panel-head notifications-head">
+        <h2>Notifications</h2>
+        <button class="video-open-btn" id="notif-mark-read-btn" type="button">Mark All Read</button>
+      </div>
+      <ul class="list notifications-list" id="notifications-list"></ul>
+    </aside>
+
+    <div class="layout">
+      <aside class="sidebar" aria-label="Sidebar Navigation">
+        <nav class="menu" id="menu-buttons">
+          <button data-target="dashboard" class="active" type="button">Dashboard</button>
+          <button data-target="courses" type="button">Courses</button>
+          <button data-target="progress" type="button">Progress</button>
+          <button data-target="search" id="search-menu" class="hidden" type="button">Search</button>
+          <button data-target="upload-course" id="upload-course-menu" class="hidden" type="button">Upload Course</button>
+          <button data-target="upload-assignment" id="upload-assignment-menu" class="hidden" type="button">Upload Assignment</button>
+        </nav>
+      </aside>
+
+      <section class="main">
+        <section class="section active" id="section-dashboard">
+          <div class="cards">
+            <article class="card"><h3 id="stat-total-courses">0</h3><span>My Courses</span></article>
+            <article class="card"><h3 id="stat-completed-courses">0</h3><span>Completed</span></article>
+            <article class="card"><h3 id="stat-pending-courses">0</h3><span>Pending</span></article>
+            <article class="card"><h3 id="stat-progress">0%</h3><span>Overall Progress</span></article>
+          </div>
+
+          <article class="panel" style="margin-bottom:16px;">
+            <div class="panel-head"><h2>Announcements</h2></div>
+            <div class="announcement-wrap">
+              <div id="announcement-form-wrap">
+                <form class="upload-form" id="announcement-form">
+                  <div class="field">
+                    <label for="announcement-input">New Announcement</label>
+                    <input id="announcement-input" type="text" placeholder="Type announcement for all students" maxlength="180" />
+                  </div>
+                  <button class="btn" type="submit">Post Announcement</button>
+                  <p class="success-msg" id="announcement-help" aria-live="polite"></p>
+                </form>
+              </div>
+              <ul class="list" id="announcement-list"></ul>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head"><h2>Available Courses</h2></div>
+            <table>
+              <thead>
+                <tr><th>Course</th><th>Teacher</th><th>Status</th></tr>
+              </thead>
+              <tbody id="courses-table-body"></tbody>
+            </table>
+          </article>
+
+          <article class="panel" style="margin-top:16px;">
+            <div class="panel-head"><h2>Student Leaderboard (Watch Time)</h2></div>
+            <table>
+              <thead>
+                <tr><th>Rank</th><th>Student</th><th>Watch Time</th></tr>
+              </thead>
+              <tbody id="leaderboard-body"></tbody>
+            </table>
+          </article>
+        </section>
+        <section class="section" id="section-courses">
+          <section class="courses-wireframe">
+            <article class="courses-main-panel">
+              <div class="courses-main-head">
+                <p class="courses-kicker">Current Course</p>
+                <h2 id="courses-focus-title">INTRODUCTION TO ALGORITHMS</h2>
+              </div>
+              <div class="protected-video-wrap">
+                <video id="courses-focus-video" class="protected-video" controls preload="metadata" playsinline webkit-playsinline controlsList="nodownload noplaybackrate noremoteplayback" disablePictureInPicture disableRemotePlayback></video>
+                <div class="video-watermark" aria-hidden="true">
+                  <span id="courses-video-watermark-a">RITP Protected Content</span>
+                  <span id="courses-video-watermark-b">RITP Protected Content</span>
+                </div>
+              </div>
+              <div class="courses-main-actions">
+                <button class="video-open-btn" id="courses-focus-open-btn" type="button">Open Full Playlist</button>
+              </div>
+              <div class="courses-progress-wrap">
+                <div class="courses-progress-track">
+                  <div class="courses-progress-fill" id="courses-progress-fill"></div>
+                </div>
+                <span class="courses-progress-value" id="courses-progress-value">0%</span>
+              </div>
+              <div class="courses-todo">
+                <h3>Dynamic To-Do</h3>
+                <ul id="courses-todo-list"></ul>
+              </div>
+            </article>
+
+            <aside class="courses-right-panel">
+              <article class="courses-badge-card">
+                <div class="courses-badge-icon">🔥</div>
+                <p id="courses-level-text">LEVEL 1 - STARTER</p>
+              </article>
+              <article class="courses-next-card">
+                <p class="courses-next-label">Next Assignment</p>
+                <h3 id="courses-next-title">No assignment</h3>
+                <p id="courses-next-course">Course: -</p>
+                <p id="courses-next-due">Due: -</p>
+                <a id="courses-next-link" class="video-open-btn hidden" target="_blank" rel="noopener noreferrer">Open Submission Link</a>
+              </article>
+              <article class="courses-list-card">
+                <p class="courses-next-label">Courses</p>
+                <div class="course-icon-grid" id="my-courses-list"></div>
+              </article>
+            </aside>
+          </section>
+        </section>
+
+        <section class="section" id="section-course-playlist">
+          <article class="panel">
+            <div class="panel-head playlist-head">
+              <div>
+                <h2 id="playlist-course-title">Course Playlist</h2>
+                <p class="video-hint" id="playlist-course-info">Course info</p>
+              </div>
+              <button type="button" class="video-open-btn" id="playlist-back-btn">Back to Courses</button>
+            </div>
+            <div class="playlist-layout">
+              <div class="playlist-main">
+                <div class="protected-video-wrap">
+                  <video id="playlist-video-player" class="protected-video" controls preload="metadata" playsinline webkit-playsinline controlsList="nodownload noplaybackrate noremoteplayback" disablePictureInPicture disableRemotePlayback></video>
+                  <div class="video-watermark" aria-hidden="true">
+                    <span id="playlist-video-watermark-a">RITP Protected Content</span>
+                    <span id="playlist-video-watermark-b">RITP Protected Content</span>
+                  </div>
+                </div>
+                <div class="playlist-orange-progress">
+                  <div class="playlist-orange-track">
+                    <div class="playlist-orange-fill" id="playlist-orange-fill"></div>
+                  </div>
+                  <span class="playlist-orange-value" id="playlist-orange-value">0%</span>
+                </div>
+                <p class="video-hint" id="playlist-video-hint">Select a lecture from playlist to play.</p>
+                <section class="mini-quiz hidden" id="mini-quiz-panel">
+                  <div class="panel-head"><h2>Mini Quiz (3 MCQs)</h2></div>
+                  <div class="mini-quiz-body">
+                    <p class="assignment-meta" id="mini-quiz-status">Watch full video to unlock the quiz.</p>
+                    <form id="mini-quiz-form" class="mini-quiz-form"></form>
+                    <button type="button" class="video-open-btn" id="mini-quiz-submit">Submit Quiz</button>
+                    <p class="success-msg" id="mini-quiz-result" aria-live="polite"></p>
+                  </div>
+                </section>
+              </div>
+              <aside class="playlist-side">
+                <div class="panel-head"><h2>Course Access</h2></div>
+                <div class="mini-quiz-body" id="course-access-panel">
+                  <p class="assignment-meta" id="course-access-status">Request access to unlock course videos.</p>
+                  <button type="button" class="video-open-btn" id="course-join-btn">Join Course</button>
+                  <p class="success-msg" id="course-access-help" aria-live="polite"></p>
+                  <div id="course-requests-wrap" class="hidden">
+                    <p class="assignment-meta" style="margin-top:10px;">Pending Requests</p>
+                    <ul class="list" id="course-access-requests"></ul>
+                  </div>
+                </div>
+                <div class="panel-head"><h2>Course Lectures</h2></div>
+                <ul class="playlist-list" id="playlist-video-list"></ul>
+                <div class="panel-head"><h2>Course Assignments</h2></div>
+                <ul class="list" id="playlist-assignment-list"></ul>
+                <p class="assignment-board-help" id="playlist-assignment-help"></p>
+                <div class="panel-head"><h2>Course Details</h2></div>
+                <ul class="list">
+                  <li>Professor: <strong id="info-professor">-</strong></li>
+                  <li>Published By: <strong id="info-publisher">-</strong></li>
+                  <li>Completed Students: <strong id="info-completed">-</strong></li>
+                  <li>Total Students: <strong id="info-total">-</strong></li>
+                </ul>
+              </aside>
+            </div>
+            <div class="playlist-suggestions-wrap">
+              <p class="courses-next-label">Suggestions</p>
+              <div class="course-icon-grid suggestions-row" id="playlist-suggestions-list"></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="section" id="section-progress">
+          <div class="grid-2">
+            <article class="card">
+              <h3 id="progress-course-rate">0%</h3>
+              <span>Course Completion Rate</span>
+            </article>
+            <article class="card">
+              <h3 id="progress-total-courses">0</h3>
+              <span>Total Available Courses</span>
+            </article>
+            <article class="card">
+              <h3 id="progress-attendance-count">0</h3>
+              <span>Attendance Marked</span>
+            </article>
+          </div>
+
+          <article class="panel" style="margin-top:16px;">
+            <div class="panel-head"><h2>Attendance Records</h2></div>
+            <table>
+              <thead>
+                <tr><th>Date</th><th>Course</th><th>Status</th></tr>
+              </thead>
+              <tbody id="progress-attendance-body"></tbody>
+            </table>
+          </article>
+
+          <article class="panel" style="margin-top:16px;">
+            <div class="panel-head"><h2>Quiz Scores</h2></div>
+            <table>
+              <thead>
+                <tr><th>Course</th><th>Score</th><th>Updated</th></tr>
+              </thead>
+              <tbody id="progress-quiz-body"></tbody>
+            </table>
+          </article>
+        </section>
+
+        <section class="section" id="section-profile">
+          <div class="grid-2">
+            <article class="panel">
+              <div class="panel-head"><h2 id="profile-role-title">My Profile</h2></div>
+              <form class="upload-form" id="profile-form">
+                <div class="field">
+                  <label for="profile-display-name">Display Name</label>
+                  <input id="profile-display-name" type="text" placeholder="Your name" />
+                </div>
+                <div class="field">
+                  <label for="profile-handle">Handle</label>
+                  <input id="profile-handle" type="text" placeholder="@username" />
+                </div>
+                <div class="field">
+                  <label for="profile-bio">Bio</label>
+                  <input id="profile-bio" type="text" placeholder="Write a short bio" maxlength="140" />
+                </div>
+                <div class="field">
+                  <label for="profile-avatar">Avatar Image URL</label>
+                  <input id="profile-avatar" type="url" placeholder="https://..." />
+                </div>
+                <div class="field">
+                  <label for="profile-avatar-file">Choose Profile Photo (Photo Library)</label>
+                  <input id="profile-avatar-file" type="file" accept="image/*" />
+                </div>
+                <button class="btn" type="submit">Save Profile</button>
+                <p class="success-msg" id="profile-help" aria-live="polite"></p>
+                <div class="role-request-actions" id="role-request-actions">
+                  <button class="video-open-btn" id="request-teacher-btn" type="button">Request Teacher</button>
+                  <button class="video-open-btn" id="request-admin-btn" type="button">Request Admin</button>
+                  <button class="video-open-btn" id="request-hod-btn" type="button">Request HOD</button>
+                </div>
+                <p class="success-msg" id="role-request-help" aria-live="polite"></p>
+              </form>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head"><h2>Profile Preview</h2></div>
+              <div class="profile-preview" id="profile-preview">
+                <div id="profile-detail-view"></div>
+                <button class="btn profile-logout-btn" id="logout-btn" type="button">Logout</button>
+              </div>
+            </article>
+          </div>
+        </section>
+        <section class="section" id="section-settings">
+          <div class="grid-2">
+            <article class="panel">
+              <div class="panel-head"><h2>Change Password</h2></div>
+              <form class="upload-form" id="password-settings-form">
+                <div class="field">
+                  <label for="current-password-setting">Current Password</label>
+                  <input id="current-password-setting" type="password" placeholder="Enter current password" />
+                </div>
+                <div class="field">
+                  <label for="new-password-setting">New Password</label>
+                  <input id="new-password-setting" type="password" placeholder="Enter new password" />
+                </div>
+                <div class="field">
+                  <label for="confirm-password-setting">Confirm New Password</label>
+                  <input id="confirm-password-setting" type="password" placeholder="Confirm new password" />
+                </div>
+                <button class="btn" type="submit">Update Password</button>
+                <p class="success-msg" id="password-settings-help" aria-live="polite"></p>
+              </form>
+            </article>
+
+            <article class="panel">
+              <div class="panel-head"><h2>Theme Style</h2></div>
+              <form class="upload-form" id="theme-settings-form">
+                <div class="field">
+                  <label for="theme-style-select">Choose Theme (Snap style)</label>
+                  <select id="theme-style-select">
+                    <option value="light">Liquid Light</option>
+                    <option value="dark">Liquid Dark</option>
+                    <option value="snap-blue">Snap Blue</option>
+                    <option value="snap-night">Snap Night</option>
+                    <option value="crimson">Crimson Red</option>
+                    <option value="amber">Amber Glow</option>
+                    <option value="rose">Rose Pink</option>
+                    <option value="ben10">Ben 10 Neon</option>
+                    <option value="royal">Royal Matte Gold</option>
+                  </select>
+                </div>
+                <button class="btn" type="submit">Apply Theme</button>
+                <p class="success-msg" id="theme-settings-help" aria-live="polite"></p>
+              </form>
+            </article>
+          </div>
+        </section>
+        <section class="section" id="section-search">
+          <div class="grid-2">
+            <article class="panel">
+              <div class="panel-head"><h2>Search Friends</h2></div>
+              <form class="upload-form" id="search-connect-form">
+                <div class="field">
+                  <label for="search-connect-input">Find students or teachers</label>
+                  <input id="search-connect-input" type="text" placeholder="Search by name, handle, or gmail" />
+                </div>
+              </form>
+              <div class="course-icon-grid" id="search-results"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-head"><h2>Open Profile</h2></div>
+              <div class="profile-open-view" id="search-profile-viewer"></div>
+              <div class="panel-head"><h2>My Connections</h2></div>
+              <ul class="list" id="connections-list"></ul>
+              <p class="success-msg" id="search-connect-help" aria-live="polite"></p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="section-upload-course">
+          <article class="panel">
+            <div class="panel-head"><h2>Upload New Video Course (Teacher)</h2></div>
+            <form class="upload-form" id="upload-course-form">
+              <div class="field">
+                <label for="course-name">Course Name</label>
+                <input id="course-name" type="text" placeholder="Enter course name" required />
+              </div>
+              <div class="field">
+                <label for="course-code">Course Code</label>
+                <input id="course-code" type="text" placeholder="Enter course code" required />
+              </div>
+              <div class="field">
+                <label for="course-video">Course Video</label>
+                <input id="course-video" type="file" accept="video/*" required />
+              </div>
+              <button class="btn" type="submit">Upload Video Course</button>
+              <p class="success-msg" id="upload-message" aria-live="polite"></p>
+            </form>
+          </article>
+        </section>
+
+        <section class="section" id="section-upload-assignment">
+          <article class="panel">
+            <div class="panel-head"><h2>Upload Assignment</h2></div>
+            <form class="upload-form" id="upload-assignment-form">
+              <div class="field">
+                <label for="assignment-title">Assignment Title</label>
+                <input id="assignment-title" type="text" placeholder="Enter assignment title" required />
+              </div>
+              <div class="field">
+                <label for="assignment-course">Course</label>
+                <input id="assignment-course" type="text" placeholder="Enter course name" required />
+              </div>
+              <div class="field">
+                <label for="assignment-drive-link">Google Drive Link</label>
+                <input id="assignment-drive-link" type="url" placeholder="https://drive.google.com/..." required />
+              </div>
+              <button class="btn" type="submit">Upload Assignment</button>
+              <p class="success-msg" id="assignment-upload-message" aria-live="polite"></p>
+            </form>
+          </article>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const authBgVideo = document.getElementById('auth-bg-video');
+    const authBgOverlay = document.getElementById('auth-bg-overlay');
+    const signupScreen = document.getElementById('signup-screen');
+    const loginScreen = document.getElementById('login-screen');
+    const dashboardScreen = document.getElementById('dashboard-screen');
+    const signupForm = document.getElementById('signup-form');
+    const signupHelp = document.getElementById('signup-help');
+    const signupUsernameInput = document.getElementById('signup-username');
+    const signupPasswordInput = document.getElementById('signup-password');
+    const signupConfirmPasswordInput = document.getElementById('signup-confirm-password');
+    const loginForm = document.getElementById('login-form');
+    const loginHelp = document.getElementById('login-help');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const goLoginBtn = document.getElementById('go-login-btn');
+    const goSignupBtn = document.getElementById('go-signup-btn');
+    const welcomeUser = document.getElementById('welcome-user');
+    const notificationsToggleBtn = document.getElementById('notifications-toggle-btn');
+    const notificationsPanel = document.getElementById('notifications-panel');
+    const notificationsList = document.getElementById('notifications-list');
+    const notifCount = document.getElementById('notif-count');
+    const notifMarkReadBtn = document.getElementById('notif-mark-read-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const uploadCourseMenu = document.getElementById('upload-course-menu');
+    const uploadAssignmentMenu = document.getElementById('upload-assignment-menu');
+    const settingsNavBtn = document.getElementById('settings-nav-btn');
+    const searchMenu = document.getElementById('search-menu');
+    const profileSearchBtn = document.getElementById("profile-search-btn");
+    const profileNavBtn = document.getElementById('profile-nav-btn');
+    const profileNavAvatar = document.getElementById('profile-nav-avatar');
+    const uploadCourseForm = document.getElementById('upload-course-form');
+    const uploadMessage = document.getElementById('upload-message');
+    const uploadAssignmentForm = document.getElementById('upload-assignment-form');
+const assignmentUploadMessage = document.getElementById('assignment-upload-message');
+const assignmentDriveLinkInput = document.getElementById('assignment-drive-link');
+const announcementFormWrap = document.getElementById('announcement-form-wrap');
+const announcementForm = document.getElementById('announcement-form');
+const announcementInput = document.getElementById('announcement-input');
+const announcementHelp = document.getElementById('announcement-help');
+const announcementList = document.getElementById('announcement-list');
+const classAssignmentsFeed = document.getElementById('class-assignments-feed');
+    const playlistVideoList = document.getElementById('playlist-video-list');
+    const playlistSuggestionsList = document.getElementById('playlist-suggestions-list');
+    const playlistAssignmentList = document.getElementById('playlist-assignment-list');
+    const playlistAssignmentHelp = document.getElementById('playlist-assignment-help');
+    const coursesTableBody = document.getElementById('courses-table-body');
+    const myCoursesList = document.getElementById('my-courses-list');
+    const coursesFocusTitle = document.getElementById('courses-focus-title');
+    const coursesFocusVideo = document.getElementById('courses-focus-video');
+    const coursesVideoWatermarkA = document.getElementById('courses-video-watermark-a');
+    const coursesVideoWatermarkB = document.getElementById('courses-video-watermark-b');
+    const coursesFocusOpenBtn = document.getElementById('courses-focus-open-btn');
+    const coursesProgressFill = document.getElementById('courses-progress-fill');
+    const coursesProgressValue = document.getElementById('courses-progress-value');
+    const coursesTodoList = document.getElementById('courses-todo-list');
+    const coursesLevelText = document.getElementById('courses-level-text');
+    const coursesNextTitle = document.getElementById('courses-next-title');
+    const coursesNextCourse = document.getElementById('courses-next-course');
+    const coursesNextDue = document.getElementById('courses-next-due');
+    const coursesNextLink = document.getElementById('courses-next-link');
+    const submittedAssignmentsList = document.getElementById('submitted-assignments-list');
+    const playlistCourseTitle = document.getElementById('playlist-course-title');
+    const playlistCourseInfo = document.getElementById('playlist-course-info');
+    const playlistBackBtn = document.getElementById('playlist-back-btn');
+    const playlistVideoPlayer = document.getElementById('playlist-video-player');
+    const playlistOrangeFill = document.getElementById('playlist-orange-fill');
+    const playlistOrangeValue = document.getElementById('playlist-orange-value');
+    const playlistVideoWatermarkA = document.getElementById('playlist-video-watermark-a');
+    const playlistVideoWatermarkB = document.getElementById('playlist-video-watermark-b');
+    const playlistVideoHint = document.getElementById('playlist-video-hint');
+    const courseAccessPanel = document.getElementById('course-access-panel');
+    const courseAccessStatus = document.getElementById('course-access-status');
+    const courseJoinBtn = document.getElementById('course-join-btn');
+    const courseAccessHelp = document.getElementById('course-access-help');
+    const courseAccessRequests = document.getElementById('course-access-requests');
+    const courseRequestsWrap = document.getElementById('course-requests-wrap');
+    const miniQuizPanel = document.getElementById('mini-quiz-panel');
+    const miniQuizStatus = document.getElementById('mini-quiz-status');
+    const miniQuizForm = document.getElementById('mini-quiz-form');
+    const miniQuizSubmit = document.getElementById('mini-quiz-submit');
+    const miniQuizResult = document.getElementById('mini-quiz-result');
+    const infoProfessor = document.getElementById('info-professor');
+    const infoPublisher = document.getElementById('info-publisher');
+    const infoCompleted = document.getElementById('info-completed');
+    const infoTotal = document.getElementById('info-total');
+    const leaderboardBody = document.getElementById('leaderboard-body');
+    const statTotalCourses = document.getElementById('stat-total-courses');
+    const statCompletedCourses = document.getElementById('stat-completed-courses');
+    const statPendingCourses = document.getElementById('stat-pending-courses');
+    const statProgress = document.getElementById('stat-progress');
+    const progressCourseRate = document.getElementById('progress-course-rate');
+    const progressTotalCourses = document.getElementById('progress-total-courses');
+    const progressAttendanceCount = document.getElementById('progress-attendance-count');
+    const progressAttendanceBody = document.getElementById('progress-attendance-body');
+    const progressQuizBody = document.getElementById('progress-quiz-body');
+    const profileForm = document.getElementById('profile-form');
+    const profileDisplayNameInput = document.getElementById('profile-display-name');
+    const profileHandleInput = document.getElementById('profile-handle');
+    const profileBioInput = document.getElementById('profile-bio');
+    const profileAvatarInput = document.getElementById('profile-avatar');
+    const profileAvatarFileInput = document.getElementById('profile-avatar-file');
+    const profileHelp = document.getElementById('profile-help');
+    const roleRequestActions = document.getElementById('role-request-actions');
+    const requestTeacherBtn = document.getElementById('request-teacher-btn');
+    const requestAdminBtn = document.getElementById('request-admin-btn');
+    const requestHodBtn = document.getElementById('request-hod-btn');
+    const roleRequestHelp = document.getElementById('role-request-help');
+    const profileDetailView = document.getElementById('profile-detail-view');
+    const passwordSettingsForm = document.getElementById('password-settings-form');
+    const currentPasswordSetting = document.getElementById('current-password-setting');
+    const newPasswordSetting = document.getElementById('new-password-setting');
+    const confirmPasswordSetting = document.getElementById('confirm-password-setting');
+    const passwordSettingsHelp = document.getElementById('password-settings-help');
+    const themeSettingsForm = document.getElementById('theme-settings-form');
+    const themeStyleSelect = document.getElementById('theme-style-select');
+    const themeSettingsHelp = document.getElementById('theme-settings-help');
+    const profileRoleTitle = document.getElementById('profile-role-title');
+    const searchConnectForm = document.getElementById('search-connect-form');
+    const searchConnectInput = document.getElementById('search-connect-input');
+    const searchResults = document.getElementById('search-results');
+    const searchProfileViewer = document.getElementById('search-profile-viewer');
+    const connectionsList = document.getElementById('connections-list');
+    const searchConnectHelp = document.getElementById('search-connect-help');
+    const menuButtons = Array.from(document.querySelectorAll('#menu-buttons button[data-target]'));
+    const sections = Array.from(document.querySelectorAll('.section'));
+    let currentUserName = '';
+    let currentUserRole = '';
+    let currentUserRoles = [];
+    let watchSessionStartedAt = null;
+    let currentPlaylistCourse = '';
+    const submittedAssignments = [
+      'Network Topologies Report',
+      'DBMS Query Practice',
+      'Linux Commands Worksheet'
+    ];
+    const classAssignments = [
+      { id: 1, title: 'AI Mini Project', course: 'Introduction to AI', due: '20 Feb', assignedBy: 'Prof. Sharma', completedBy: [], submissions: {} },
+      { id: 3, title: 'WPD Practical UI', course: 'Web Programming', due: '24 Feb', assignedBy: 'Prof. Kulkarni', completedBy: [], submissions: {} }
+    ];
+    const watchTimeByStudent = {};
+const notificationsData = [
+  { id: 1, text: 'Welcome to RITP portal dashboard.', time: 'Just now', read: false },
+  { id: 3, text: 'Course video updated for Programming in C.', time: 'Today', read: true }
+];
+const announcementsData = [
+  { id: 1, text: 'Welcome to the new semester. Keep checking course videos.', by: 'Admin', time: 'Today' }
+];
+const ACCOUNTS_STORAGE_KEY = 'ritp_accounts_v1';
+const SESSION_STORAGE_KEY = 'ritp_session_v1';
+const ROLE_REQUESTS_STORAGE_KEY = 'ritp_role_requests_v1';
+const COURSE_ACCESS_STORAGE_KEY = 'ritp_course_access_v1';
+const MAX_PROFILE_PHOTO_DIMENSION = 320;
+const PROFILE_PHOTO_QUALITY = 0.8;
+
+function saveLocalJSON(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (error) {
+    console.warn(`Local save failed for ${key}`, error);
+    return false;
+  }
+}
+
+function removeLocalValue(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.warn(`Local remove failed for ${key}`, error);
+  }
+}
+
+function estimateDataUrlBytes(dataUrl) {
+  const base64 = String(dataUrl || '').split(',')[1] || '';
+  return Math.ceil((base64.length * 3) / 4);
+}
+
+function compressImageToDataUrl(file, maxDimension = MAX_PROFILE_PHOTO_DIMENSION, quality = PROFILE_PHOTO_QUALITY) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type || !file.type.startsWith('image/')) {
+      reject(new Error('Please select a valid image file.'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read selected image.'));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error('Selected file is not a readable image.'));
+      image.onload = () => {
+        const longestSide = Math.max(image.width, image.height) || 1;
+        const scale = Math.min(1, maxDimension / longestSide);
+        const width = Math.max(1, Math.round(image.width * scale));
+        const height = Math.max(1, Math.round(image.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Image processing is not supported in this browser.'));
+          return;
+        }
+        ctx.drawImage(image, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      image.src = String(reader.result || '');
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadAccounts() {
+  try {
+    const raw = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveAccounts(accounts) {
+  return saveLocalJSON(ACCOUNTS_STORAGE_KEY, accounts);
+}
+
+function loadRoleRequests() {
+  try {
+    const raw = localStorage.getItem(ROLE_REQUESTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveRoleRequests() {
+  return saveLocalJSON(ROLE_REQUESTS_STORAGE_KEY, roleRequests);
+}
+
+function loadCourseAccess() {
+  try {
+    const raw = localStorage.getItem(COURSE_ACCESS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveCourseAccess() {
+  return saveLocalJSON(COURSE_ACCESS_STORAGE_KEY, courseAccessByCourse);
+}
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function saveSession(email) {
+  return saveLocalJSON(SESSION_STORAGE_KEY, { email: normalizeEmail(email) });
+}
+
+function clearSession() {
+  removeLocalValue(SESSION_STORAGE_KEY);
+}
+
+function normalizeEmail(email) {
+  return email.trim().toLowerCase();
+}
+
+function updateVideoWatermarks() {
+  const who = currentUserName || 'guest';
+  const stamp = new Date().toLocaleString();
+  const text = `${who} • ${stamp} • RITP`;
+  if (coursesVideoWatermarkA) coursesVideoWatermarkA.textContent = text;
+  if (coursesVideoWatermarkB) coursesVideoWatermarkB.textContent = text;
+  if (playlistVideoWatermarkA) playlistVideoWatermarkA.textContent = text;
+  if (playlistVideoWatermarkB) playlistVideoWatermarkB.textContent = text;
+}
+
+const AUTO_ADMIN_EMAILS = new Set([
+  'eshangodambe83@gmail.com',
+  'yashbhirud2025@gmail.com'
+].map((email) => normalizeEmail(email)));
+
+function isValidGmail(email) {
+  return /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(email);
+}
+
+function normalizeCourseName(name) {
+  return String(name || '').trim().toLowerCase();
+}
+
+function getCourseNameVariants(name) {
+  const full = normalizeCourseName(name);
+  const base = full.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+  const set = new Set([full]);
+  if (base) set.add(base);
+  return Array.from(set);
+}
+
+function resolveCourseByName(name) {
+  const query = normalizeCourseName(name);
+  if (!query) return null;
+  const exact = coursesData.find((course) => normalizeCourseName(course.name) === query);
+  if (exact) return exact;
+  const queryBase = query.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!queryBase) return null;
+  return coursesData.find((course) => {
+    const full = normalizeCourseName(course.name);
+    const base = full.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    return base === queryBase;
+  }) || null;
+}
+
+let accountsByEmail = loadAccounts();
+normalizeAccountRoles();
+let courseAccessByCourse = loadCourseAccess();
+function getPrimaryRoleFromRoles(roles) {
+  if (roles.includes('HOD')) return 'HOD';
+  if (roles.includes('Admin')) return 'Admin';
+  if (roles.includes('Teacher')) return 'Teacher';
+  return 'Student';
+}
+
+function normalizeRoles(roles) {
+  const filtered = (roles || []).filter(Boolean);
+  const set = new Set(filtered);
+  if (!set.size) set.add('Student');
+  return Array.from(set);
+}
+
+function getAccountRoles(email) {
+  const key = normalizeEmail(email || '');
+  const acc = accountsByEmail[key] || {};
+  if (Array.isArray(acc.roles) && acc.roles.length) {
+    return normalizeRoles(acc.roles);
+  }
+  const base = acc.role || 'Student';
+  if (base === 'HOD') return ['HOD', 'Teacher'];
+  return [base];
+}
+
+function setAccountRoles(email, roles) {
+  const key = normalizeEmail(email || '');
+  if (!accountsByEmail[key]) return false;
+  const normalized = normalizeRoles(roles);
+  accountsByEmail[key].roles = normalized;
+  accountsByEmail[key].role = getPrimaryRoleFromRoles(normalized);
+  return true;
+}
+
+function normalizeAccountRoles() {
+  let changed = false;
+  Object.entries(accountsByEmail).forEach(([email, acc]) => {
+    const normalizedEmail = normalizeEmail(email || '');
+    if (!acc.roles || !Array.isArray(acc.roles) || !acc.roles.length) {
+      const base = acc.role || 'Student';
+      const roles = base === 'HOD' ? ['HOD', 'Teacher'] : [base];
+      acc.roles = normalizeRoles(roles);
+      acc.role = getPrimaryRoleFromRoles(acc.roles);
+      accountsByEmail[normalizedEmail] = acc;
+      changed = true;
+    }
+    if (AUTO_ADMIN_EMAILS.has(normalizedEmail) && !acc.roles.includes('Admin')) {
+      acc.roles = normalizeRoles([...acc.roles, 'Admin']);
+      acc.role = getPrimaryRoleFromRoles(acc.roles);
+      accountsByEmail[normalizedEmail] = acc;
+      changed = true;
+    }
+  });
+  if (changed) {
+    saveAccounts(accountsByEmail);
+  }
+}
+let roleRequests = loadRoleRequests();
+const QUIZ_SCORES_STORAGE_KEY = 'ritp_quiz_scores_v1';
+const miniQuizBank = {
+  'Programming in C': [
+    { q: 'Which keyword is used to define a constant in C?', options: ['int', 'const', 'static'], answer: 1 },
+    { q: 'Which function prints output in C?', options: ['scanf', 'printf', 'print'], answer: 1 },
+    { q: 'Which symbol ends a C statement?', options: [';', ':', ','], answer: 0 }
+  ],
+  'Introduction to AI': [
+    { q: 'AI stands for?', options: ['Automated Interface', 'Artificial Intelligence', 'Applied Informatics'], answer: 1 },
+    { q: 'Machine learning is a part of?', options: ['AI', 'DBMS', 'Networking'], answer: 0 },
+    { q: 'Supervised learning uses?', options: ['No data', 'Labeled data', 'Only images'], answer: 1 }
+  ],
+  'BEE (Basic Electrics and Electronics)': [
+    { q: 'Unit of electric current is?', options: ['Volt', 'Ampere', 'Ohm'], answer: 1 },
+    { q: 'Symbol of resistance is?', options: ['R', 'C', 'L'], answer: 0 },
+    { q: 'Diode allows current in?', options: ['Both directions', 'One direction', 'No direction'], answer: 1 }
+  ],
+  'Web Programming': [
+    { q: 'Which tag adds a hyperlink?', options: ['<a>', '<h1>', '<p>'], answer: 0 },
+    { q: 'CSS is used for?', options: ['Database', 'Styling', 'Compilation'], answer: 1 },
+    { q: 'JavaScript runs in?', options: ['Browser', 'Printer', 'Router'], answer: 0 }
+  ]
+};
+
+function loadQuizScores() {
+  try {
+    const raw = localStorage.getItem(QUIZ_SCORES_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveQuizScores() {
+  return saveLocalJSON(QUIZ_SCORES_STORAGE_KEY, quizScores);
+}
+
+let quizScores = loadQuizScores();
+const ATTENDANCE_STORAGE_KEY = 'ritp_attendance_v1';
+
+function loadAttendanceRecords() {
+  try {
+    const raw = localStorage.getItem(ATTENDANCE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveAttendanceRecords() {
+  return saveLocalJSON(ATTENDANCE_STORAGE_KEY, attendanceRecords);
+}
+
+function getTodayDateKey() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+let attendanceRecords = loadAttendanceRecords();
+const PROFILE_STORAGE_KEY = 'ritp_profiles_v1';
+const THEME_PREF_STORAGE_KEY = 'ritp_theme_pref_v1';
+
+function loadProfiles() {
+  try {
+    const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveProfiles() {
+  return saveLocalJSON(PROFILE_STORAGE_KEY, profilesByUser);
+}
+
+function loadThemePrefs() {
+  try {
+    const raw = localStorage.getItem(THEME_PREF_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveThemePrefs() {
+  return saveLocalJSON(THEME_PREF_STORAGE_KEY, themePrefByUser);
+}
+
+let profilesByUser = loadProfiles();
+let themePrefByUser = loadThemePrefs();
+let lastProtectionNoticeAt = 0;
+const unskippableVideoProgressBySrc = {};
+const CONNECTIONS_STORAGE_KEY = 'ritp_connections_v1';
+
+function loadConnections() {
+  try {
+    const raw = localStorage.getItem(CONNECTIONS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveConnections() {
+  return saveLocalJSON(CONNECTIONS_STORAGE_KEY, connectionsByUser);
+}
+let connectionsByUser = loadConnections();
+let currentThemeId = 'light';
+let selectedProfilePhotoData = '';
+let selectedSearchProfileEmail = '';
+let currentMiniQuiz = [];
+let currentCourseVideos = [];
+const PROFILE_FALLBACK_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODIiIGhlaWdodD0iODIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgyIiBoZWlnaHQ9IjgyIiBmaWxsPSIjZTJlOGYwIi8+PGNpcmNsZSBjeD0iNDEiIGN5PSIzMiIgcj0iMTYiIGZpbGw9IiM5NGEzYjgiLz48cmVjdCB4PSIxOCIgeT0iNTIiIHdpZHRoPSI0NiIgaGVpZ2h0PSIxOCIgcng9IjkiIGZpbGw9IiM5NGEzYjgiLz48L3N2Zz4=';
+const coursesData = [
+      { name: 'BEE (Basic Electrics and Electronics)', teacher: 'Prof. Electrical', professor: 'Prof. Electrical', publisher: 'RITP EEE Dept', completedStudents: 0, totalStudents: 96, status: 'Ongoing', hasVideo: true, videoUrl: './bee-basic-electrics-electronics-local.mp4', iconUrl: './bee-icon.svg' },
+      { name: 'Programming in C', teacher: 'Course Instructor', professor: 'Prof. Coder', publisher: 'RITP LMS', completedStudents: 58, totalStudents: 92, status: 'Ongoing', hasVideo: true, videoUrl: './programming-in-c-local.mp4', iconUrl: './programming-in-c-icon.svg' },
+      { name: 'Introduction to AI', teacher: 'Prof. Sharma', professor: 'Prof. Sharma', publisher: 'RITP AI Dept', completedStudents: 44, totalStudents: 88, status: 'Ongoing', hasVideo: true, videoUrl: './introduction-to-ai-local.mp4?v=2', iconUrl: './introduction-to-ai-icon.svg' },
+      { name: 'Web Programming', teacher: 'Prof. Kulkarni', professor: 'Prof. Kulkarni', publisher: 'RITP IT Dept', completedStudents: 0, totalStudents: 76, status: 'Pending', hasVideo: false, videoUrl: '' }
+    ];
+    classAssignments.forEach((task) => {
+      const resolved = resolveCourseByName(task.course);
+      task.courseKey = normalizeCourseName(resolved ? resolved.name : task.course);
+    });
+    function setAuthVisualVisibility(show) {
+      authBgVideo.classList.toggle('hidden', !show);
+      authBgOverlay.classList.toggle('hidden', !show);
+      if (show) {
+        authBgVideo.play().catch(() => {});
+      } else {
+        authBgVideo.pause();
+      }
+    }
+
+    function getStatusClass(status) {
+      if (status === 'Completed') return 'completed';
+      if (status === 'Pending') return 'pending';
+      return 'ongoing';
+    }
+
+    function isValidDriveLink(link) {
+      return /^https?:\/\/(drive|docs)\.google\.com\//i.test(link);
+    }
+
+    function renderCourseViews() {
+      const total = coursesData.length;
+      const completed = coursesData.filter((course) => course.status === 'Completed').length;
+      const pending = coursesData.filter((course) => course.status === 'Pending').length;
+      const progress = total ? Math.round((completed / total) * 100) : 0;
+
+      statTotalCourses.textContent = String(total);
+      statCompletedCourses.textContent = String(completed);
+      statPendingCourses.textContent = String(pending);
+      statProgress.textContent = `${progress}%`;
+      progressCourseRate.textContent = `${progress}%`;
+      progressTotalCourses.textContent = String(total);
+
+      coursesTableBody.innerHTML = coursesData.map((course) => (
+        `<tr>
+          <td>${course.name}</td>
+          <td>${course.teacher}</td>
+          <td><span class=\"status ${getStatusClass(course.status)}\">${course.status}</span></td>
+        </tr>`
+      )).join('');
+
+      myCoursesList.innerHTML = coursesData.map((course) => {
+        const short = course.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+        const icon = course.iconUrl
+          ? `<img src="${course.iconUrl}" alt="${course.name} icon" />`
+          : short;
+        return `<article class="course-app course-app-click" data-course-name="${course.name}">
+          <div class="course-app-icon">${icon}</div>
+          <div class="course-app-name">${course.name}</div>
+          <div class="course-app-status"><span class="status ${getStatusClass(course.status)}">${course.teacher}</span></div>
+        </article>`;
+      }).join('');
+      myCoursesList.querySelectorAll('.course-app-click').forEach((item) => {
+        item.addEventListener('click', () => {
+          currentPlaylistCourse = item.dataset.courseName || '';
+          renderCoursesShowcase();
+        });
+      });
+      renderCoursesShowcase();
+    }
+
+function renderCoursesShowcase() {
+  if (!coursesFocusTitle || !coursesProgressFill || !coursesProgressValue || !coursesTodoList) return;
+  if (!coursesData.length) {
+    coursesFocusTitle.textContent = 'NO COURSES AVAILABLE';
+    coursesProgressFill.style.width = '0%';
+    coursesProgressValue.textContent = '0%';
+    coursesTodoList.innerHTML = '<li><input type="checkbox" disabled /><span>No tasks yet</span></li>';
+    coursesLevelText.textContent = 'LEVEL 1 - STARTER';
+    coursesNextTitle.textContent = 'No assignment';
+    coursesNextCourse.textContent = 'Course: -';
+    coursesNextDue.textContent = 'Due: -';
+    coursesNextLink.classList.add('hidden');
+    coursesNextLink.removeAttribute('href');
+    if (coursesFocusVideo) {
+      coursesFocusVideo.pause();
+      coursesFocusVideo.removeAttribute('src');
+      coursesFocusVideo.load();
+      coursesFocusVideo.dataset.src = '';
+      coursesFocusVideo.dataset.course = '';
+    }
+    return;
+  }
+
+  const featuredCourse = coursesData.find((course) => normalizeCourseName(course.name) === normalizeCourseName(currentPlaylistCourse)) || coursesData[0];
+  const featuredCourseName = featuredCourse ? featuredCourse.name : '';
+  const featuredTasks = classAssignments.filter((task) => normalizeCourseName(task.course) === normalizeCourseName(featuredCourseName));
+  const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
+  const isStudent = currentUserRoles.includes('Student');
+  const approved = isStudent && isStudentApprovedForCourse(featuredCourseName, currentUserName);
+  const canViewCourseVideo = isTeacherSide || approved;
+  coursesFocusTitle.textContent = featuredCourseName.toUpperCase();
+
+  if (coursesFocusVideo) {
+    const videos = getCourseVideos(featuredCourse);
+    const featuredVideo = videos[0];
+    const nextSrc = canViewCourseVideo && featuredVideo && featuredVideo.url ? featuredVideo.url : '';
+    if (coursesFocusVideo.dataset.src !== nextSrc) {
+      coursesFocusVideo.pause();
+      if (nextSrc) {
+        coursesFocusVideo.src = nextSrc;
+        coursesFocusVideo.load();
+      } else {
+        coursesFocusVideo.removeAttribute('src');
+        coursesFocusVideo.load();
+      }
+      coursesFocusVideo.dataset.src = nextSrc;
+      coursesFocusVideo.dataset.course = featuredCourseName;
+    }
+  }
+
+  const videoProgress = Number(canViewCourseVideo && coursesFocusVideo && coursesFocusVideo.duration ? Math.round((coursesFocusVideo.currentTime / coursesFocusVideo.duration) * 100) : 0);
+  coursesProgressFill.style.width = `${videoProgress}%`;
+  coursesProgressValue.textContent = `${videoProgress}%`;
+
+  const hasSubmission = featuredTasks.some((task) => Boolean(task.submissions && task.submissions[currentUserName]));
+  const quizKey = getQuizScoreKey(featuredCourseName);
+  const hasQuizAttempt = Boolean(quizScores[quizKey]);
+  const todoRows = canViewCourseVideo
+    ? [
+      { text: 'Watch current lecture to 95%', done: videoProgress >= 95 },
+      { text: 'Submit at least one assignment', done: hasSubmission },
+      { text: 'Complete mini quiz', done: hasQuizAttempt }
+    ]
+    : [
+      { text: 'Join this course to unlock lecture video', done: false },
+      { text: 'After approval, watch lecture to 95%', done: false },
+      { text: 'Then complete assignment and quiz', done: false }
+    ];
+  coursesTodoList.innerHTML = todoRows.map((item) => (
+    `<li><input type="checkbox" ${item.done ? 'checked' : ''} disabled /><span>${escapeHtml(item.text)}</span></li>`
+  )).join('');
+
+  const watchSeconds = watchTimeByStudent[currentUserName] || 0;
+  const level = watchSeconds >= 10800 ? 'LEVEL 5 - ACHIEVER' : watchSeconds >= 7200 ? 'LEVEL 4 - ELITE' : watchSeconds >= 3600 ? 'LEVEL 3 - FOCUSED' : watchSeconds >= 1200 ? 'LEVEL 2 - RISING' : 'LEVEL 1 - STARTER';
+  coursesLevelText.textContent = level;
+
+  const nextAssignment = featuredTasks.find((task) => !(task.submissions && task.submissions[currentUserName])) || classAssignments.find((task) => !(task.submissions && task.submissions[currentUserName])) || null;
+  if (!nextAssignment) {
+    coursesNextTitle.textContent = 'No pending assignment';
+    coursesNextCourse.textContent = `Course: ${featuredCourseName}`;
+    coursesNextDue.textContent = 'Due: -';
+    coursesNextLink.classList.add('hidden');
+    coursesNextLink.removeAttribute('href');
+  } else {
+    coursesNextTitle.textContent = nextAssignment.title;
+    coursesNextCourse.textContent = `Course: ${nextAssignment.course}`;
+    coursesNextDue.textContent = `Due: ${nextAssignment.due || 'TBD'}`;
+    if (nextAssignment.driveLink && isValidDriveLink(nextAssignment.driveLink)) {
+      coursesNextLink.classList.remove('hidden');
+      coursesNextLink.setAttribute('href', nextAssignment.driveLink);
+    } else {
+      coursesNextLink.classList.add('hidden');
+      coursesNextLink.removeAttribute('href');
+    }
+  }
+
+  if (coursesFocusOpenBtn) {
+    coursesFocusOpenBtn.onclick = () => {
+      openCoursePlaylist(featuredCourseName);
+    };
+    coursesFocusOpenBtn.textContent = canViewCourseVideo ? 'Open Full Playlist' : 'Open & Request Join';
+  }
+}
+
+function updateCoursesVideoProgressUI() {
+  if (!coursesFocusVideo || !coursesProgressFill || !coursesProgressValue) return;
+  const duration = coursesFocusVideo.duration || 0;
+  const percent = duration > 0 ? Math.round((coursesFocusVideo.currentTime / duration) * 100) : 0;
+  coursesProgressFill.style.width = `${percent}%`;
+  coursesProgressValue.textContent = `${percent}%`;
+}
+
+function updatePlaylistOrangeProgressUI() {
+  if (!playlistVideoPlayer || !playlistOrangeFill || !playlistOrangeValue) return;
+  const duration = playlistVideoPlayer.duration || 0;
+  const percent = duration > 0 ? Math.round((playlistVideoPlayer.currentTime / duration) * 100) : 0;
+  playlistOrangeFill.style.width = `${percent}%`;
+  playlistOrangeValue.textContent = `${percent}%`;
+}
+
+function enforceUnskippableVideo(videoEl, label) {
+  if (!videoEl || videoEl.dataset.unskippableBound === '1') return;
+  videoEl.dataset.unskippableBound = '1';
+  let isCorrecting = false;
+  const MAX_FORWARD_DRIFT_SECONDS = 0.35;
+
+  const getSrcKey = () => videoEl.currentSrc || videoEl.src || '';
+
+  const rollbackIfNeeded = (currentTime) => {
+    const src = getSrcKey();
+    if (!src || !Number.isFinite(currentTime)) return false;
+    const allowed = Number(unskippableVideoProgressBySrc[src] || 0);
+    if (currentTime > allowed + MAX_FORWARD_DRIFT_SECONDS) {
+      isCorrecting = true;
+      videoEl.currentTime = Math.max(0, allowed);
+      isCorrecting = false;
+      const now = Date.now();
+      if (now - lastProtectionNoticeAt > 1200) {
+        lastProtectionNoticeAt = now;
+        addNotification(`${label} is unskippable. Forward seek is blocked.`);
+      }
+      return true;
+    }
+    return false;
+  };
+
+  videoEl.addEventListener('loadedmetadata', () => {
+    const src = getSrcKey();
+    if (!src) return;
+    const saved = Number(unskippableVideoProgressBySrc[src] || 0);
+    if (saved > 0 && saved < (videoEl.duration || Infinity)) {
+      isCorrecting = true;
+      videoEl.currentTime = saved;
+      isCorrecting = false;
+    }
+  });
+
+  videoEl.addEventListener('timeupdate', () => {
+    if (isCorrecting) return;
+    const src = getSrcKey();
+    if (!src || !Number.isFinite(videoEl.currentTime)) return;
+    if (rollbackIfNeeded(videoEl.currentTime)) return;
+    const prev = Number(unskippableVideoProgressBySrc[src] || 0);
+    if (videoEl.currentTime > prev && videoEl.currentTime <= prev + 2) {
+      unskippableVideoProgressBySrc[src] = videoEl.currentTime;
+    }
+  });
+
+  videoEl.addEventListener('seeking', () => {
+    if (isCorrecting) return;
+    rollbackIfNeeded(videoEl.currentTime);
+  });
+
+  videoEl.addEventListener('seeked', () => {
+    if (isCorrecting) return;
+    rollbackIfNeeded(videoEl.currentTime);
+  });
+
+  videoEl.addEventListener('ratechange', () => {
+    if (videoEl.playbackRate !== 1) {
+      videoEl.playbackRate = 1;
+    }
+  });
+}
+
+function renderClassAssignmentsFeed() {
+  if (!classAssignmentsFeed) return;
+  classAssignmentsFeed.innerHTML = classAssignments.map((task) => (
+    `<li>
+      <strong>${task.title}</strong>
+      <div class="assignment-meta">Course: ${task.course} | Due: ${task.due}</div>
+      <div class="assignment-meta">Assigned by: ${task.assignedBy} | Completed: ${task.completedBy.length}</div>
+      ${task.driveLink ? `<div class="assignment-meta">Assignment Link: <a href="${task.driveLink}" target="_blank" rel="noopener noreferrer">Open Drive</a></div>` : ''}
+    </li>`
+  )).join('');
+}
+
+function renderPlaylistAssignments(courseName) {
+  const resolvedCourse = resolveCourseByName(courseName);
+  const selectedCourseKey = normalizeCourseName(resolvedCourse ? resolvedCourse.name : courseName);
+  const tasks = classAssignments.filter((task) => {
+    if (task.courseKey) {
+      return normalizeCourseName(task.courseKey) === selectedCourseKey;
+    }
+    const resolvedTaskCourse = resolveCourseByName(task.course);
+    const taskKey = normalizeCourseName(resolvedTaskCourse ? resolvedTaskCourse.name : task.course);
+    return taskKey === selectedCourseKey;
+  });
+  if (!tasks.length) {
+    playlistAssignmentList.innerHTML = '<li>No assignments for this course yet.</li>';
+    playlistAssignmentHelp.textContent = '';
+    renderCoursesShowcase();
+    return;
+  }
+
+  playlistAssignmentList.innerHTML = tasks.map((task) => {
+    const doneByUser = currentUserName && task.submissions && task.submissions[currentUserName];
+    const proof = doneByUser ? `<div class="assignment-proof">Drive Link: <a href="${task.submissions[currentUserName]}" target="_blank" rel="noopener noreferrer">Open Submission</a></div>` : '';
+    const assignmentLink = task.driveLink ? `<div class="assignment-proof">Assignment Link: <a href="${task.driveLink}" target="_blank" rel="noopener noreferrer">Open Drive</a></div>` : '';
+    const disableUpload = doneByUser || currentUserRole !== 'Student' ? 'disabled' : '';
+    const disableDone = 'disabled';
+    return `<li>
+      <div class="assignment-task">
+        <div>
+          <div><strong>${task.title}</strong> <span class="status ${doneByUser ? 'completed' : 'pending'}">${doneByUser ? 'Completed' : 'Assigned'}</span></div>
+          <div class="assignment-meta">Due: ${task.due} | Assigned by: ${task.assignedBy}</div>
+          ${assignmentLink}
+          ${proof}
+        </div>
+        <button type="button" class="video-open-btn assignment-complete-btn" data-id="${task.id}" ${disableDone}>${doneByUser ? 'Done' : 'Mark Complete'}</button>
+      </div>
+      <input type="url" class="assignment-upload-input" data-id="${task.id}" placeholder="Paste Google Drive link" ${disableUpload} />
+    </li>`;
+  }).join('');
+
+  playlistAssignmentList.querySelectorAll('.assignment-upload-input').forEach((input) => {
+    input.addEventListener('input', () => {
+      const id = Number(input.dataset.id);
+      const btn = playlistAssignmentList.querySelector(`.assignment-complete-btn[data-id="${id}"]`);
+      if (!btn) return;
+      const link = input.value.trim();
+      if (isValidDriveLink(link) && currentUserRole === 'Student' && btn.textContent !== 'Done') {
+        btn.disabled = false;
+      } else {
+        btn.disabled = true;
+      }
+    });
+  });
+
+    playlistAssignmentList.querySelectorAll('.assignment-complete-btn').forEach((button) => {
+      button.addEventListener('click', () => {
+        if (currentUserRole !== 'Student' || !currentUserName) {
+          playlistAssignmentHelp.textContent = 'Login as Student to submit and mark assignment complete.';
+          return;
+        }
+
+      const id = Number(button.dataset.id);
+      const task = classAssignments.find((item) => item.id === id);
+      const linkInput = playlistAssignmentList.querySelector(`.assignment-upload-input[data-id="${id}"]`);
+      const driveLink = linkInput ? linkInput.value.trim() : '';
+
+      if (!task || !isValidDriveLink(driveLink)) {
+        playlistAssignmentHelp.textContent = 'Paste a valid Google Drive link first, then mark complete.';
+        return;
+      }
+
+      if (!task.completedBy.includes(currentUserName)) {
+        task.completedBy.push(currentUserName);
+      }
+      task.submissions[currentUserName] = driveLink;
+      submittedAssignments.unshift(`${task.title} (${task.course}) - Drive Link`);
+      renderSubmittedAssignments();
+      renderClassAssignmentsFeed();
+      playlistAssignmentHelp.textContent = 'Marked complete with Google Drive link.';
+      addNotification(`Assignment completed: ${task.title}`);
+      renderCoursesShowcase();
+      renderPlaylistAssignments(courseName);
+    });
+  });
+
+  if (currentUserRole !== 'Student') {
+    playlistAssignmentHelp.textContent = 'Students can paste Google Drive link and mark assignment complete here.';
+  }
+  renderCoursesShowcase();
+}
+
+function bindCourseAccessActions(courseName) {
+  if (!courseName || !courseAccessPanel) return;
+
+  if (courseJoinBtn) {
+    courseJoinBtn.onclick = () => {
+      if (!currentUserName || !currentUserRoles.includes('Student')) return;
+      const record = getCourseAccessRecord(courseName);
+      const email = normalizeEmail(currentUserName);
+      if (!record.requests.includes(email) && !record.approved.includes(email)) {
+        record.requests.push(email);
+        if (!updateCourseAccess(courseName, record)) {
+          courseAccessHelp.textContent = 'Could not send request (storage full).';
+          courseAccessHelp.style.color = '#b91c1c';
+          return;
+        }
+        courseAccessHelp.textContent = 'Request sent. Waiting for approval.';
+        courseAccessHelp.style.color = '#166534';
+      }
+      renderCourseAccessPanel({ name: courseName });
+    };
+  }
+
+  courseAccessPanel.querySelectorAll('.course-approve-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const email = normalizeEmail(btn.dataset.email || '');
+      const record = getCourseAccessRecord(courseName);
+      record.requests = record.requests.filter((item) => normalizeEmail(item) !== email);
+      if (!record.approved.includes(email)) record.approved.push(email);
+      if (!updateCourseAccess(courseName, record)) {
+        courseAccessHelp.textContent = 'Could not approve (storage full).';
+        courseAccessHelp.style.color = '#b91c1c';
+        return;
+      }
+      addNotification(`Approved ${email} for ${courseName}.`);
+      renderCourseAccessPanel({ name: courseName });
+    });
+  });
+
+  courseAccessPanel.querySelectorAll('.course-reject-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const email = normalizeEmail(btn.dataset.email || '');
+      const record = getCourseAccessRecord(courseName);
+      record.requests = record.requests.filter((item) => normalizeEmail(item) !== email);
+      if (!updateCourseAccess(courseName, record)) {
+        courseAccessHelp.textContent = 'Could not reject (storage full).';
+        courseAccessHelp.style.color = '#b91c1c';
+        return;
+      }
+      addNotification(`Rejected ${email} for ${courseName}.`);
+      renderCourseAccessPanel({ name: courseName });
+    });
+  });
+}
+
+function renderSubmittedAssignments() {
+      if (!submittedAssignmentsList) return;
+      submittedAssignmentsList.innerHTML = submittedAssignments.map((item) => (
+        `<li>${item}</li>`
+      )).join('');
+    }
+
+    function formatWatchTime(totalSeconds) {
+      const safe = Math.max(0, Math.floor(totalSeconds));
+      const hours = Math.floor(safe / 3600);
+      const minutes = Math.floor((safe % 3600) / 60);
+      const seconds = safe % 60;
+      const hh = String(hours).padStart(2, '0');
+      const mm = String(minutes).padStart(2, '0');
+      const ss = String(seconds).padStart(2, '0');
+      return `${hh}:${mm}:${ss}`;
+    }
+
+    function renderLeaderboard() {
+      const rows = Object.entries(watchTimeByStudent)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, seconds], index) => (
+          `<tr><td>${index + 1}</td><td>${name}</td><td>${formatWatchTime(seconds)}</td></tr>`
+        ))
+        .join('');
+
+      leaderboardBody.innerHTML = rows || '<tr><td>1</td><td>No student data</td><td>00:00:00</td></tr>';
+    }
+
+    function renderQuizScores() {
+      if (!progressQuizBody) return;
+      const userKey = currentUserName ? currentUserName.toLowerCase() : '';
+      const rows = Object.entries(quizScores)
+        .filter(([key]) => key.startsWith(`${userKey}::`))
+        .map(([key, value]) => {
+          const course = key.split('::')[1] || '-';
+          const when = value.savedAt ? new Date(value.savedAt).toLocaleString() : '-';
+          return `<tr><td>${course}</td><td>${value.score}/${value.total}</td><td>${when}</td></tr>`;
+        })
+        .join('');
+
+      progressQuizBody.innerHTML = rows || '<tr><td>No quiz attempts</td><td>-</td><td>-</td></tr>';
+    }
+
+function renderAttendanceRecords() {
+      if (!progressAttendanceBody || !progressAttendanceCount) return;
+      const userKey = currentUserName ? currentUserName.toLowerCase() : '';
+      const rowsData = Object.entries(attendanceRecords)
+        .filter(([key]) => key.startsWith(`${userKey}::`))
+        .map(([key]) => {
+          const parts = key.split('::');
+          return { course: parts[1] || '-', date: parts[2] || '-', status: 'Present' };
+        })
+        .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+      progressAttendanceCount.textContent = String(rowsData.length);
+      progressAttendanceBody.innerHTML = rowsData.map((row) => (
+        `<tr><td>${row.date}</td><td>${row.course}</td><td>${row.status}</td></tr>`
+      )).join('') || '<tr><td>-</td><td>No attendance yet</td><td>-</td></tr>';
+    }
+
+    function markAttendanceForCurrentCourse() {
+      if (currentUserRole !== 'Student' || !currentUserName || !currentPlaylistCourse) return;
+      const userKey = currentUserName.toLowerCase();
+      const dateKey = getTodayDateKey();
+      const key = `${userKey}::${currentPlaylistCourse}::${dateKey}`;
+      if (attendanceRecords[key]) return;
+      attendanceRecords[key] = { markedAt: Date.now() };
+      saveAttendanceRecords();
+      renderAttendanceRecords();
+    }
+
+    function commitWatchTime() {
+      if (!watchSessionStartedAt) return;
+      if (currentUserRole !== 'Student' || !currentUserName) {
+        watchSessionStartedAt = null;
+        return;
+      }
+      const elapsed = Math.floor((Date.now() - watchSessionStartedAt) / 1000);
+      watchSessionStartedAt = null;
+      if (elapsed <= 0) return;
+      watchTimeByStudent[currentUserName] = (watchTimeByStudent[currentUserName] || 0) + elapsed;
+      renderLeaderboard();
+      renderCoursesShowcase();
+    }
+    function playPlaylistVideo(url, title) {
+      if (!url) return;
+      if (coursesFocusVideo && !coursesFocusVideo.paused) {
+        coursesFocusVideo.pause();
+      }
+      playlistVideoPlayer.src = url;
+      playlistVideoPlayer.load();
+      updatePlaylistOrangeProgressUI();
+      playlistVideoHint.textContent = `Now playing: ${title}`;
+      playlistVideoPlayer.play().catch(() => {
+        playlistVideoHint.textContent = 'Video loaded. Click play to start.';
+      });
+    }
+
+    function getCourseVideos(course) {
+      if (course.name === 'BEE (Basic Electrics and Electronics)') {
+        return [
+          { title: 'The Invisible Partnership', url: './bee-invisible-partnership-local.mp4', duration: 'Lecture 1' },
+          { title: 'Basic Electrics and Electronics', url: './bee-basic-electrics-electronics-local.mp4', duration: 'Lecture 2' }
+        ];
+      }
+      return course.videoUrl ? [{ title: `${course.name} - Lecture 1`, url: course.videoUrl, duration: 'Lecture 1' }] : [];
+    }
+
+    function setActivePlaylistItem(index) {
+      if (!playlistVideoList) return;
+      playlistVideoList.querySelectorAll('.playlist-item').forEach((el) => {
+        el.classList.toggle('active', Number(el.dataset.index) === index);
+      });
+    }
+
+    function renderCourseVideoPlaylist(course) {
+      if (!playlistVideoList) return null;
+      const videos = getCourseVideos(course);
+      currentCourseVideos = videos;
+
+      if (!videos.length) {
+        playlistVideoList.innerHTML = '<li class="assignment-meta" style="padding:10px;">No lectures uploaded yet.</li>';
+        return null;
+      }
+
+      playlistVideoList.innerHTML = videos.map((video, index) => (
+        `<li class="playlist-item ${index === 0 ? 'active' : ''}" data-index="${index}">
+          <div class="playlist-thumb">${index + 1}</div>
+          <div class="playlist-meta">
+            <strong>${video.title || `${course.name} - Lecture ${index + 1}`}</strong>
+            <span>${video.duration || `Lecture ${index + 1}`}</span>
+          </div>
+        </li>`
+      )).join('');
+
+      playlistVideoList.querySelectorAll('.playlist-item').forEach((item) => {
+        item.addEventListener('click', () => {
+          const index = Number(item.dataset.index);
+          const video = currentCourseVideos[index];
+          if (!video || !video.url) return;
+          setActivePlaylistItem(index);
+          playPlaylistVideo(video.url, video.title || `${course.name} - Lecture ${index + 1}`);
+        });
+      });
+
+      return videos[0];
+    }
+    function renderSelectedCourseDetails(course) {
+      infoProfessor.textContent = course.professor || course.teacher || '-';
+      infoPublisher.textContent = course.publisher || 'RITP LMS';
+      infoCompleted.textContent = String(course.completedStudents ?? 0);
+      infoTotal.textContent = String(course.totalStudents ?? 0);
+    }
+
+    function renderPlaylistSuggestions(currentCourseName) {
+      if (!playlistSuggestionsList) return;
+      const suggestions = coursesData.filter((course) => normalizeCourseName(course.name) !== normalizeCourseName(currentCourseName));
+      if (!suggestions.length) {
+        playlistSuggestionsList.innerHTML = '<div class="assignment-meta" style="padding:8px 2px;">No suggestions available.</div>';
+        return;
+      }
+
+      playlistSuggestionsList.innerHTML = suggestions.map((course) => {
+        const short = course.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+        const icon = course.iconUrl
+          ? `<img src="${course.iconUrl}" alt="${course.name} icon" />`
+          : short;
+        return `<article class="course-app course-app-click" data-course-name="${course.name}">
+          <div class="course-app-icon">${icon}</div>
+          <div class="course-app-name">${course.name}</div>
+          <div class="course-app-status"><span class="status ${getStatusClass(course.status)}">${course.teacher}</span></div>
+        </article>`;
+      }).join('');
+
+      playlistSuggestionsList.querySelectorAll('.course-app-click').forEach((item) => {
+        item.addEventListener('click', () => {
+          const nextCourse = item.dataset.courseName || '';
+          if (!nextCourse) return;
+          openCoursePlaylist(nextCourse);
+        });
+      });
+    }
+
+    function getQuizScoreKey(courseName) {
+      const userKey = currentUserName ? currentUserName.toLowerCase() : 'guest';
+      return `${userKey}::${courseName}`;
+    }
+
+    function setupMiniQuiz(courseName) {
+      const questions = miniQuizBank[courseName] || miniQuizBank['Web Programming'];
+      currentMiniQuiz = questions.slice(0, 3);
+      miniQuizForm.innerHTML = currentMiniQuiz.map((item, index) => (`
+        <div class="quiz-item">
+          <p>Q${index + 1}. ${item.q}</p>
+          ${item.options.map((opt, optIndex) => (`
+            <label class="quiz-option">
+              <input type="radio" name="quiz-q-${index}" value="${optIndex}" /> ${opt}
+            </label>
+          `)).join('')}
+        </div>
+      `)).join('');
+
+      const scoreKey = getQuizScoreKey(courseName);
+      const last = quizScores[scoreKey];
+      if (last) {
+        miniQuizStatus.textContent = `Last score: ${last.score}/${last.total}. Watch full video to retry.`;
+      } else {
+        miniQuizStatus.textContent = 'Watch full video to unlock the quiz.';
+      }
+      miniQuizResult.textContent = '';
+      miniQuizPanel.classList.add('hidden');
+    }
+
+    function showMiniQuizAfterVideo() {
+      if (!currentPlaylistCourse || !currentMiniQuiz.length) return;
+      miniQuizPanel.classList.remove('hidden');
+      miniQuizStatus.textContent = `Video completed. Answer all 3 questions for ${currentPlaylistCourse}.`;
+      miniQuizPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function submitMiniQuiz() {
+      if (!currentPlaylistCourse || !currentMiniQuiz.length) return;
+      const formData = new FormData(miniQuizForm);
+      let score = 0;
+
+      for (let i = 0; i < currentMiniQuiz.length; i += 1) {
+        const selected = formData.get(`quiz-q-${i}`);
+        if (selected === null) {
+          miniQuizResult.style.color = '#b91c1c';
+          miniQuizResult.textContent = 'Please answer all 3 questions.';
+          return;
+        }
+        if (Number(selected) === currentMiniQuiz[i].answer) {
+          score += 1;
+        }
+      }
+
+      const scoreKey = getQuizScoreKey(currentPlaylistCourse);
+      quizScores[scoreKey] = { score, total: currentMiniQuiz.length, savedAt: Date.now() };
+      saveQuizScores();
+      renderQuizScores();
+      miniQuizResult.style.color = '#166534';
+      miniQuizResult.textContent = `Quiz submitted. Score: ${score}/${currentMiniQuiz.length}`;
+      addNotification(`Quiz score in ${currentPlaylistCourse}: ${score}/${currentMiniQuiz.length}`);
+    }
+
+    function openCoursePlaylist(courseName) {
+      if (coursesFocusVideo && !coursesFocusVideo.paused) {
+        coursesFocusVideo.pause();
+      }
+      currentPlaylistCourse = courseName;
+      playlistAssignmentList.innerHTML = '<li>Loading assignments...</li>';
+      playlistAssignmentHelp.textContent = '';
+      const targetKeys = new Set(getCourseNameVariants(courseName));
+      const course = coursesData.find((item) => {
+        const keys = getCourseNameVariants(item.name);
+        return keys.some((key) => targetKeys.has(key));
+      });
+      if (!course) {
+        playlistCourseTitle.textContent = `${courseName} - Playlist`;
+        playlistCourseInfo.textContent = 'Course not found.';
+        playlistVideoPlayer.removeAttribute('src');
+        playlistVideoPlayer.load();
+        updatePlaylistOrangeProgressUI();
+        playlistVideoHint.textContent = 'Could not load this course.';
+        playlistAssignmentList.innerHTML = '<li>No assignments for this course yet.</li>';
+        playlistAssignmentHelp.textContent = '';
+        renderPlaylistSuggestions(courseName);
+        setActiveSection('course-playlist');
+        renderCoursesShowcase();
+        return;
+      }
+      playlistCourseTitle.textContent = `${courseName} - Playlist`;
+      if (course) {
+        playlistCourseInfo.textContent = `Teacher: ${course.teacher} | Status: ${course.status}`;
+        renderSelectedCourseDetails(course);
+        renderCourseAccessPanel(course);
+        bindCourseAccessActions(course.name);
+
+        const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
+        const isStudent = currentUserRoles.includes('Student');
+        const approved = isStudent && isStudentApprovedForCourse(course.name, currentUserName);
+
+        const canView = isTeacherSide || approved;
+        playlistVideoPlayer.classList.toggle('hidden', !canView);
+        playlistVideoList.classList.toggle('hidden', !canView);
+        miniQuizPanel.classList.toggle('hidden', !canView);
+
+        if (canView) {
+          renderPlaylistAssignments(course.name);
+          setupMiniQuiz(course.name);
+          renderPlaylistSuggestions(course.name);
+          const firstVideo = renderCourseVideoPlaylist(course);
+          if (firstVideo && firstVideo.url) {
+            playPlaylistVideo(firstVideo.url, firstVideo.title || `${course.name} - Lecture 1`);
+            setActivePlaylistItem(0);
+          } else {
+            playlistVideoPlayer.removeAttribute('src');
+            playlistVideoPlayer.load();
+            updatePlaylistOrangeProgressUI();
+            playlistVideoHint.textContent = 'No video uploaded yet for this course.';
+          }
+        } else {
+          playlistVideoPlayer.removeAttribute('src');
+          playlistVideoPlayer.load();
+          updatePlaylistOrangeProgressUI();
+          playlistVideoHint.textContent = 'Access required to view course videos.';
+          playlistAssignmentList.innerHTML = '<li>Join the course to view assignments.</li>';
+          playlistAssignmentHelp.textContent = '';
+          renderPlaylistSuggestions(course.name);
+        }
+      }
+      setActiveSection('course-playlist');
+      renderCoursesShowcase();
+    }
+    function setBackgroundForDashboard(isDashboardOpen) {
+      if (isDashboardOpen) {
+        document.body.style.background = '#f1f5f9';
+      } else {
+        document.body.style.background = '';
+      }
+    }
+
+    function renderNotifications() {
+      const roleItems = roleRequests
+        .filter((req) => currentUserRole === 'Admin' || req.email === currentUserName)
+        .slice()
+        .sort((a, b) => b.requestedAt - a.requestedAt)
+        .map((req) => ({
+          id: req.id,
+          type: 'role_request',
+          text: `${req.email} requested ${req.targetRole} access`,
+          time: req.requestedAt ? new Date(req.requestedAt).toLocaleString() : 'Now',
+          status: req.status || 'pending',
+          email: req.email,
+          targetRole: req.targetRole,
+          reviewedBy: req.reviewedBy || ''
+        }));
+
+      const allItems = [...roleItems, ...notificationsData];
+
+      notificationsList.innerHTML = allItems.map((item) => {
+        if (item.type === 'role_request') {
+          const showActions = currentUserRole === 'Admin' && item.status === 'pending';
+          const statusLabel = item.status === 'approved' ? 'Approved' : item.status === 'rejected' ? 'Rejected' : 'Pending';
+          const reviewed = item.reviewedBy ? ` | By: ${item.reviewedBy}` : '';
+          return `<li class="${item.status === 'pending' ? 'unread' : ''}">
+            <strong>${item.text}</strong>
+            <div class="notifications-meta">${item.time} | Status: ${statusLabel}${reviewed}</div>
+            ${showActions ? `<div class="role-request-controls">
+              <button type="button" class="video-open-btn role-request-action-btn" data-id="${item.id}" data-action="approve">Approve</button>
+              <button type="button" class="video-open-btn role-request-action-btn" data-id="${item.id}" data-action="reject">Reject</button>
+            </div>` : ''}
+          </li>`;
+        }
+
+        return `<li class="${item.read ? '' : 'unread'}">
+          <strong>${item.text}</strong>
+          <div class="notifications-meta">${item.time}</div>
+        </li>`;
+      }).join('') || '<li>No notifications yet.</li>';
+
+      notificationsList.querySelectorAll('.role-request-action-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          handleRoleRequestDecision(Number(btn.dataset.id), btn.dataset.action);
+        });
+      });
+
+      let unread = notificationsData.filter((item) => !item.read).length;
+      if (currentUserRole === 'Admin') {
+        unread += roleRequests.filter((req) => req.status === 'pending').length;
+      } else if (currentUserName) {
+        unread += roleRequests.filter((req) => req.email === currentUserName && req.status === 'pending').length;
+      }
+
+      notifCount.textContent = String(unread);
+      notifCount.classList.toggle('hidden', unread === 0);
+    }
+
+    function addNotification(text) {
+      notificationsData.unshift({
+        id: Date.now(),
+        text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        read: false
+      });
+      renderNotifications();
+    }
+
+    function applyAppTheme(themeId, persist = true) {
+      const next = themeId || 'light';
+      dashboardScreen.classList.remove('theme-dark', 'theme-snap-blue', 'theme-snap-night', 'theme-crimson', 'theme-amber', 'theme-rose', 'theme-ben10', 'theme-royal');
+      if (next === 'dark') dashboardScreen.classList.add('theme-dark');
+      if (next === 'snap-blue') dashboardScreen.classList.add('theme-snap-blue');
+      if (next === 'snap-night') dashboardScreen.classList.add('theme-snap-night');
+      if (next === 'crimson') dashboardScreen.classList.add('theme-crimson');
+      if (next === 'amber') dashboardScreen.classList.add('theme-amber');
+      if (next === 'rose') dashboardScreen.classList.add('theme-rose');
+      if (next === 'ben10') dashboardScreen.classList.add('theme-ben10');
+      if (next === 'royal') dashboardScreen.classList.add('theme-royal');
+      currentThemeId = next;
+      themeStyleSelect.value = next;
+      updateThemeButton();
+      if (persist && currentUserName) {
+        themePrefByUser[currentUserName.toLowerCase()] = next;
+        saveThemePrefs();
+      }
+    }
+    function updateThemeButton() {
+      // Theme switching is handled from Settings panel only.
+    }
+function getBadgeClass(role) {
+  if (role === 'Teacher') return 'badge-teacher';
+  if (role === 'Admin') return 'badge-admin';
+  if (role === 'HOD') return 'badge-hod';
+  return 'badge-student';
+}
+
+function getCourseAccessRecord(courseName) {
+  if (!courseName) return { requests: [], approved: [] };
+  if (!courseAccessByCourse[courseName]) {
+    courseAccessByCourse[courseName] = { requests: [], approved: [] };
+  }
+  return courseAccessByCourse[courseName];
+}
+
+function isStudentApprovedForCourse(courseName, email) {
+  const record = getCourseAccessRecord(courseName);
+  return record.approved.includes(normalizeEmail(email));
+}
+
+function isStudentRequestedForCourse(courseName, email) {
+  const record = getCourseAccessRecord(courseName);
+  return record.requests.includes(normalizeEmail(email));
+}
+
+function updateCourseAccess(courseName, record) {
+  courseAccessByCourse[courseName] = record;
+  return saveCourseAccess();
+}
+
+function renderCourseAccessPanel(course) {
+  if (!courseAccessPanel || !courseAccessStatus || !courseJoinBtn || !courseAccessHelp) return;
+  const courseName = course ? course.name : currentPlaylistCourse;
+  const record = getCourseAccessRecord(courseName);
+  const myEmail = normalizeEmail(currentUserName || '');
+  const isStudent = currentUserRoles.includes('Student');
+  const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
+  const approved = isStudent && isStudentApprovedForCourse(courseName, myEmail);
+  const requested = isStudent && isStudentRequestedForCourse(courseName, myEmail);
+
+  courseRequestsWrap.classList.toggle('hidden', !isTeacherSide);
+  if (isTeacherSide) {
+    const pending = record.requests.slice().sort();
+    courseAccessRequests.innerHTML = pending.map((email) => {
+      return `<li>
+        <strong>${email}</strong>
+        <div class="role-request-controls">
+          <button type="button" class="video-open-btn course-approve-btn" data-email="${email}">Approve</button>
+          <button type="button" class="video-open-btn course-reject-btn" data-email="${email}">Reject</button>
+        </div>
+      </li>`;
+    }).join('') || '<li>No pending requests.</li>';
+  } else {
+    courseAccessRequests.innerHTML = '';
+  }
+
+  if (isTeacherSide) {
+    courseAccessStatus.textContent = 'Manage student access requests for this course.';
+    courseJoinBtn.classList.add('hidden');
+  } else if (approved) {
+    courseAccessStatus.textContent = 'Access approved. You can view course videos.';
+    courseJoinBtn.classList.add('hidden');
+  } else if (requested) {
+    courseAccessStatus.textContent = 'Request sent. Waiting for teacher approval.';
+    courseJoinBtn.classList.add('hidden');
+  } else {
+    courseAccessStatus.textContent = 'Request access to unlock course videos.';
+    courseJoinBtn.classList.remove('hidden');
+  }
+}
+
+function getRoleBadgesHtml(roles) {
+  const list = normalizeRoles(roles);
+  const order = ['HOD', 'Admin', 'Teacher', 'Student'];
+  const sorted = order.filter((role) => list.includes(role));
+  return sorted.map((role) => `<span class="role-badge ${getBadgeClass(role)}">${role}</span>`).join('');
+}
+
+function hasPendingRoleRequest(email, targetRole) {
+  return roleRequests.some((req) => req.email === email && req.targetRole === targetRole && req.status === 'pending');
+}
+
+function renderRoleRequestActions() {
+  if (!roleRequestActions || !roleRequestHelp) return;
+
+  if (!currentUserName) {
+    roleRequestActions.classList.add('hidden');
+    roleRequestHelp.textContent = '';
+    return;
+  }
+
+  if (currentUserRoles.includes('Admin')) {
+    roleRequestActions.classList.add('hidden');
+    roleRequestHelp.textContent = 'You already have Admin access.';
+    roleRequestHelp.style.color = '#166534';
+    return;
+  }
+
+  if (currentUserRoles.includes('HOD')) {
+    roleRequestActions.classList.add('hidden');
+    roleRequestHelp.textContent = 'You already have HOD access.';
+    roleRequestHelp.style.color = '#166534';
+    return;
+  }
+
+  roleRequestActions.classList.remove('hidden');
+
+  const teacherPending = hasPendingRoleRequest(currentUserName, 'Teacher');
+  const adminPending = hasPendingRoleRequest(currentUserName, 'Admin');
+  const hodPending = hasPendingRoleRequest(currentUserName, 'HOD');
+
+  requestTeacherBtn.disabled = false;
+  requestAdminBtn.disabled = false;
+  requestHodBtn.disabled = false;
+  requestTeacherBtn.textContent = currentUserRoles.includes('Teacher')
+    ? 'Teacher (Current)'
+    : teacherPending
+      ? 'Teacher (Pending)'
+      : 'Request Teacher';
+  requestAdminBtn.textContent = adminPending
+    ? 'Admin (Pending)'
+    : 'Request Admin';
+  requestHodBtn.textContent = hodPending
+    ? 'HOD (Pending)'
+    : 'Request HOD';
+
+  if (teacherPending || adminPending || hodPending) {
+    roleRequestHelp.textContent = 'Your request is pending admin approval in Alerts.';
+    roleRequestHelp.style.color = '#9a3412';
+  } else {
+    roleRequestHelp.textContent = 'Request role upgrade. Current admin must approve from Alerts.';
+    roleRequestHelp.style.color = '#475569';
+  }
+}
+
+function submitRoleRequest(targetRole) {
+  if (!currentUserName) return;
+  if (currentUserRoles.includes('Admin')) {
+    roleRequestHelp.textContent = 'You already have Admin access.';
+    roleRequestHelp.style.color = '#166534';
+    return;
+  }
+
+  if (currentUserRoles.includes('HOD')) {
+    roleRequestHelp.textContent = 'You already have HOD access.';
+    roleRequestHelp.style.color = '#166534';
+    return;
+  }
+
+  if (targetRole === 'Teacher' && currentUserRoles.includes('Teacher')) {
+    roleRequestHelp.textContent = 'You are already a Teacher.';
+    roleRequestHelp.style.color = '#166534';
+    return;
+  }
+
+  if (targetRole === 'HOD' && currentUserRoles.includes('HOD')) {
+    roleRequestHelp.textContent = 'You already have HOD access.';
+    roleRequestHelp.style.color = '#166534';
+    return;
+  }
+
+  if (hasPendingRoleRequest(currentUserName, targetRole)) {
+    roleRequestHelp.textContent = `${targetRole} request already pending.`;
+    roleRequestHelp.style.color = '#9a3412';
+    return;
+  }
+
+  roleRequests.unshift({
+    id: Date.now(),
+    email: currentUserName,
+    currentRole: currentUserRole,
+    targetRole,
+    status: 'pending',
+    requestedAt: Date.now()
+  });
+  if (!saveRoleRequests()) {
+    roleRequests = roleRequests.filter((req) => !(req.email === currentUserName && req.targetRole === targetRole && req.status === 'pending'));
+    roleRequestHelp.textContent = 'Could not save request on this device (storage full).';
+    roleRequestHelp.style.color = '#b91c1c';
+    return;
+  }
+  addNotification(`Role request sent: ${targetRole}`);
+  renderRoleRequestActions();
+  renderNotifications();
+}
+
+function handleRoleRequestDecision(requestId, action) {
+  if (currentUserRole !== 'Admin') return;
+  const req = roleRequests.find((item) => item.id === requestId);
+  if (!req || req.status !== 'pending') return;
+
+  if (action === 'approve') {
+    req.status = 'approved';
+    req.reviewedBy = currentUserName;
+    req.reviewedAt = Date.now();
+
+    if (accountsByEmail[req.email]) {
+      const existingRoles = getAccountRoles(req.email);
+      let nextRoles = [...existingRoles, req.targetRole];
+      if (req.targetRole === 'HOD') {
+        nextRoles = [...nextRoles, 'Teacher'];
+      }
+      setAccountRoles(req.email, nextRoles);
+      saveAccounts(accountsByEmail);
+    }
+
+    addNotification(`Approved ${req.email} as ${req.targetRole}`);
+  } else {
+    req.status = 'rejected';
+    req.reviewedBy = currentUserName;
+    req.reviewedAt = Date.now();
+    addNotification(`Rejected ${req.email} role request (${req.targetRole})`);
+  }
+
+  saveRoleRequests();
+  renderNotifications();
+  renderSearchUsers();
+  renderConnectionsList();
+}
+
+function renderUserProfile() {
+  const key = currentUserName ? currentUserName.toLowerCase() : '';
+  const profile = profilesByUser[key] || {};
+  const roleLabel = currentUserRole || 'Student';
+
+  profileRoleTitle.textContent = `${roleLabel} Profile`;
+  profileDisplayNameInput.value = profile.displayName || '';
+  profileHandleInput.value = profile.handle || '';
+  profileBioInput.value = profile.bio || '';
+  profileAvatarInput.value = profile.avatar || '';
+  selectedProfilePhotoData = profile.avatarData || '';
+  if (profileAvatarFileInput) profileAvatarFileInput.value = '';
+  renderOwnProfileCard();
+  renderRoleRequestActions();
+  updateNavbarProfileAvatar();
+}
+
+function updateNavbarProfileAvatar() {
+  if (!profileNavAvatar) return;
+  const summary = getUserProfileSummary(currentUserName || '');
+  profileNavAvatar.src = summary.avatar || PROFILE_FALLBACK_AVATAR;
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getUserProfileSummary(email) {
+  const key = normalizeEmail(email || '');
+  const acc = accountsByEmail[key] || {};
+  const profile = profilesByUser[key] || {};
+  const displayName = profile.displayName || key || 'User';
+  const handle = profile.handle || `@${(key || 'user').split('@')[0]}`;
+  const roles = getAccountRoles(key);
+  return {
+    email: key,
+    role: acc.role || getPrimaryRoleFromRoles(roles),
+    roles,
+    displayName,
+    handle: handle.startsWith('@') ? handle : `@${handle}`,
+    bio: profile.bio || 'No bio added yet.',
+    avatar: profile.avatarData || profile.avatar || PROFILE_FALLBACK_AVATAR
+  };
+}
+
+function getUserProfileStats(email) {
+  const key = normalizeEmail(email || '');
+  const attendanceEntries = Object.keys(attendanceRecords)
+    .filter((entryKey) => entryKey.startsWith(`${key}::`));
+  const quizEntries = Object.keys(quizScores)
+    .filter((entryKey) => entryKey.startsWith(`${key}::`));
+  const courses = new Set();
+
+  attendanceEntries.forEach((entryKey) => {
+    const parts = entryKey.split('::');
+    if (parts[1]) courses.add(parts[1]);
+  });
+  quizEntries.forEach((entryKey) => {
+    const parts = entryKey.split('::');
+    if (parts[1]) courses.add(parts[1]);
+  });
+  classAssignments.forEach((task) => {
+    const hasSubmission = Object.keys(task.submissions || {}).some((submittedBy) => normalizeEmail(submittedBy) === key);
+    if (hasSubmission && task.course) courses.add(task.course);
+  });
+
+  return {
+    attendanceCount: attendanceEntries.length,
+    quizCount: quizEntries.length,
+    courses: Array.from(courses)
+  };
+}
+
+function buildProfileCardHtml(email, showEmail = true) {
+  const summary = getUserProfileSummary(email);
+  const stats = getUserProfileStats(email);
+  const coursesList = stats.courses.length
+    ? stats.courses.map((course) => `<li>${escapeHtml(course)}</li>`).join('')
+    : '<li>No course activity yet.</li>';
+
+  return `<article class="profile-card-detailed">
+    <div class="profile-card-head">
+      <img class="profile-card-avatar" src="${summary.avatar}" alt="${escapeHtml(summary.displayName)} avatar" />
+      <div>
+        <h3 class="profile-card-name">${escapeHtml(summary.displayName)} ${getRoleBadgesHtml(summary.roles)}</h3>
+        <p class="profile-card-handle">${escapeHtml(summary.handle)}</p>
+        ${showEmail ? `<p class="profile-card-email">${escapeHtml(summary.email)}</p>` : ''}
+      </div>
+    </div>
+    <p class="profile-card-bio">${escapeHtml(summary.bio)}</p>
+    <div class="profile-card-stats">
+      <div class="profile-card-stat"><strong>${stats.courses.length}</strong><span>Courses Attending</span></div>
+      <div class="profile-card-stat"><strong>${stats.attendanceCount}</strong><span>Attendance</span></div>
+      <div class="profile-card-stat"><strong>${stats.quizCount}</strong><span>Quizzes Played</span></div>
+    </div>
+    <div class="profile-card-courses">
+      <h4>Course Activity</h4>
+      <ul class="profile-card-course-list">${coursesList}</ul>
+    </div>
+  </article>`;
+}
+
+function renderOwnProfileCard() {
+  if (!profileDetailView || !currentUserName) return;
+  profileDetailView.innerHTML = buildProfileCardHtml(currentUserName, true);
+}
+
+function canAdminDemoteUser(email) {
+  const key = normalizeEmail(email || '');
+  if (!key || currentUserRole !== 'Admin') return false;
+  if (key === normalizeEmail(currentUserName || '')) return false;
+  const roles = getAccountRoles(key);
+  return roles.includes('Teacher') || roles.includes('Admin') || roles.includes('HOD');
+}
+
+function canAdminDeleteUser(email) {
+  const key = normalizeEmail(email || '');
+  if (!key || currentUserRole !== 'Admin') return false;
+  if (key === normalizeEmail(currentUserName || '')) return false;
+  const roles = getAccountRoles(key);
+  return roles.some((role) => role === 'Student' || role === 'Teacher' || role === 'HOD');
+}
+
+function canAdminRemoveRole(email, role) {
+  const key = normalizeEmail(email || '');
+  if (!key || currentUserRole !== 'Admin') return false;
+  if (key === normalizeEmail(currentUserName || '')) return false;
+  const roles = getAccountRoles(key);
+  return roles.includes(role);
+}
+
+function removeUserActivityData(email) {
+  const key = normalizeEmail(email || '');
+
+  Object.keys(attendanceRecords).forEach((entryKey) => {
+    if (entryKey.startsWith(`${key}::`)) {
+      delete attendanceRecords[entryKey];
+    }
+  });
+
+  Object.keys(quizScores).forEach((entryKey) => {
+    if (entryKey.startsWith(`${key}::`)) {
+      delete quizScores[entryKey];
+    }
+  });
+
+  roleRequests = roleRequests.filter((req) => normalizeEmail(req.email || '') !== key);
+
+  Object.keys(connectionsByUser).forEach((owner) => {
+    const list = Array.isArray(connectionsByUser[owner]) ? connectionsByUser[owner] : [];
+    connectionsByUser[owner] = list.filter((item) => normalizeEmail(item || '') !== key);
+  });
+  delete connectionsByUser[key];
+
+  classAssignments.forEach((task) => {
+    task.completedBy = (task.completedBy || []).filter((entry) => normalizeEmail(entry || '') !== key);
+    Object.keys(task.submissions || {}).forEach((submittedBy) => {
+      if (normalizeEmail(submittedBy) === key) {
+        delete task.submissions[submittedBy];
+      }
+    });
+  });
+}
+
+function deleteUserAccount(email) {
+  const key = normalizeEmail(email || '');
+  if (!canAdminDeleteUser(key)) return;
+  if (!accountsByEmail[key]) return;
+
+  const backup = {
+    accountsByEmail: JSON.parse(JSON.stringify(accountsByEmail)),
+    profilesByUser: JSON.parse(JSON.stringify(profilesByUser)),
+    themePrefByUser: JSON.parse(JSON.stringify(themePrefByUser)),
+    connectionsByUser: JSON.parse(JSON.stringify(connectionsByUser)),
+    attendanceRecords: JSON.parse(JSON.stringify(attendanceRecords)),
+    quizScores: JSON.parse(JSON.stringify(quizScores)),
+    roleRequests: JSON.parse(JSON.stringify(roleRequests))
+  };
+
+  delete accountsByEmail[key];
+  delete profilesByUser[key];
+  delete themePrefByUser[key];
+  removeUserActivityData(key);
+
+  const allSaved = (
+    saveAccounts(accountsByEmail) &&
+    saveProfiles() &&
+    saveThemePrefs() &&
+    saveConnections() &&
+    saveAttendanceRecords() &&
+    saveQuizScores() &&
+    saveRoleRequests()
+  );
+
+  if (!allSaved) {
+    accountsByEmail = backup.accountsByEmail;
+    profilesByUser = backup.profilesByUser;
+    themePrefByUser = backup.themePrefByUser;
+    connectionsByUser = backup.connectionsByUser;
+    attendanceRecords = backup.attendanceRecords;
+    quizScores = backup.quizScores;
+    roleRequests = backup.roleRequests;
+    saveAccounts(accountsByEmail);
+    saveProfiles();
+    saveThemePrefs();
+    saveConnections();
+    saveAttendanceRecords();
+    saveQuizScores();
+    saveRoleRequests();
+    searchConnectHelp.textContent = 'Could not delete account on this device (storage full).';
+    searchConnectHelp.style.color = '#b91c1c';
+    return;
+  }
+
+  if (selectedSearchProfileEmail === key) {
+    selectedSearchProfileEmail = '';
+  }
+  addNotification(`Account deleted by admin: ${key}`);
+  searchConnectHelp.textContent = `${key} account deleted.`;
+  searchConnectHelp.style.color = '#166534';
+  renderNotifications();
+  renderSearchUsers();
+  renderConnectionsList();
+  renderSearchProfileViewer(selectedSearchProfileEmail);
+}
+
+function demoteUserToStudent(email) {
+  const key = normalizeEmail(email || '');
+  if (!canAdminDemoteUser(key)) return;
+  const account = accountsByEmail[key];
+  if (!account) return;
+
+  const previousRoles = getAccountRoles(key);
+  setAccountRoles(key, ['Student']);
+
+  if (!saveAccounts(accountsByEmail)) {
+    setAccountRoles(key, previousRoles);
+    searchConnectHelp.textContent = 'Could not update role on this device (storage full).';
+    searchConnectHelp.style.color = '#b91c1c';
+    return;
+  }
+
+  addNotification(`Role updated: ${key} moved to Student.`);
+  searchConnectHelp.textContent = `${key} is now a Student.`;
+  searchConnectHelp.style.color = '#166534';
+  renderNotifications();
+  renderSearchUsers();
+  renderConnectionsList();
+  renderSearchProfileViewer(key);
+}
+
+function removeRoleFromUser(email, role) {
+  const key = normalizeEmail(email || '');
+  if (!canAdminRemoveRole(key, role)) return;
+  const account = accountsByEmail[key];
+  if (!account) return;
+  const previousRoles = getAccountRoles(key);
+  const nextRoles = previousRoles.filter((r) => r !== role);
+  setAccountRoles(key, nextRoles);
+
+  if (!saveAccounts(accountsByEmail)) {
+    setAccountRoles(key, previousRoles);
+    searchConnectHelp.textContent = 'Could not update role on this device (storage full).';
+    searchConnectHelp.style.color = '#b91c1c';
+    return;
+  }
+
+  addNotification(`Role updated: ${key} removed ${role}.`);
+  searchConnectHelp.textContent = `${key} role updated.`;
+  searchConnectHelp.style.color = '#166534';
+  renderNotifications();
+  renderSearchUsers();
+  renderConnectionsList();
+  renderSearchProfileViewer(key);
+}
+
+function renderSearchProfileViewer(email) {
+  if (!searchProfileViewer) return;
+  if (!email) {
+    searchProfileViewer.innerHTML = '<p class="connect-meta">Select a user profile from the list.</p>';
+    return;
+  }
+  const adminActionButtons = [];
+  if (canAdminDemoteUser(email)) {
+    adminActionButtons.push('<button type="button" class="video-open-btn admin-demote-btn" id="admin-demote-btn">Remove From Post</button>');
+  }
+  if (canAdminRemoveRole(email, 'HOD')) {
+    adminActionButtons.push('<button type="button" class="video-open-btn admin-demote-btn" id="admin-remove-hod-btn">Remove HOD</button>');
+  }
+  if (canAdminRemoveRole(email, 'Teacher')) {
+    adminActionButtons.push('<button type="button" class="video-open-btn admin-demote-btn" id="admin-remove-teacher-btn">Remove Teacher</button>');
+  }
+  if (canAdminDeleteUser(email)) {
+    adminActionButtons.push('<button type="button" class="video-open-btn admin-delete-btn" id="admin-delete-btn">Delete Account</button>');
+  }
+  const adminAction = adminActionButtons.length
+    ? `<div class="admin-demote-wrap">${adminActionButtons.join('')}</div>`
+    : '';
+  searchProfileViewer.innerHTML = `${buildProfileCardHtml(email, true)}${adminAction}`;
+
+  const demoteBtn = document.getElementById('admin-demote-btn');
+  if (demoteBtn) {
+    demoteBtn.addEventListener('click', () => {
+      const profile = getUserProfileSummary(email);
+      const ok = window.confirm(`Remove ${profile.displayName} (${profile.role}) from post and make Student?`);
+      if (!ok) return;
+      demoteUserToStudent(email);
+    });
+  }
+
+  const deleteBtn = document.getElementById('admin-delete-btn');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', () => {
+      const profile = getUserProfileSummary(email);
+      const ok = window.confirm(`Delete ${profile.displayName}'s account permanently from this device?`);
+      if (!ok) return;
+      deleteUserAccount(email);
+    });
+  }
+
+  const removeHodBtn = document.getElementById('admin-remove-hod-btn');
+  if (removeHodBtn) {
+    removeHodBtn.addEventListener('click', () => {
+      const profile = getUserProfileSummary(email);
+      const ok = window.confirm(`Remove HOD role from ${profile.displayName}?`);
+      if (!ok) return;
+      removeRoleFromUser(email, 'HOD');
+    });
+  }
+
+  const removeTeacherBtn = document.getElementById('admin-remove-teacher-btn');
+  if (removeTeacherBtn) {
+    removeTeacherBtn.addEventListener('click', () => {
+      const profile = getUserProfileSummary(email);
+      const ok = window.confirm(`Remove Teacher role from ${profile.displayName}?`);
+      if (!ok) return;
+      removeRoleFromUser(email, 'Teacher');
+    });
+  }
+}
+
+function getConnectionSet() {
+  const key = currentUserName ? currentUserName.toLowerCase() : '';
+  const arr = connectionsByUser[key] || [];
+  return new Set(arr);
+}
+
+function isConnectableRole(role) {
+  return role === 'Student' || role === 'Teacher' || role === 'Admin' || role === 'HOD';
+}
+
+function renderConnectionsList() {
+  const connections = Array.from(getConnectionSet());
+  connectionsList.innerHTML = connections.map((email) => {
+    const roles = getAccountRoles(email);
+    const p = profilesByUser[email] || {};
+    const name = p.displayName || email;
+    return `<li><strong>${name}</strong> ${getRoleBadgesHtml(roles)}<div class="assignment-meta">${email}</div></li>`;
+  }).join('') || '<li>No connections yet.</li>';
+}
+
+function renderSearchUsers() {
+  if (!searchResults) return;
+  const q = (searchConnectInput.value || '').trim().toLowerCase();
+  const me = currentUserName ? currentUserName.toLowerCase() : '';
+  const myRole = currentUserRole || '';
+  const connectionSet = getConnectionSet();
+
+  if (!isConnectableRole(myRole)) {
+    searchResults.innerHTML = '<div class="connect-meta">Search is available for all roles.</div>';
+    renderSearchProfileViewer('');
+    connectionsList.innerHTML = '<li>Not available for this role.</li>';
+    return;
+  }
+
+  const users = Object.entries(accountsByEmail)
+    .filter(([email, acc]) => email !== me && isConnectableRole(acc.role))
+    .map(([email, acc]) => {
+      const p = profilesByUser[email] || {};
+      const name = p.displayName || email;
+      const handle = p.handle || `@${email.split('@')[0]}`;
+      const avatar = p.avatarData || p.avatar || PROFILE_FALLBACK_AVATAR;
+      const roles = getAccountRoles(email);
+      const primaryRole = getPrimaryRoleFromRoles(roles);
+      return { email, role: primaryRole, roles, name, handle, bio: p.bio || '', avatar };
+    })
+    .filter((u) => !q || u.email.includes(q) || u.name.toLowerCase().includes(q) || u.handle.toLowerCase().includes(q));
+
+  if (!users.length) {
+    selectedSearchProfileEmail = '';
+    renderSearchProfileViewer('');
+  } else if (!users.some((u) => u.email === selectedSearchProfileEmail)) {
+    selectedSearchProfileEmail = users[0].email;
+    renderSearchProfileViewer(selectedSearchProfileEmail);
+  } else {
+    renderSearchProfileViewer(selectedSearchProfileEmail);
+  }
+
+  searchResults.innerHTML = users.map((u) => {
+    const connected = connectionSet.has(u.email);
+    const activeClass = selectedSearchProfileEmail === u.email ? ' style="outline:2px solid rgba(59, 130, 246, 0.35);"' : '';
+    return `<article class="search-profile-card" data-email="${u.email}"${activeClass}>
+      <div class="search-profile-head">
+        <img class="search-profile-avatar" src="${u.avatar}" alt="${escapeHtml(u.name)} avatar" />
+        <div>
+          <div class="search-profile-name">${escapeHtml(u.name)}</div>
+          <div class="search-profile-handle">${escapeHtml(u.handle)}</div>
+        </div>
+        ${getRoleBadgesHtml(u.roles)}
+      </div>
+      <div class="connect-meta">${escapeHtml(u.bio || 'No bio added yet.')}</div>
+      <div class="search-profile-actions">
+        <button type="button" class="video-open-btn connect-btn" data-email="${u.email}">${connected ? 'Connected' : 'Connect'}</button>
+      </div>
+    </article>`;
+  }).join('') || '<div class="connect-meta">No matching users found.</div>';
+
+  searchResults.querySelectorAll('.search-profile-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      selectedSearchProfileEmail = card.dataset.email || '';
+      renderSearchProfileViewer(selectedSearchProfileEmail);
+      renderSearchUsers();
+    });
+  });
+
+  searchResults.querySelectorAll('.connect-btn').forEach((btn) => {
+    btn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const email = btn.dataset.email;
+      const key = currentUserName.toLowerCase();
+      const set = getConnectionSet();
+      if (set.has(email)) {
+        set.delete(email);
+      } else {
+        set.add(email);
+      }
+      connectionsByUser[key] = Array.from(set);
+      saveConnections();
+      renderSearchUsers();
+      renderConnectionsList();
+    });
+  });
+
+  renderConnectionsList();
+}
+
+    function canPostAnnouncement() {
+      return currentUserRoles.includes('Teacher') || currentUserRoles.includes('Admin') || currentUserRoles.includes('HOD');
+    }
+
+    function renderAnnouncements() {
+      announcementList.innerHTML = announcementsData.map((item) => (
+        `<li>
+          <strong>${item.text}</strong>
+          <div class="assignment-meta">By: ${item.by} | ${item.time}</div>
+        </li>`
+      )).join('') || '<li>No announcements yet.</li>';
+
+      announcementFormWrap.classList.toggle('hidden', !canPostAnnouncement());
+      if (!canPostAnnouncement()) {
+        announcementHelp.textContent = '';
+      }
+    }
+
+    function showSignupScreen() {
+      dashboardScreen.classList.add('hidden');
+      loginScreen.classList.add('hidden');
+      signupScreen.classList.remove('hidden');
+      setAuthVisualVisibility(true);
+      setBackgroundForDashboard(false);
+    }
+
+    function showLoginScreen(message) {
+      dashboardScreen.classList.add('hidden');
+      signupScreen.classList.add('hidden');
+      loginScreen.classList.remove('hidden');
+      setAuthVisualVisibility(true);
+      setBackgroundForDashboard(false);
+      if (message) {
+        loginHelp.style.color = '#166534';
+        loginHelp.textContent = message;
+      } else {
+        loginHelp.textContent = '';
+      }
+    }
+
+function openDashboard(userName) {
+      signupScreen.classList.add('hidden');
+      loginScreen.classList.add('hidden');
+      dashboardScreen.classList.remove('hidden');
+      setAuthVisualVisibility(false);
+      currentUserName = userName;
+      currentUserRoles = getAccountRoles(userName);
+      currentUserRole = getPrimaryRoleFromRoles(currentUserRoles);
+      updateVideoWatermarks();
+      saveSession(userName);
+      if (currentUserRole === 'Student' && !watchTimeByStudent[userName]) {
+        watchTimeByStudent[userName] = 0;
+      }
+      if (welcomeUser) {
+      if (welcomeUser) {
+        welcomeUser.textContent = `Welcome ${currentUserRole}: ${userName}`;
+      }
+      }
+      const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('Admin') || currentUserRoles.includes('HOD');
+      uploadCourseMenu.classList.toggle('hidden', !(currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD')));
+      uploadAssignmentMenu.classList.toggle('hidden', !(currentUserRole === 'Student' || isTeacherSide));
+      if (settingsNavBtn) settingsNavBtn.classList.remove('hidden');
+      searchMenu.classList.remove('hidden');
+      notificationsPanel.classList.add('hidden');
+      profileSearchBtn.classList.remove("hidden");
+      if (profileNavBtn) profileNavBtn.classList.remove('hidden');
+      const savedTheme = themePrefByUser[userName.toLowerCase()] || 'light';
+      applyAppTheme(savedTheme, false);
+      renderCourseViews();
+      renderUserProfile();
+      updateNavbarProfileAvatar();
+      renderSearchUsers();
+      renderLeaderboard();
+      renderAttendanceRecords();
+      renderQuizScores();
+      renderClassAssignmentsFeed();
+      renderNotifications();
+      renderAnnouncements();
+      if (currentPlaylistCourse) {
+        renderCourseAccessPanel({ name: currentPlaylistCourse });
+        bindCourseAccessActions(currentPlaylistCourse);
+      }
+      updateThemeButton();
+      setBackgroundForDashboard(true);
+      setActiveSection('dashboard');
+    }
+
+    function logout() {
+      commitWatchTime();
+      playlistVideoPlayer.pause();
+      if (coursesFocusVideo) coursesFocusVideo.pause();
+      dashboardScreen.classList.add('hidden');
+      loginScreen.classList.remove('hidden');
+      signupScreen.classList.add('hidden');
+      setAuthVisualVisibility(true);
+      loginForm.reset();
+      loginHelp.textContent = '';
+      loginHelp.style.color = '#b91c1c';
+      uploadMessage.textContent = '';
+      uploadCourseMenu.classList.add('hidden');
+      assignmentUploadMessage.textContent = '';
+      playlistAssignmentHelp.textContent = '';
+      uploadAssignmentMenu.classList.add('hidden');
+      if (settingsNavBtn) settingsNavBtn.classList.add('hidden');
+      searchMenu.classList.add('hidden');
+      announcementHelp.textContent = '';
+      notificationsPanel.classList.add('hidden');
+      profileSearchBtn.classList.add("hidden");
+      if (profileNavBtn) profileNavBtn.classList.add('hidden');
+      clearSession();
+      applyAppTheme('light', false);
+      currentUserName = '';
+      currentUserRole = '';
+      currentUserRoles = [];
+      updateVideoWatermarks();
+      if (profileNavAvatar) profileNavAvatar.src = PROFILE_FALLBACK_AVATAR;
+      setBackgroundForDashboard(false);
+      usernameInput.focus();
+    }
+
+    function setActiveSection(target) {
+      if (target !== 'course-playlist' && playlistVideoPlayer && !playlistVideoPlayer.paused) {
+        playlistVideoPlayer.pause();
+      }
+      if (target !== 'courses' && coursesFocusVideo && !coursesFocusVideo.paused) {
+        coursesFocusVideo.pause();
+      }
+      sections.forEach((section) => {
+        section.classList.toggle('active', section.id === `section-${target}`);
+      });
+
+      menuButtons.forEach((button) => {
+        button.classList.toggle('active', button.dataset.target === target);
+      });
+
+      if (target === 'courses') {
+        renderCoursesShowcase();
+      }
+    }
+
+    loginForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const email = normalizeEmail(usernameInput.value);
+  const password = passwordInput.value.trim();
+
+  if (!email || !password) {
+    loginHelp.style.color = '#b91c1c';
+    loginHelp.textContent = 'Please fill Gmail and password.';
+    return;
+  }
+
+  if (!isValidGmail(email)) {
+    loginHelp.style.color = '#b91c1c';
+    loginHelp.textContent = 'Please enter a valid Gmail address.';
+    return;
+  }
+
+  const account = accountsByEmail[email];
+  if (!account) {
+    loginHelp.style.color = '#b91c1c';
+    loginHelp.textContent = 'Account not found. Please signup first.';
+    return;
+  }
+
+  if (account.password !== password) {
+    loginHelp.style.color = '#b91c1c';
+    loginHelp.textContent = 'Incorrect password for this Gmail.';
+    return;
+  }
+
+  loginHelp.style.color = '#b91c1c';
+  loginHelp.textContent = '';
+  saveSession(email);
+  openDashboard(email);
+});
+
+    signupForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const email = normalizeEmail(signupUsernameInput.value);
+  const password = signupPasswordInput.value.trim();
+  const confirmPassword = signupConfirmPasswordInput.value.trim();
+  if (!email || !password || !confirmPassword) {
+    signupHelp.textContent = 'Please fill all signup details.';
+    return;
+  }
+
+  if (!isValidGmail(email)) {
+    signupHelp.textContent = 'Only Gmail signup is allowed (example@gmail.com).';
+    return;
+  }
+
+  if (password.length < 4) {
+    signupHelp.textContent = 'Password must be at least 4 characters.';
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    signupHelp.textContent = 'Password and confirm password must match.';
+    return;
+  }
+
+  if (accountsByEmail[email]) {
+    signupHelp.textContent = 'This Gmail is already registered. Please login.';
+    return;
+  }
+
+  const role = AUTO_ADMIN_EMAILS.has(email) ? 'Admin' : 'Student';
+  const roles = role === 'Admin' ? ['Admin'] : ['Student'];
+  accountsByEmail[email] = { password, role, roles };
+  saveAccounts(accountsByEmail);
+
+  usernameInput.value = email;
+  passwordInput.value = '';
+  signupForm.reset();
+  signupHelp.textContent = '';
+  showLoginScreen('Account created. Please login with the same Gmail and password.');
+});
+
+    menuButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        setActiveSection(button.dataset.target);
+      });
+    });
+
+
+    notificationsToggleBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      notificationsPanel.classList.toggle('hidden');
+    });
+
+    notificationsPanel.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+
+    notifMarkReadBtn.addEventListener('click', () => {
+      notificationsData.forEach((item) => {
+        item.read = true;
+      });
+      renderNotifications();
+    });
+
+    document.addEventListener('click', () => {
+      notificationsPanel.classList.add('hidden');
+    });
+
+    document.addEventListener('contextmenu', (event) => {
+      if (event.target.closest('.protected-video-wrap')) {
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      const key = String(event.key || '').toLowerCase();
+      const blockedCombo = (event.ctrlKey || event.metaKey) && (key === 's' || key === 'p' || key === 'u' || key === 'i' || key === 'j');
+      const blocked = blockedCombo || key === 'printscreen';
+      if (!blocked) return;
+      event.preventDefault();
+      const now = Date.now();
+      if (now - lastProtectionNoticeAt > 2000) {
+        lastProtectionNoticeAt = now;
+        addNotification('Protected video: screenshot/record shortcuts are restricted.');
+      }
+    });
+
+    window.addEventListener('beforeprint', () => {
+      if (playlistVideoPlayer) playlistVideoPlayer.pause();
+      if (coursesFocusVideo) coursesFocusVideo.pause();
+    });
+
+    setInterval(updateVideoWatermarks, 30000);
+
+    logoutBtn.addEventListener('click', logout);
+
+    requestTeacherBtn.addEventListener('click', () => {
+      submitRoleRequest('Teacher');
+    });
+
+    requestAdminBtn.addEventListener('click', () => {
+      submitRoleRequest('Admin');
+    });
+
+    requestHodBtn.addEventListener('click', () => {
+      submitRoleRequest('HOD');
+    });
+
+    profileAvatarFileInput.addEventListener('change', async () => {
+      const file = profileAvatarFileInput.files && profileAvatarFileInput.files[0];
+      if (!file) return;
+      profileHelp.textContent = 'Optimizing photo for local device storage...';
+      profileHelp.style.color = '#334155';
+
+      try {
+        const compressed = await compressImageToDataUrl(file);
+        const photoBytes = estimateDataUrlBytes(compressed);
+        if (photoBytes > 900 * 1024) {
+          throw new Error('Photo is too large after compression. Please choose a smaller image.');
+        }
+        selectedProfilePhotoData = compressed;
+        renderOwnProfileCard();
+        profileHelp.textContent = 'Photo saved locally (compressed). Click Save Profile to apply.';
+        profileHelp.style.color = '#166534';
+      } catch (error) {
+        selectedProfilePhotoData = '';
+        profileHelp.textContent = error.message || 'Could not process selected photo.';
+        profileHelp.style.color = '#b91c1c';
+      }
+    });
+
+    profileForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!currentUserName) {
+        profileHelp.textContent = 'Please login first.';
+        profileHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      const key = currentUserName.toLowerCase();
+      const displayName = profileDisplayNameInput.value.trim();
+      const handleRaw = profileHandleInput.value.trim();
+      const bio = profileBioInput.value.trim();
+      const avatar = profileAvatarInput.value.trim();
+
+      profilesByUser[key] = {
+        displayName,
+        handle: handleRaw,
+        bio,
+        avatar,
+        avatarData: selectedProfilePhotoData || ''
+      };
+      if (!saveProfiles()) {
+        profileHelp.textContent = 'Local device storage is full. Remove old browser data or use a smaller photo.';
+        profileHelp.style.color = '#b91c1c';
+        return;
+      }
+      renderUserProfile();
+      renderSearchUsers();
+      profileHelp.textContent = 'Profile updated successfully.';
+      profileHelp.style.color = '#166534';
+      addNotification('Profile updated.');
+    });
+
+    passwordSettingsForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!currentUserName || !accountsByEmail[currentUserName]) {
+        passwordSettingsHelp.textContent = 'Please login first.';
+        passwordSettingsHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      const currentPassword = currentPasswordSetting.value.trim();
+      const nextPassword = newPasswordSetting.value.trim();
+      const confirmPassword = confirmPasswordSetting.value.trim();
+      const account = accountsByEmail[currentUserName];
+
+      if (!currentPassword || !nextPassword || !confirmPassword) {
+        passwordSettingsHelp.textContent = 'Please fill all password fields.';
+        passwordSettingsHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      if (account.password !== currentPassword) {
+        passwordSettingsHelp.textContent = 'Current password is incorrect.';
+        passwordSettingsHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      if (nextPassword.length < 4) {
+        passwordSettingsHelp.textContent = 'New password must be at least 4 characters.';
+        passwordSettingsHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      if (nextPassword !== confirmPassword) {
+        passwordSettingsHelp.textContent = 'New password and confirm password must match.';
+        passwordSettingsHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      account.password = nextPassword;
+      accountsByEmail[currentUserName] = account;
+      saveAccounts(accountsByEmail);
+      passwordSettingsHelp.textContent = 'Password changed successfully.';
+      passwordSettingsHelp.style.color = '#166534';
+      passwordSettingsForm.reset();
+      addNotification('Password changed from settings.');
+    });
+
+    themeSettingsForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      applyAppTheme(themeStyleSelect.value || 'light');
+      themeSettingsHelp.textContent = 'Theme applied successfully.';
+      themeSettingsHelp.style.color = '#166534';
+    });
+
+    searchConnectInput.addEventListener('input', renderSearchUsers);
+
+    profileSearchBtn.addEventListener("click", () => {
+      if (!isConnectableRole(currentUserRole)) return;
+      setActiveSection("search");
+      searchConnectInput.focus();
+    });
+    if (profileNavBtn) {
+      profileNavBtn.addEventListener('click', () => {
+        setActiveSection('profile');
+      });
+    }
+    if (settingsNavBtn) {
+      settingsNavBtn.addEventListener('click', () => {
+        setActiveSection('settings');
+      });
+    }
+    uploadCourseForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const name = document.getElementById('course-name').value.trim();
+      const code = document.getElementById('course-code').value.trim();
+      const videoInput = document.getElementById('course-video');
+      const videoFile = videoInput.files[0];
+      if (!name || !code || !videoFile) {
+        uploadMessage.textContent = 'Please enter course details and choose a video file.';
+        uploadMessage.style.color = '#b91c1c';
+        return;
+      }
+
+      coursesData.push({
+        name: `${name} (${code})`,
+        teacher: 'You',
+        professor: 'You',
+        publisher: 'RITP LMS',
+        completedStudents: 0,
+        totalStudents: 0,
+        status: 'Ongoing',
+        hasVideo: true,
+        videoUrl: URL.createObjectURL(videoFile)
+      });
+      renderCourseViews();
+
+      uploadMessage.textContent = `Video course uploaded: ${videoFile.name}`;
+      uploadMessage.style.color = '#166534';
+      addNotification(`New course uploaded: ${name} (${code})`);
+      uploadCourseForm.reset();
+    });
+
+    uploadAssignmentForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const title = document.getElementById('assignment-title').value.trim();
+      const course = document.getElementById('assignment-course').value.trim();
+      const driveLink = assignmentDriveLinkInput.value.trim();
+      const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('Admin') || currentUserRoles.includes('HOD');
+
+      if (!title || !course || !isValidDriveLink(driveLink)) {
+        assignmentUploadMessage.textContent = 'Please fill all details and enter a valid Google Drive link.';
+        assignmentUploadMessage.style.color = '#b91c1c';
+        return;
+      }
+
+      if (isTeacherSide) {
+        const resolvedCourse = resolveCourseByName(course);
+        const courseKey = normalizeCourseName(resolvedCourse ? resolvedCourse.name : course);
+        classAssignments.unshift({
+          id: Date.now(),
+          title,
+          course,
+          courseKey,
+          due: 'TBD',
+          assignedBy: `${currentUserRole}: ${currentUserName}`,
+          completedBy: [],
+          submissions: {},
+          driveLink
+        });
+        renderClassAssignmentsFeed();
+        if (normalizeCourseName(currentPlaylistCourse) === normalizeCourseName(course)) {
+          renderPlaylistAssignments(currentPlaylistCourse);
+        }
+        renderCoursesShowcase();
+        assignmentUploadMessage.textContent = 'Class assignment posted with Google Drive link.';
+        assignmentUploadMessage.style.color = '#166534';
+        addNotification(`New assignment posted: ${title}`);
+      } else {
+        submittedAssignments.unshift(`${title} (${course}) - ${driveLink}`);
+        renderSubmittedAssignments();
+        renderCoursesShowcase();
+        assignmentUploadMessage.textContent = 'Assignment uploaded with Google Drive link.';
+        assignmentUploadMessage.style.color = '#166534';
+        addNotification(`Assignment submitted: ${title}`);
+      }
+      uploadAssignmentForm.reset();
+    });
+    announcementForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!canPostAnnouncement()) {
+        announcementHelp.textContent = 'Only Teacher or Admin can post announcements.';
+        announcementHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      const text = announcementInput.value.trim();
+      if (!text) {
+        announcementHelp.textContent = 'Please type an announcement first.';
+        announcementHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      announcementsData.unshift({
+        id: Date.now(),
+        text,
+        by: `${currentUserRole}: ${currentUserName}`,
+        time: 'Just now'
+      });
+      renderAnnouncements();
+      addNotification(`New announcement posted by ${currentUserRole}`);
+      announcementHelp.textContent = 'Announcement posted successfully.';
+      announcementHelp.style.color = '#166534';
+      announcementForm.reset();
+    });
+
+    playlistVideoPlayer.addEventListener('error', () => {
+      commitWatchTime();
+      updatePlaylistOrangeProgressUI();
+      playlistVideoHint.textContent = 'Cannot load this playlist video file.';
+    });
+    playlistVideoPlayer.addEventListener('play', () => {
+      if (coursesFocusVideo && !coursesFocusVideo.paused) {
+        coursesFocusVideo.pause();
+      }
+      if (currentUserRole === 'Student' && !watchSessionStartedAt) {
+        watchSessionStartedAt = Date.now();
+      }
+      markAttendanceForCurrentCourse();
+    });
+
+    playlistVideoPlayer.addEventListener('pause', commitWatchTime);
+    playlistVideoPlayer.addEventListener('loadedmetadata', updatePlaylistOrangeProgressUI);
+    playlistVideoPlayer.addEventListener('timeupdate', updatePlaylistOrangeProgressUI);
+    playlistVideoPlayer.addEventListener('ended', () => {
+      commitWatchTime();
+      updatePlaylistOrangeProgressUI();
+      showMiniQuizAfterVideo();
+    });
+
+    if (coursesFocusVideo) {
+      coursesFocusVideo.addEventListener('play', () => {
+        if (playlistVideoPlayer && !playlistVideoPlayer.paused) {
+          playlistVideoPlayer.pause();
+        }
+      });
+      coursesFocusVideo.addEventListener('loadedmetadata', () => {
+        updateCoursesVideoProgressUI();
+        renderCoursesShowcase();
+      });
+      coursesFocusVideo.addEventListener('timeupdate', () => {
+        updateCoursesVideoProgressUI();
+        const firstTodoCheck = coursesTodoList ? coursesTodoList.querySelector('li input') : null;
+        if (firstTodoCheck && !firstTodoCheck.checked && coursesFocusVideo.duration && (coursesFocusVideo.currentTime / coursesFocusVideo.duration) >= 0.95) {
+          renderCoursesShowcase();
+        }
+      });
+      coursesFocusVideo.addEventListener('ended', () => {
+        updateCoursesVideoProgressUI();
+        renderCoursesShowcase();
+      });
+    }
+
+    enforceUnskippableVideo(playlistVideoPlayer, 'Full playlist lecture');
+    enforceUnskippableVideo(coursesFocusVideo, 'Course preview lecture');
+
+    miniQuizSubmit.addEventListener('click', submitMiniQuiz);
+
+    goLoginBtn.addEventListener('click', () => {
+      signupHelp.textContent = '';
+      showLoginScreen('');
+    });
+
+    goSignupBtn.addEventListener('click', () => {
+      loginHelp.textContent = '';
+      showSignupScreen();
+    });
+
+    playlistBackBtn.addEventListener('click', () => {
+      setActiveSection('courses');
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        commitWatchTime();
+        if (playlistVideoPlayer) playlistVideoPlayer.pause();
+        if (coursesFocusVideo) coursesFocusVideo.pause();
+      }
+    });
+
+    renderCourseViews();
+    renderSubmittedAssignments();
+    renderClassAssignmentsFeed();
+    renderLeaderboard();
+    renderAttendanceRecords();
+    renderQuizScores();
+    renderNotifications();
+    renderAnnouncements();
+    applyAppTheme('light', false);
+    updateVideoWatermarks();
+
+    const activeSession = loadSession();
+    if (activeSession && activeSession.email) {
+      const email = normalizeEmail(activeSession.email);
+      const account = accountsByEmail[email];
+      if (account) {
+        usernameInput.value = email;
+        openDashboard(email);
+      } else {
+        clearSession();
+        showLoginScreen("");
+      }
+    } else {
+      showLoginScreen("");
+    }
+  </script>
+</body>
+</html>
