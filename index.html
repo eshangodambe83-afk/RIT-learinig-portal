@@ -1373,6 +1373,14 @@
   color: #1d4ed8;
 }
 
+.admin-promote-empty {
+  width: 100%;
+  text-align: right;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .profile-open-view {
   padding: 16px 18px;
 }
@@ -5846,14 +5854,18 @@ function renderSearchUsers() {
   searchResults.innerHTML = users.map((u) => {
     const connected = connectionSet.has(u.email);
     const activeClass = selectedSearchProfileEmail === u.email ? ' style="outline:2px solid rgba(59, 130, 246, 0.35);"' : '';
+    const isSelf = normalizeEmail(u.email) === normalizeEmail(currentUserName || '');
+    const isTargetAdmin = Array.isArray(u.roles) && u.roles.includes('Admin');
+    const showPencil = isAdminView && !isSelf && !isTargetAdmin;
     const canPromoteTeacher = isAdminView && canAdminPromoteToRole(u.email, 'Teacher');
     const canPromoteHod = isAdminView && canAdminPromoteToRole(u.email, 'HOD');
-    const showPromoteMenu = adminPromoteMenuEmail === u.email && (canPromoteTeacher || canPromoteHod);
-    const promoteControls = (canPromoteTeacher || canPromoteHod)
+    const showPromoteMenu = adminPromoteMenuEmail === u.email && showPencil;
+    const promoteControls = showPencil
       ? `<button type="button" class="video-open-btn admin-promote-toggle-btn" data-email="${u.email}" title="Promote user" aria-label="Promote user">✏️</button>
          <div class="admin-promote-menu ${showPromoteMenu ? '' : 'hidden'}" data-menu-email="${u.email}">
            ${canPromoteTeacher ? `<button type="button" class="video-open-btn admin-promote-role-btn" data-email="${u.email}" data-role="Teacher">Teacher</button>` : ''}
            ${canPromoteHod ? `<button type="button" class="video-open-btn admin-promote-role-btn" data-email="${u.email}" data-role="HOD">HOD</button>` : ''}
+           ${!canPromoteTeacher && !canPromoteHod ? `<div class="admin-promote-empty">No promotion options</div>` : ''}
          </div>`
       : '';
     return `<article class="search-profile-card" data-email="${u.email}"${activeClass}>
