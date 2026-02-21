@@ -3129,8 +3129,15 @@ function getPrimaryRoleFromRoles(roles) {
 function normalizeRoles(roles) {
   const filtered = (roles || []).filter(Boolean);
   const set = new Set(filtered);
+  if (set.has('HOD')) {
+    set.add('Teacher');
+  }
+  if (set.has('HOD') || set.has('Admin') || set.has('Teacher')) {
+    set.delete('Student');
+  }
   if (!set.size) set.add('Student');
-  return Array.from(set);
+  const order = ['HOD', 'Admin', 'Teacher', 'Student'];
+  return Array.from(set).sort((a, b) => order.indexOf(a) - order.indexOf(b));
 }
 
 function getAccountRoles(email) {
@@ -3157,11 +3164,14 @@ function normalizeAccountRoles() {
   let changed = false;
   Object.entries(accountsByEmail).forEach(([email, acc]) => {
     const normalizedEmail = normalizeEmail(email || '');
-    if (!acc.roles || !Array.isArray(acc.roles) || !acc.roles.length) {
-      const base = acc.role || 'Student';
-      const roles = base === 'HOD' ? ['HOD', 'Teacher'] : [base];
-      acc.roles = normalizeRoles(roles);
-      acc.role = getPrimaryRoleFromRoles(acc.roles);
+    const base = acc.role || 'Student';
+    const fallbackRoles = base === 'HOD' ? ['HOD', 'Teacher'] : [base];
+    const normalized = normalizeRoles(
+      Array.isArray(acc.roles) && acc.roles.length ? acc.roles : fallbackRoles
+    );
+    if (!acc.roles || JSON.stringify(acc.roles) !== JSON.stringify(normalized) || acc.role !== getPrimaryRoleFromRoles(normalized)) {
+      acc.roles = normalized;
+      acc.role = getPrimaryRoleFromRoles(normalized);
       accountsByEmail[normalizedEmail] = acc;
       changed = true;
     }
@@ -4473,6 +4483,9 @@ function handleRoleRequestDecision(requestId, action) {
     if (accountsByEmail[req.email]) {
       const existingRoles = getAccountRoles(req.email);
       let nextRoles = [...existingRoles, req.targetRole];
+      if (req.targetRole === 'Teacher' || req.targetRole === 'HOD') {
+        nextRoles = nextRoles.filter((role) => role !== 'Student');
+      }
       if (req.targetRole === 'HOD') {
         nextRoles = [...nextRoles, 'Teacher'];
       }
