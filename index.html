@@ -521,6 +521,12 @@
       backdrop-filter: blur(16px) saturate(165%);
       -webkit-backdrop-filter: blur(16px) saturate(165%);
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100%;
+      z-index: 40;
     }
 
     .navbar .title {
@@ -536,7 +542,7 @@
     .layout {
       min-height: calc(100vh - 68px);
       gap: 14px;
-      padding: 14px;
+      padding: 82px 14px 14px;
     }
 
     .sidebar {
@@ -1550,6 +1556,7 @@
       .layout {
         grid-template-columns: 1fr;
         min-height: auto;
+        padding-top: 84px;
       }
 
       .sidebar {
@@ -1631,8 +1638,10 @@
       }
 
       .notifications-panel {
-        top: 74px;
-        right: 10px;
+        top: 74px !important;
+        right: 10px !important;
+        left: auto !important;
+        bottom: auto !important;
         width: min(360px, calc(100vw - 20px));
       }
 
@@ -1766,9 +1775,11 @@
     }
 
     .notifications-panel {
-      position: fixed;
-      top: 82px;
-      right: 22px;
+      position: fixed !important;
+      top: 82px !important;
+      right: 22px !important;
+      left: auto !important;
+      bottom: auto !important;
       z-index: 30;
       width: min(360px, calc(100vw - 24px));
       border-radius: 16px;
@@ -1780,6 +1791,8 @@
       padding: 12px;
       max-height: 70vh;
       overflow: auto;
+      overflow-x: hidden;
+      contain: layout style paint;
     }
 
     .notifications-head {
@@ -1795,6 +1808,8 @@
       background: rgba(255, 255, 255, 0.8);
       border-radius: 12px;
       padding: 10px;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .notifications-list li.unread {
@@ -2330,8 +2345,7 @@
     .dashboard.theme-stranger .navbar,
     .dashboard.theme-stranger .sidebar,
     .dashboard.theme-stranger .panel,
-    .dashboard.theme-stranger .card,
-    .dashboard.theme-stranger .notifications-panel {
+    .dashboard.theme-stranger .card {
       position: relative;
       z-index: 2;
       background: rgba(5, 5, 5, 0.92);
@@ -2339,6 +2353,16 @@
       border-radius: 0;
       color: #f5f5f5;
       box-shadow: 0 0 24px rgba(127, 29, 29, 0.26);
+    }
+
+    .dashboard.theme-stranger .notifications-panel {
+      background: rgba(5, 5, 5, 0.92);
+      border-color: rgba(220, 38, 38, 0.34);
+      border-radius: 0;
+      color: #f5f5f5;
+      box-shadow: 0 0 24px rgba(127, 29, 29, 0.26);
+      position: fixed;
+      z-index: 30;
     }
 
     .dashboard.theme-stranger .title,
@@ -2629,7 +2653,10 @@
 
         <section class="section" id="section-my-courses-teacher">
           <article class="panel">
-            <div class="panel-head"><h2>My Posted Courses</h2></div>
+            <div class="panel-head playlist-head">
+              <h2>My Posted Courses</h2>
+              <button type="button" class="video-open-btn" id="my-courses-upload-btn">Upload Course</button>
+            </div>
             <p class="assignment-meta" id="my-courses-teacher-help">Your uploaded courses and their details will appear here.</p>
             <div id="my-courses-teacher-list"></div>
           </article>
@@ -2893,8 +2920,19 @@
                 <input id="course-code" type="text" placeholder="Enter course code" required />
               </div>
               <div class="field">
+                <label for="course-upload-mode">Upload Type</label>
+                <select id="course-upload-mode" required>
+                  <option value="single">Single Video</option>
+                  <option value="playlist">Create Playlist</option>
+                </select>
+              </div>
+              <div class="field" id="single-video-field">
                 <label for="course-video">Course Video</label>
                 <input id="course-video" type="file" accept="video/*" required />
+              </div>
+              <div class="field hidden" id="playlist-videos-field">
+                <label for="course-playlist-videos">Playlist Videos (select multiple)</label>
+                <input id="course-playlist-videos" type="file" accept="video/*" multiple />
               </div>
               <button class="btn" type="submit">Upload Video Course</button>
               <p class="success-msg" id="upload-message" aria-live="polite"></p>
@@ -2961,6 +2999,12 @@
     const profileNavAvatar = document.getElementById('profile-nav-avatar');
     const uploadCourseForm = document.getElementById('upload-course-form');
     const uploadMessage = document.getElementById('upload-message');
+    const myCoursesUploadBtn = document.getElementById('my-courses-upload-btn');
+    const courseUploadModeSelect = document.getElementById('course-upload-mode');
+    const singleVideoField = document.getElementById('single-video-field');
+    const playlistVideosField = document.getElementById('playlist-videos-field');
+    const courseVideoInput = document.getElementById('course-video');
+    const coursePlaylistVideosInput = document.getElementById('course-playlist-videos');
     const uploadAssignmentForm = document.getElementById('upload-assignment-form');
 const assignmentUploadMessage = document.getElementById('assignment-upload-message');
 const assignmentDriveLinkInput = document.getElementById('assignment-drive-link');
@@ -4053,6 +4097,21 @@ const coursesData = [
       return /^https?:\/\/(drive|docs)\.google\.com\//i.test(link);
     }
 
+    function updateCourseUploadModeUI() {
+      if (!courseUploadModeSelect || !singleVideoField || !playlistVideosField || !courseVideoInput || !coursePlaylistVideosInput) return;
+      const mode = courseUploadModeSelect.value === 'playlist' ? 'playlist' : 'single';
+      const singleMode = mode === 'single';
+      singleVideoField.classList.toggle('hidden', !singleMode);
+      playlistVideosField.classList.toggle('hidden', singleMode);
+      courseVideoInput.required = singleMode;
+      coursePlaylistVideosInput.required = !singleMode;
+      if (singleMode) {
+        coursePlaylistVideosInput.value = '';
+      } else {
+        courseVideoInput.value = '';
+      }
+    }
+
     function renderMyTeacherCourses() {
       if (!myCoursesTeacherList || !myCoursesTeacherHelp) return;
       const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
@@ -4599,6 +4658,15 @@ function renderAttendanceRecords() {
     }
 
     function getCourseVideos(course) {
+      if (Array.isArray(course.playlistVideos) && course.playlistVideos.length) {
+        return course.playlistVideos
+          .map((video, index) => ({
+            title: video && video.title ? String(video.title) : `${course.name} - Lecture ${index + 1}`,
+            url: video && video.url ? String(video.url) : '',
+            duration: video && video.duration ? String(video.duration) : `Lecture ${index + 1}`
+          }))
+          .filter((video) => video.url);
+      }
       if (course.name === 'BEE (Basic Electrics and Electronics)') {
         return [
           { title: 'The Invisible Partnership', url: './bee-invisible-partnership-local.mp4', duration: 'Lecture 1' },
@@ -5986,9 +6054,24 @@ function openDashboard(userName) {
       });
     });
 
+    function positionNotificationsPanel() {
+      if (!notificationsPanel || !notificationsToggleBtn) return;
+      const rect = notificationsToggleBtn.getBoundingClientRect();
+      const panelWidth = Math.min(360, Math.max(260, window.innerWidth - 24));
+      const right = Math.max(10, window.innerWidth - rect.right);
+      const top = Math.max(74, Math.round(rect.bottom + 10));
+      notificationsPanel.style.position = 'fixed';
+      notificationsPanel.style.width = `${panelWidth}px`;
+      notificationsPanel.style.right = `${right}px`;
+      notificationsPanel.style.top = `${top}px`;
+      notificationsPanel.style.left = 'auto';
+      notificationsPanel.style.bottom = 'auto';
+      notificationsPanel.style.transform = 'translateZ(0)';
+    }
 
     notificationsToggleBtn.addEventListener('click', (event) => {
       event.stopPropagation();
+      positionNotificationsPanel();
       notificationsPanel.classList.toggle('hidden');
     });
 
@@ -6005,6 +6088,12 @@ function openDashboard(userName) {
 
     document.addEventListener('click', () => {
       notificationsPanel.classList.add('hidden');
+    });
+
+    window.addEventListener('resize', () => {
+      if (!notificationsPanel.classList.contains('hidden')) {
+        positionNotificationsPanel();
+      }
     });
 
     document.addEventListener('contextmenu', (event) => {
@@ -6285,17 +6374,41 @@ function openDashboard(userName) {
         setActiveSection('settings');
       });
     }
+    if (myCoursesUploadBtn) {
+      myCoursesUploadBtn.addEventListener('click', () => {
+        setActiveSection('upload-course');
+      });
+    }
+    if (courseUploadModeSelect) {
+      courseUploadModeSelect.addEventListener('change', updateCourseUploadModeUI);
+      updateCourseUploadModeUI();
+    }
     uploadCourseForm.addEventListener('submit', (event) => {
       event.preventDefault();
       const name = document.getElementById('course-name').value.trim();
       const code = document.getElementById('course-code').value.trim();
-      const videoInput = document.getElementById('course-video');
-      const videoFile = videoInput.files[0];
-      if (!name || !code || !videoFile) {
-        uploadMessage.textContent = 'Please enter course details and choose a video file.';
+      const uploadMode = courseUploadModeSelect && courseUploadModeSelect.value === 'playlist' ? 'playlist' : 'single';
+      const videoFile = courseVideoInput && courseVideoInput.files ? courseVideoInput.files[0] : null;
+      const playlistFiles = coursePlaylistVideosInput && coursePlaylistVideosInput.files ? Array.from(coursePlaylistVideosInput.files) : [];
+      const selectedFiles = uploadMode === 'playlist' ? playlistFiles : (videoFile ? [videoFile] : []);
+
+      if (!name || !code || !selectedFiles.length) {
+        uploadMessage.textContent = 'Please enter course details and choose video file(s).';
         uploadMessage.style.color = '#b91c1c';
         return;
       }
+
+      if (uploadMode === 'playlist' && selectedFiles.length < 2) {
+        uploadMessage.textContent = 'For playlist mode, select at least 2 videos.';
+        uploadMessage.style.color = '#b91c1c';
+        return;
+      }
+
+      const playlistVideos = selectedFiles.map((file, index) => ({
+        title: `${name} - Lecture ${index + 1}`,
+        url: URL.createObjectURL(file),
+        duration: `Lecture ${index + 1}`
+      }));
 
       coursesData.push({
         name: `${name} (${code})`,
@@ -6306,16 +6419,20 @@ function openDashboard(userName) {
         totalStudents: 0,
         status: 'Ongoing',
         hasVideo: true,
-        videoUrl: URL.createObjectURL(videoFile),
+        videoUrl: playlistVideos[0].url,
+        playlistVideos,
         uploadedByEmail: normalizeEmail(currentUserName || ''),
         uploadedByName: currentUserName || ''
       });
       renderCourseViews();
 
-      uploadMessage.textContent = `Video course uploaded: ${videoFile.name}`;
+      uploadMessage.textContent = uploadMode === 'playlist'
+        ? `Playlist created with ${selectedFiles.length} videos.`
+        : `Video course uploaded: ${videoFile ? videoFile.name : ''}`;
       uploadMessage.style.color = '#166534';
       addNotification(`New course uploaded: ${name} (${code})`);
       uploadCourseForm.reset();
+      updateCourseUploadModeUI();
     });
 
     uploadAssignmentForm.addEventListener('submit', (event) => {
