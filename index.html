@@ -2810,11 +2810,15 @@ window.RITP_SUPABASE_ANON_KEY = 'sb_publishable_07trEP-et16WU8RsY87aOQ_haDp6LWG'
 const SUPABASE_URL = String(window.RITP_SUPABASE_URL || '').trim();
 const SUPABASE_ANON_KEY = String(window.RITP_SUPABASE_ANON_KEY || '').trim();
 const SUPABASE_ACCOUNTS_TABLE = 'ritp_accounts';
+const SUPABASE_PROFILES_TABLE = 'ritp_profiles';
 const MAX_PROFILE_PHOTO_DIMENSION = 320;
 const PROFILE_PHOTO_QUALITY = 0.8;
 let pendingCloudAccountsSync = null;
 let cloudAccountsSyncTimer = null;
 let cloudAccountsSyncInFlight = false;
+let pendingCloudProfilesSync = null;
+let cloudProfilesSyncTimer = null;
+let cloudProfilesSyncInFlight = false;
 
 function saveLocalJSON(key, value) {
   try {
@@ -3247,8 +3251,143 @@ function loadProfiles() {
   }
 }
 
+function sanitizeProfilePayload(profile) {
+  const src = profile || {};
+  return {
+    displayName: String(src.displayName || '').trim(),
+    handle: String(src.handle || '').trim(),
+    bio: String(src.bio || '').trim(),
+    avatar: String(src.avatar || '').trim(),
+    avatarData: String(src.avatarData || '')
+  };
+}
+
+function toCloudProfileRow(email, profile) {
+  const clean = sanitizeProfilePayload(profile);
+  return {
+    email: normalizeEmail(email || ''),
+    display_name: clean.displayName,
+    handle: clean.handle,
+    bio: clean.bio,
+    avatar: clean.avatar,
+    avatar_data: clean.avatarData
+  };
+}
+
+function fromCloudProfileRow(row) {
+  const email = normalizeEmail(row.email || '');
+  if (!email) return null;
+  return {
+    email,
+    profile: sanitizeProfilePayload({
+      displayName: row.display_name || '',
+      handle: row.handle || '',
+      bio: row.bio || '',
+      avatar: row.avatar || '',
+      avatarData: row.avatar_data || ''
+    })
+  };
+}
+
+async function fetchCloudProfiles() {
+  if (!isCloudAccountsConfigured()) return null;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_PROFILES_TABLE}?select=email,display_name,handle,bio,avatar,avatar_data`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: buildCloudHeaders()
+    });
+    if (!response.ok) throw new Error(`Cloud profile load failed (${response.status})`);
+    const rows = await response.json();
+    const mapped = {};
+    (rows || []).forEach((row) => {
+      const normalized = fromCloudProfileRow(row);
+      if (normalized) mapped[normalized.email] = normalized.profile;
+    });
+    return mapped;
+  } catch (error) {
+    console.warn('Cloud profile fetch failed. Using local fallback.', error);
+    return null;
+  }
+}
+
+async function upsertCloudProfiles(profilesMap) {
+  if (!isCloudAccountsConfigured()) return false;
+  const rows = Object.entries(profilesMap || {})
+    .map(([email, profile]) => toCloudProfileRow(email, profile))
+    .filter((row) => row.email);
+  if (!rows.length) return true;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_PROFILES_TABLE}?on_conflict=email`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: buildCloudHeaders({
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal'
+      }),
+      body: JSON.stringify(rows)
+    });
+    if (!response.ok) throw new Error(`Cloud profile sync failed (${response.status})`);
+    return true;
+  } catch (error) {
+    console.warn('Cloud profile sync failed.', error);
+    return false;
+  }
+}
+
+async function deleteCloudProfile(email) {
+  if (!isCloudAccountsConfigured()) return false;
+  try {
+    const key = encodeURIComponent(normalizeEmail(email || ''));
+    if (!key) return false;
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_PROFILES_TABLE}?email=eq.${key}`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: buildCloudHeaders({ Prefer: 'return=minimal' })
+    });
+    if (!response.ok) throw new Error(`Cloud profile delete failed (${response.status})`);
+    return true;
+  } catch (error) {
+    console.warn('Cloud profile delete failed.', error);
+    return false;
+  }
+}
+
+function queueCloudProfilesSync(profiles) {
+  if (!isCloudAccountsConfigured()) return;
+  pendingCloudProfilesSync = JSON.parse(JSON.stringify(profiles || {}));
+  if (cloudProfilesSyncTimer || cloudProfilesSyncInFlight) return;
+  cloudProfilesSyncTimer = setTimeout(flushCloudProfilesSync, 350);
+}
+
+async function flushCloudProfilesSync() {
+  cloudProfilesSyncTimer = null;
+  if (cloudProfilesSyncInFlight || !pendingCloudProfilesSync) return;
+  cloudProfilesSyncInFlight = true;
+  const snapshot = pendingCloudProfilesSync;
+  pendingCloudProfilesSync = null;
+  await upsertCloudProfiles(snapshot);
+  cloudProfilesSyncInFlight = false;
+  if (pendingCloudProfilesSync) {
+    cloudProfilesSyncTimer = setTimeout(flushCloudProfilesSync, 350);
+  }
+}
+
+async function refreshProfilesFromCloud() {
+  const cloudProfiles = await fetchCloudProfiles();
+  if (!cloudProfiles) return false;
+  profilesByUser = { ...profilesByUser, ...cloudProfiles };
+  saveLocalJSON(PROFILE_STORAGE_KEY, profilesByUser);
+  return true;
+}
+
 function saveProfiles() {
-  return saveLocalJSON(PROFILE_STORAGE_KEY, profilesByUser);
+  const savedLocal = saveLocalJSON(PROFILE_STORAGE_KEY, profilesByUser);
+  if (savedLocal) queueCloudProfilesSync(profilesByUser);
+  return savedLocal;
 }
 
 function loadThemePrefs() {
@@ -4521,6 +4660,7 @@ function deleteUserAccount(email) {
   delete themePrefByUser[key];
   removeUserActivityData(key);
   deleteCloudAccount(key);
+  deleteCloudProfile(key);
 
   const allSaved = (
     saveAccounts(accountsByEmail) &&
@@ -4869,7 +5009,9 @@ function openDashboard(userName) {
       updateThemeButton();
       setBackgroundForDashboard(true);
       setActiveSection('dashboard');
-      refreshAccountsFromCloud().then(() => {
+      Promise.all([refreshAccountsFromCloud(), refreshProfilesFromCloud()]).then(() => {
+        renderUserProfile();
+        updateNavbarProfileAvatar();
         renderSearchUsers();
         renderConnectionsList();
       });
@@ -5392,6 +5534,7 @@ function openDashboard(userName) {
 
     (async () => {
       await refreshAccountsFromCloud();
+      await refreshProfilesFromCloud();
       const activeSession = loadSession();
       if (activeSession && activeSession.email) {
         const email = normalizeEmail(activeSession.email);
