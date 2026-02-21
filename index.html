@@ -2189,15 +2189,52 @@
       border-bottom-color: #6f4b1d;
     }
 
+    .dashboard.theme-stranger {
+      background:
+        radial-gradient(1200px 500px at 80% -10%, rgba(255, 60, 60, 0.15), transparent 56%),
+        radial-gradient(900px 460px at 10% 110%, rgba(220, 38, 38, 0.16), transparent 58%),
+        linear-gradient(180deg, #120708 0%, #0a0a0c 55%, #08080a 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dashboard.theme-stranger::before,
+    .dashboard.theme-stranger::after {
+      content: "";
+      position: fixed;
+      bottom: 0;
+      width: 210px;
+      height: 340px;
+      pointer-events: none;
+      opacity: 0.26;
+      z-index: 1;
+      filter: drop-shadow(0 0 18px rgba(239, 68, 68, 0.34));
+      background:
+        radial-gradient(circle at 50% 16%, rgba(248, 113, 113, 0.8) 0 18px, transparent 18px),
+        linear-gradient(180deg, rgba(239, 68, 68, 0.35) 0%, rgba(30, 3, 3, 0.95) 62%);
+      clip-path: polygon(40% 0%, 60% 0%, 69% 15%, 77% 37%, 86% 63%, 100% 100%, 0% 100%, 14% 63%, 23% 37%, 31% 15%);
+    }
+
+    .dashboard.theme-stranger::before {
+      left: 14px;
+    }
+
+    .dashboard.theme-stranger::after {
+      right: 14px;
+      transform: scaleX(-1);
+    }
+
     .dashboard.theme-stranger .navbar,
     .dashboard.theme-stranger .sidebar,
     .dashboard.theme-stranger .panel,
     .dashboard.theme-stranger .card,
     .dashboard.theme-stranger .notifications-panel {
-      background: linear-gradient(155deg, rgba(16, 16, 16, 0.95), rgba(34, 8, 8, 0.9));
-      border-color: rgba(220, 38, 38, 0.42);
+      position: relative;
+      z-index: 2;
+      background: linear-gradient(155deg, rgba(17, 17, 20, 0.9), rgba(36, 8, 8, 0.88));
+      border-color: rgba(248, 113, 113, 0.38);
       color: #fee2e2;
-      box-shadow: 0 10px 22px rgba(127, 29, 29, 0.35);
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(239, 68, 68, 0.12);
     }
 
     .dashboard.theme-stranger .title,
@@ -2208,52 +2245,58 @@
     .dashboard.theme-stranger .video-hint,
     .dashboard.theme-stranger .assignment-meta,
     .dashboard.theme-stranger .course-app-name {
-      color: #fecaca;
-      text-shadow: 0 0 8px rgba(220, 38, 38, 0.28);
+      color: #fda4af;
+      text-shadow: 0 0 10px rgba(220, 38, 38, 0.4);
+      letter-spacing: 0.02em;
+    }
+
+    .dashboard.theme-stranger .card h3 {
+      color: #ffe4e6;
+      text-shadow: 0 0 16px rgba(248, 113, 113, 0.32);
     }
 
     .dashboard.theme-stranger .menu button {
-      color: #fca5a5;
+      color: #fecaca;
     }
 
     .dashboard.theme-stranger .menu button:hover,
     .dashboard.theme-stranger .menu button.active {
-      background: rgba(185, 28, 28, 0.22);
-      color: #fee2e2;
+      background: linear-gradient(90deg, rgba(127, 29, 29, 0.35), rgba(69, 10, 10, 0.2));
+      color: #fff1f2;
     }
 
     .dashboard.theme-stranger th,
     .dashboard.theme-stranger td {
-      color: #fee2e2;
-      border-bottom-color: rgba(239, 68, 68, 0.25);
+      color: #ffe4e6;
+      border-bottom-color: rgba(248, 113, 113, 0.24);
     }
 
     .dashboard.theme-stranger thead th {
-      background: rgba(127, 29, 29, 0.64);
-      color: #fef2f2;
+      background: rgba(127, 29, 29, 0.68);
+      color: #fff1f2;
     }
 
     .dashboard.theme-stranger tbody tr:hover {
-      background: rgba(127, 29, 29, 0.2);
+      background: rgba(127, 29, 29, 0.26);
     }
 
     .dashboard.theme-stranger .list li,
     .dashboard.theme-stranger .notifications-list li {
-      background: rgba(10, 10, 10, 0.8);
-      border-color: rgba(239, 68, 68, 0.35);
-      color: #fee2e2;
+      background: linear-gradient(145deg, rgba(16, 16, 18, 0.9), rgba(39, 8, 8, 0.7));
+      border-color: rgba(248, 113, 113, 0.32);
+      color: #ffe4e6;
     }
 
     .dashboard.theme-stranger .notifications-list li.unread {
-      background: rgba(153, 27, 27, 0.33);
-      border-color: rgba(248, 113, 113, 0.5);
+      background: linear-gradient(145deg, rgba(153, 27, 27, 0.45), rgba(69, 10, 10, 0.35));
+      border-color: rgba(251, 113, 133, 0.54);
     }
 
     .dashboard.theme-stranger input,
     .dashboard.theme-stranger select {
-      color: #fef2f2;
-      background: rgba(7, 7, 7, 0.86);
-      border-color: rgba(220, 38, 38, 0.44);
+      color: #fff1f2;
+      background: rgba(10, 10, 12, 0.88);
+      border-color: rgba(248, 113, 113, 0.45);
     }
 
     .dashboard.theme-stranger input::placeholder {
@@ -2262,15 +2305,15 @@
 
     .dashboard.theme-stranger .video-open-btn,
     .dashboard.theme-stranger .nav-icon-btn {
-      color: #fee2e2;
-      background: rgba(42, 10, 10, 0.82);
-      border-color: rgba(220, 38, 38, 0.5);
-      box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.2), 0 0 12px rgba(239, 68, 68, 0.22);
+      color: #fff1f2;
+      background: linear-gradient(150deg, rgba(69, 10, 10, 0.85), rgba(127, 29, 29, 0.6));
+      border-color: rgba(248, 113, 113, 0.55);
+      box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.22), 0 0 14px rgba(239, 68, 68, 0.26);
     }
 
     .dashboard.theme-stranger .panel-head {
-      background: rgba(22, 6, 6, 0.9);
-      border-bottom-color: rgba(220, 38, 38, 0.4);
+      background: linear-gradient(90deg, rgba(35, 7, 7, 0.96), rgba(20, 6, 6, 0.92));
+      border-bottom-color: rgba(248, 113, 113, 0.34);
     }
   </style>
 </head>
