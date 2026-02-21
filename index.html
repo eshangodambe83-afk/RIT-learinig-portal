@@ -2188,6 +2188,90 @@
       background: #1b1b1b;
       border-bottom-color: #6f4b1d;
     }
+
+    .dashboard.theme-stranger .navbar,
+    .dashboard.theme-stranger .sidebar,
+    .dashboard.theme-stranger .panel,
+    .dashboard.theme-stranger .card,
+    .dashboard.theme-stranger .notifications-panel {
+      background: linear-gradient(155deg, rgba(16, 16, 16, 0.95), rgba(34, 8, 8, 0.9));
+      border-color: rgba(220, 38, 38, 0.42);
+      color: #fee2e2;
+      box-shadow: 0 10px 22px rgba(127, 29, 29, 0.35);
+    }
+
+    .dashboard.theme-stranger .title,
+    .dashboard.theme-stranger .welcome,
+    .dashboard.theme-stranger .panel h2,
+    .dashboard.theme-stranger .card span,
+    .dashboard.theme-stranger .field label,
+    .dashboard.theme-stranger .video-hint,
+    .dashboard.theme-stranger .assignment-meta,
+    .dashboard.theme-stranger .course-app-name {
+      color: #fecaca;
+      text-shadow: 0 0 8px rgba(220, 38, 38, 0.28);
+    }
+
+    .dashboard.theme-stranger .menu button {
+      color: #fca5a5;
+    }
+
+    .dashboard.theme-stranger .menu button:hover,
+    .dashboard.theme-stranger .menu button.active {
+      background: rgba(185, 28, 28, 0.22);
+      color: #fee2e2;
+    }
+
+    .dashboard.theme-stranger th,
+    .dashboard.theme-stranger td {
+      color: #fee2e2;
+      border-bottom-color: rgba(239, 68, 68, 0.25);
+    }
+
+    .dashboard.theme-stranger thead th {
+      background: rgba(127, 29, 29, 0.64);
+      color: #fef2f2;
+    }
+
+    .dashboard.theme-stranger tbody tr:hover {
+      background: rgba(127, 29, 29, 0.2);
+    }
+
+    .dashboard.theme-stranger .list li,
+    .dashboard.theme-stranger .notifications-list li {
+      background: rgba(10, 10, 10, 0.8);
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #fee2e2;
+    }
+
+    .dashboard.theme-stranger .notifications-list li.unread {
+      background: rgba(153, 27, 27, 0.33);
+      border-color: rgba(248, 113, 113, 0.5);
+    }
+
+    .dashboard.theme-stranger input,
+    .dashboard.theme-stranger select {
+      color: #fef2f2;
+      background: rgba(7, 7, 7, 0.86);
+      border-color: rgba(220, 38, 38, 0.44);
+    }
+
+    .dashboard.theme-stranger input::placeholder {
+      color: #fca5a5;
+    }
+
+    .dashboard.theme-stranger .video-open-btn,
+    .dashboard.theme-stranger .nav-icon-btn {
+      color: #fee2e2;
+      background: rgba(42, 10, 10, 0.82);
+      border-color: rgba(220, 38, 38, 0.5);
+      box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.2), 0 0 12px rgba(239, 68, 68, 0.22);
+    }
+
+    .dashboard.theme-stranger .panel-head {
+      background: rgba(22, 6, 6, 0.9);
+      border-bottom-color: rgba(220, 38, 38, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -2580,6 +2664,7 @@
                     <option value="amber">Amber Glow</option>
                     <option value="rose">Rose Pink</option>
                     <option value="ben10">Ben 10 Neon</option>
+                    <option value="stranger">Stranger Things Red</option>
                     <option value="royal">Royal Matte Gold</option>
                   </select>
                 </div>
@@ -4341,7 +4426,7 @@ function renderAttendanceRecords() {
 
     function applyAppTheme(themeId, persist = true) {
       const next = themeId || 'light';
-      dashboardScreen.classList.remove('theme-dark', 'theme-snap-blue', 'theme-snap-night', 'theme-crimson', 'theme-amber', 'theme-rose', 'theme-ben10', 'theme-royal');
+      dashboardScreen.classList.remove('theme-dark', 'theme-snap-blue', 'theme-snap-night', 'theme-crimson', 'theme-amber', 'theme-rose', 'theme-ben10', 'theme-stranger', 'theme-royal');
       if (next === 'dark') dashboardScreen.classList.add('theme-dark');
       if (next === 'snap-blue') dashboardScreen.classList.add('theme-snap-blue');
       if (next === 'snap-night') dashboardScreen.classList.add('theme-snap-night');
@@ -4349,6 +4434,7 @@ function renderAttendanceRecords() {
       if (next === 'amber') dashboardScreen.classList.add('theme-amber');
       if (next === 'rose') dashboardScreen.classList.add('theme-rose');
       if (next === 'ben10') dashboardScreen.classList.add('theme-ben10');
+      if (next === 'stranger') dashboardScreen.classList.add('theme-stranger');
       if (next === 'royal') dashboardScreen.classList.add('theme-royal');
       currentThemeId = next;
       themeStyleSelect.value = next;
