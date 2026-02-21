@@ -2287,6 +2287,7 @@
           <button data-target="progress" type="button">Progress</button>
           <button data-target="search" id="search-menu" class="hidden" type="button">Search</button>
           <button data-target="upload-course" id="upload-course-menu" class="hidden" type="button">Upload Course</button>
+          <button data-target="my-courses-teacher" id="my-courses-teacher-menu" class="hidden" type="button">My Courses</button>
           <button data-target="upload-assignment" id="upload-assignment-menu" class="hidden" type="button">Upload Assignment</button>
         </nav>
       </aside>
@@ -2384,6 +2385,14 @@
               </article>
             </aside>
           </section>
+        </section>
+
+        <section class="section" id="section-my-courses-teacher">
+          <article class="panel">
+            <div class="panel-head"><h2>My Posted Courses</h2></div>
+            <p class="assignment-meta" id="my-courses-teacher-help">Your uploaded courses and their details will appear here.</p>
+            <div id="my-courses-teacher-list"></div>
+          </article>
         </section>
 
         <section class="section" id="section-course-playlist">
@@ -2674,6 +2683,7 @@
     const notifMarkReadBtn = document.getElementById('notif-mark-read-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const uploadCourseMenu = document.getElementById('upload-course-menu');
+    const myCoursesTeacherMenu = document.getElementById('my-courses-teacher-menu');
     const uploadAssignmentMenu = document.getElementById('upload-assignment-menu');
     const settingsNavBtn = document.getElementById('settings-nav-btn');
     const searchMenu = document.getElementById('search-menu');
@@ -2697,6 +2707,8 @@ const classAssignmentsFeed = document.getElementById('class-assignments-feed');
     const playlistAssignmentHelp = document.getElementById('playlist-assignment-help');
     const coursesTableBody = document.getElementById('courses-table-body');
     const myCoursesList = document.getElementById('my-courses-list');
+    const myCoursesTeacherList = document.getElementById('my-courses-teacher-list');
+    const myCoursesTeacherHelp = document.getElementById('my-courses-teacher-help');
     const coursesFocusTitle = document.getElementById('courses-focus-title');
     const coursesFocusVideo = document.getElementById('courses-focus-video');
     const coursesVideoWatermarkA = document.getElementById('courses-video-watermark-a');
@@ -3491,6 +3503,70 @@ const coursesData = [
       return /^https?:\/\/(drive|docs)\.google\.com\//i.test(link);
     }
 
+    function renderMyTeacherCourses() {
+      if (!myCoursesTeacherList || !myCoursesTeacherHelp) return;
+      const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
+      if (!isTeacherSide || !currentUserName) {
+        myCoursesTeacherHelp.textContent = 'This section is available for Teacher, HOD, and Admin accounts.';
+        myCoursesTeacherList.innerHTML = '';
+        return;
+      }
+
+      const userKey = normalizeEmail(currentUserName);
+      const userNameKey = String(currentUserName || '').trim().toLowerCase();
+      const ownCourses = coursesData.filter((course) => {
+        const ownerKey = normalizeEmail(course.uploadedByEmail || '');
+        if (ownerKey) return ownerKey === userKey;
+        const teacherName = String(course.teacher || '').trim().toLowerCase();
+        const professorName = String(course.professor || '').trim().toLowerCase();
+        return teacherName === userNameKey || professorName === userNameKey;
+      });
+
+      if (!ownCourses.length) {
+        myCoursesTeacherHelp.textContent = 'No posted courses yet. Upload a course to view details here.';
+        myCoursesTeacherList.innerHTML = '';
+        return;
+      }
+
+      myCoursesTeacherHelp.textContent = `${ownCourses.length} posted course(s) found for your account.`;
+      myCoursesTeacherList.innerHTML = ownCourses.map((course) => {
+        const videos = getCourseVideos(course);
+        const courseTasks = classAssignments.filter((task) => {
+          const resolved = resolveCourseByName(task.course);
+          const taskName = resolved ? resolved.name : task.course;
+          return normalizeCourseName(taskName) === normalizeCourseName(course.name);
+        });
+        const assignedCount = courseTasks.length;
+        const submittedCount = courseTasks.reduce((sum, task) => {
+          return sum + Object.keys(task.submissions || {}).length;
+        }, 0);
+        return `<article class="panel" style="margin-top:12px;">
+          <div class="panel-head">
+            <h2>${escapeHtml(course.name)}</h2>
+            <button type="button" class="video-open-btn my-course-open-btn" data-course-name="${encodeURIComponent(course.name)}">Open Course</button>
+          </div>
+          <ul class="list">
+            <li>Teacher: <strong>${escapeHtml(course.teacher || '-')}</strong></li>
+            <li>Professor: <strong>${escapeHtml(course.professor || '-')}</strong></li>
+            <li>Status: <strong>${escapeHtml(course.status || 'Ongoing')}</strong></li>
+            <li>Total Students: <strong>${Number(course.totalStudents || 0)}</strong></li>
+            <li>Completed Students: <strong>${Number(course.completedStudents || 0)}</strong></li>
+            <li>Total Lectures: <strong>${videos.length}</strong></li>
+            <li>Total Assignments: <strong>${assignedCount}</strong></li>
+            <li>Total Submissions: <strong>${submittedCount}</strong></li>
+          </ul>
+        </article>`;
+      }).join('');
+
+      myCoursesTeacherList.querySelectorAll('.my-course-open-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const courseName = decodeURIComponent(btn.dataset.courseName || '');
+          if (!courseName) return;
+          openCoursePlaylist(courseName);
+        });
+      });
+    }
+
     function renderCourseViews() {
       const total = coursesData.length;
       const completed = coursesData.filter((course) => course.status === 'Completed').length;
@@ -3530,6 +3606,7 @@ const coursesData = [
         });
       });
       renderCoursesShowcase();
+      renderMyTeacherCourses();
     }
 
 function renderCoursesShowcase() {
@@ -5020,6 +5097,7 @@ function openDashboard(userName) {
       }
       const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('Admin') || currentUserRoles.includes('HOD');
       uploadCourseMenu.classList.toggle('hidden', !(currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD')));
+      if (myCoursesTeacherMenu) myCoursesTeacherMenu.classList.toggle('hidden', !isTeacherSide);
       uploadAssignmentMenu.classList.toggle('hidden', !(currentUserRole === 'Student' || isTeacherSide));
       if (settingsNavBtn) settingsNavBtn.classList.remove('hidden');
       searchMenu.classList.remove('hidden');
@@ -5066,6 +5144,7 @@ function openDashboard(userName) {
       loginHelp.style.color = '#b91c1c';
       uploadMessage.textContent = '';
       uploadCourseMenu.classList.add('hidden');
+      if (myCoursesTeacherMenu) myCoursesTeacherMenu.classList.add('hidden');
       assignmentUploadMessage.textContent = '';
       playlistAssignmentHelp.textContent = '';
       uploadAssignmentMenu.classList.add('hidden');
@@ -5103,6 +5182,9 @@ function openDashboard(userName) {
 
       if (target === 'courses') {
         renderCoursesShowcase();
+      }
+      if (target === 'my-courses-teacher') {
+        renderMyTeacherCourses();
       }
       if (target === 'search' || target === 'profile') {
         refreshProfilesFromCloud().then(() => {
@@ -5408,14 +5490,16 @@ function openDashboard(userName) {
 
       coursesData.push({
         name: `${name} (${code})`,
-        teacher: 'You',
-        professor: 'You',
+        teacher: currentUserName || 'Prof.untitled',
+        professor: currentUserName || 'Prof.untitled',
         publisher: 'RITP LMS',
         completedStudents: 0,
         totalStudents: 0,
         status: 'Ongoing',
         hasVideo: true,
-        videoUrl: URL.createObjectURL(videoFile)
+        videoUrl: URL.createObjectURL(videoFile),
+        uploadedByEmail: normalizeEmail(currentUserName || ''),
+        uploadedByName: currentUserName || ''
       });
       renderCourseViews();
 
@@ -5453,6 +5537,7 @@ function openDashboard(userName) {
           driveLink
         });
         renderClassAssignmentsFeed();
+        renderMyTeacherCourses();
         if (normalizeCourseName(currentPlaylistCourse) === normalizeCourseName(course)) {
           renderPlaylistAssignments(currentPlaylistCourse);
         }
@@ -5464,6 +5549,7 @@ function openDashboard(userName) {
         submittedAssignments.unshift(`${title} (${course}) - ${driveLink}`);
         renderSubmittedAssignments();
         renderCoursesShowcase();
+        renderMyTeacherCourses();
         assignmentUploadMessage.textContent = 'Assignment uploaded with Google Drive link.';
         assignmentUploadMessage.style.color = '#166534';
         addNotification(`Assignment submitted: ${title}`);
