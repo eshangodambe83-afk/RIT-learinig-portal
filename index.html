@@ -2733,6 +2733,20 @@
                 <p class="success-msg" id="theme-settings-help" aria-live="polite"></p>
               </form>
             </article>
+            <article class="panel">
+              <div class="panel-head"><h2>Suggestions</h2></div>
+              <form class="upload-form" id="suggestion-form">
+                <div class="field">
+                  <label for="suggestion-input">Share suggestion for Admin</label>
+                  <input id="suggestion-input" type="text" placeholder="Type your suggestion here" maxlength="220" />
+                </div>
+                <button class="btn" id="suggestion-submit-btn" type="submit">Send Suggestion</button>
+                <p class="success-msg" id="suggestion-help" aria-live="polite"></p>
+              </form>
+              <div class="panel-head"><h2>Suggestion Updates</h2></div>
+              <p class="assignment-meta" id="suggestions-list-title">Suggestions history</p>
+              <ul class="list" id="suggestions-list"></ul>
+            </article>
           </div>
         </section>
         <section class="section" id="section-search">
@@ -2924,6 +2938,12 @@ const classAssignmentsFeed = document.getElementById('class-assignments-feed');
     const themeSettingsForm = document.getElementById('theme-settings-form');
     const themeStyleSelect = document.getElementById('theme-style-select');
     const themeSettingsHelp = document.getElementById('theme-settings-help');
+    const suggestionForm = document.getElementById('suggestion-form');
+    const suggestionInput = document.getElementById('suggestion-input');
+    const suggestionSubmitBtn = document.getElementById('suggestion-submit-btn');
+    const suggestionHelp = document.getElementById('suggestion-help');
+    const suggestionsList = document.getElementById('suggestions-list');
+    const suggestionsListTitle = document.getElementById('suggestions-list-title');
     const profileRoleTitle = document.getElementById('profile-role-title');
     const searchConnectForm = document.getElementById('search-connect-form');
     const searchConnectInput = document.getElementById('search-connect-input');
@@ -2969,6 +2989,7 @@ const SUPABASE_URL = String(window.RITP_SUPABASE_URL || '').trim();
 const SUPABASE_ANON_KEY = String(window.RITP_SUPABASE_ANON_KEY || '').trim();
 const SUPABASE_ACCOUNTS_TABLE = 'ritp_accounts';
 const SUPABASE_PROFILES_TABLE = 'ritp_profiles';
+const SUPABASE_SUGGESTIONS_TABLE = 'ritp_suggestions';
 const MAX_PROFILE_PHOTO_DIMENSION = 320;
 const PROFILE_PHOTO_QUALITY = 0.8;
 let pendingCloudAccountsSync = null;
@@ -3594,8 +3615,142 @@ function saveThemePrefs() {
   return saveLocalJSON(THEME_PREF_STORAGE_KEY, themePrefByUser);
 }
 
+const SUGGESTIONS_STORAGE_KEY = 'ritp_suggestions_v1';
+
+function loadSuggestions() {
+  try {
+    const raw = localStorage.getItem(SUGGESTIONS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function normalizeSuggestion(item) {
+  const idRaw = Number(item && item.id);
+  return {
+    id: Number.isFinite(idRaw) && idRaw > 0 ? idRaw : Date.now(),
+    email: normalizeEmail((item && item.email) || ''),
+    fromRole: String((item && item.fromRole) || 'Student'),
+    text: String((item && item.text) || '').trim(),
+    status: String((item && item.status) || 'open'),
+    createdAt: Number(item && item.createdAt) || Date.now(),
+    reviewedBy: String((item && item.reviewedBy) || ''),
+    reviewedAt: Number(item && item.reviewedAt) || 0
+  };
+}
+
+function saveSuggestions() {
+  return saveLocalJSON(SUGGESTIONS_STORAGE_KEY, suggestionsData);
+}
+
+function toCloudSuggestionRow(item) {
+  const s = normalizeSuggestion(item);
+  return {
+    id: s.id,
+    email: s.email,
+    from_role: s.fromRole,
+    text: s.text,
+    status: s.status,
+    created_at: new Date(s.createdAt).toISOString(),
+    reviewed_by: s.reviewedBy || null,
+    reviewed_at: s.reviewedAt ? new Date(s.reviewedAt).toISOString() : null
+  };
+}
+
+function fromCloudSuggestionRow(row) {
+  return normalizeSuggestion({
+    id: row.id,
+    email: row.email,
+    fromRole: row.from_role,
+    text: row.text,
+    status: row.status,
+    createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+    reviewedBy: row.reviewed_by || '',
+    reviewedAt: row.reviewed_at ? new Date(row.reviewed_at).getTime() : 0
+  });
+}
+
+async function fetchCloudSuggestions() {
+  if (!isCloudAccountsConfigured()) return null;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_SUGGESTIONS_TABLE}?select=id,email,from_role,text,status,created_at,reviewed_by,reviewed_at&order=created_at.desc`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: buildCloudHeaders()
+    });
+    if (!response.ok) throw new Error(`Cloud suggestions load failed (${response.status})`);
+    const rows = await response.json();
+    return (rows || []).map(fromCloudSuggestionRow);
+  } catch (error) {
+    console.warn('Cloud suggestions fetch failed. Using local fallback.', error);
+    return null;
+  }
+}
+
+async function insertCloudSuggestion(item) {
+  if (!isCloudAccountsConfigured()) return false;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_SUGGESTIONS_TABLE}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: buildCloudHeaders({
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      }),
+      body: JSON.stringify([toCloudSuggestionRow(item)])
+    });
+    if (!response.ok) throw new Error(`Cloud suggestion insert failed (${response.status})`);
+    return true;
+  } catch (error) {
+    console.warn('Cloud suggestion insert failed.', error);
+    return false;
+  }
+}
+
+async function updateCloudSuggestionStatus(item) {
+  if (!isCloudAccountsConfigured()) return false;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const id = Number(item && item.id);
+    if (!Number.isFinite(id)) return false;
+    const url = `${base}/rest/v1/${SUPABASE_SUGGESTIONS_TABLE}?id=eq.${id}`;
+    const payload = toCloudSuggestionRow(item);
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: buildCloudHeaders({
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      }),
+      body: JSON.stringify({
+        status: payload.status,
+        reviewed_by: payload.reviewed_by,
+        reviewed_at: payload.reviewed_at
+      })
+    });
+    if (!response.ok) throw new Error(`Cloud suggestion update failed (${response.status})`);
+    return true;
+  } catch (error) {
+    console.warn('Cloud suggestion update failed.', error);
+    return false;
+  }
+}
+
+async function refreshSuggestionsFromCloud() {
+  const cloudItems = await fetchCloudSuggestions();
+  if (!cloudItems) return false;
+  suggestionsData = cloudItems
+    .filter((item) => item.text)
+    .sort((a, b) => b.createdAt - a.createdAt);
+  saveSuggestions();
+  return true;
+}
+
 let profilesByUser = loadProfiles();
 let themePrefByUser = loadThemePrefs();
+let suggestionsData = loadSuggestions().map(normalizeSuggestion);
 let lastProtectionNoticeAt = 0;
 const unskippableVideoProgressBySrc = {};
 const CONNECTIONS_STORAGE_KEY = 'ritp_connections_v1';
@@ -5099,6 +5254,77 @@ function renderConnectionsList() {
   }).join('') || '<li>No connections yet.</li>';
 }
 
+function renderSuggestionsPanel() {
+  if (!suggestionsList || !suggestionsListTitle || !suggestionForm) return;
+  const isAdmin = currentUserRole === 'Admin';
+  const canSubmit = currentUserRoles.includes('Student') || currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD');
+
+  suggestionForm.classList.toggle('hidden', !canSubmit);
+  if (suggestionHelp && !canSubmit) {
+    suggestionHelp.textContent = '';
+  }
+
+  if (!currentUserName) {
+    suggestionsListTitle.textContent = 'Login to view suggestions.';
+    suggestionsList.innerHTML = '<li>Please login first.</li>';
+    return;
+  }
+
+  let visible = [];
+  if (isAdmin) {
+    visible = suggestionsData.slice().sort((a, b) => b.createdAt - a.createdAt);
+    suggestionsListTitle.textContent = 'All suggestions sent to Admin';
+  } else {
+    const key = normalizeEmail(currentUserName);
+    visible = suggestionsData
+      .filter((item) => normalizeEmail(item.email) === key)
+      .sort((a, b) => b.createdAt - a.createdAt);
+    suggestionsListTitle.textContent = 'Your submitted suggestions';
+  }
+
+  if (!visible.length) {
+    suggestionsList.innerHTML = '<li>No suggestions yet.</li>';
+    return;
+  }
+
+  suggestionsList.innerHTML = visible.map((item) => {
+    const when = item.createdAt ? new Date(item.createdAt).toLocaleString() : '-';
+    const reviewedText = item.reviewedBy
+      ? `Reviewed by: ${escapeHtml(item.reviewedBy)}${item.reviewedAt ? ` | ${new Date(item.reviewedAt).toLocaleString()}` : ''}`
+      : 'Not reviewed yet';
+    const status = item.status === 'reviewed' ? 'Reviewed' : 'Open';
+    const adminAction = isAdmin && item.status !== 'reviewed'
+      ? `<div style="margin-top:8px;"><button type="button" class="video-open-btn suggestion-review-btn" data-id="${item.id}">Mark Reviewed</button></div>`
+      : '';
+    return `<li>
+      <strong>${escapeHtml(item.text)}</strong>
+      <div class="assignment-meta">From: ${escapeHtml(item.email)} (${escapeHtml(item.fromRole)}) | ${when} | Status: ${status}</div>
+      <div class="assignment-meta">${reviewedText}</div>
+      ${adminAction}
+    </li>`;
+  }).join('');
+
+  suggestionsList.querySelectorAll('.suggestion-review-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!isAdmin) return;
+      const id = Number(btn.dataset.id);
+      const item = suggestionsData.find((entry) => Number(entry.id) === id);
+      if (!item) return;
+      item.status = 'reviewed';
+      item.reviewedBy = currentUserName;
+      item.reviewedAt = Date.now();
+      if (!saveSuggestions()) {
+        suggestionHelp.textContent = 'Could not update suggestion status on this device.';
+        suggestionHelp.style.color = '#b91c1c';
+        return;
+      }
+      await updateCloudSuggestionStatus(item);
+      renderSuggestionsPanel();
+      addNotification(`Suggestion reviewed: ${item.email}`);
+    });
+  });
+}
+
 function renderSearchUsers() {
   if (!searchResults) return;
   const q = (searchConnectInput.value || '').trim().toLowerCase();
@@ -5263,6 +5489,7 @@ function openDashboard(userName) {
       renderClassAssignmentsFeed();
       renderNotifications();
       renderAnnouncements();
+      renderSuggestionsPanel();
       if (currentPlaylistCourse) {
         renderCourseAccessPanel({ name: currentPlaylistCourse });
         bindCourseAccessActions(currentPlaylistCourse);
@@ -5270,11 +5497,12 @@ function openDashboard(userName) {
       updateThemeButton();
       setBackgroundForDashboard(true);
       setActiveSection('dashboard');
-      Promise.all([refreshAccountsFromCloud(), refreshProfilesFromCloud()]).then(() => {
+      Promise.all([refreshAccountsFromCloud(), refreshProfilesFromCloud(), refreshSuggestionsFromCloud()]).then(() => {
         renderUserProfile();
         updateNavbarProfileAvatar();
         renderSearchUsers();
         renderConnectionsList();
+        renderSuggestionsPanel();
       });
     }
 
@@ -5332,6 +5560,11 @@ function openDashboard(userName) {
       }
       if (target === 'my-courses-teacher') {
         renderMyTeacherCourses();
+      }
+      if (target === 'settings') {
+        refreshSuggestionsFromCloud().then(() => {
+          renderSuggestionsPanel();
+        });
       }
       if (target === 'search' || target === 'profile') {
         refreshProfilesFromCloud().then(() => {
@@ -5606,6 +5839,59 @@ function openDashboard(userName) {
       themeSettingsHelp.style.color = '#166534';
     });
 
+    suggestionForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!currentUserName) {
+        suggestionHelp.textContent = 'Please login first.';
+        suggestionHelp.style.color = '#b91c1c';
+        return;
+      }
+      const canSubmit = currentUserRoles.includes('Student') || currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD');
+      if (!canSubmit) {
+        suggestionHelp.textContent = 'Only Student, Teacher, or HOD can send suggestions.';
+        suggestionHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      const text = String(suggestionInput.value || '').trim();
+      if (!text) {
+        suggestionHelp.textContent = 'Please type your suggestion.';
+        suggestionHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      const item = normalizeSuggestion({
+        id: Date.now(),
+        email: currentUserName,
+        fromRole: currentUserRole,
+        text,
+        status: 'open',
+        createdAt: Date.now(),
+        reviewedBy: '',
+        reviewedAt: 0
+      });
+
+      suggestionsData.unshift(item);
+      if (!saveSuggestions()) {
+        suggestionsData = suggestionsData.filter((entry) => Number(entry.id) !== Number(item.id));
+        suggestionHelp.textContent = 'Could not save suggestion on this device.';
+        suggestionHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      const cloudSaved = await insertCloudSuggestion(item);
+      renderSuggestionsPanel();
+      suggestionForm.reset();
+      if (cloudSaved || !isCloudAccountsConfigured()) {
+        suggestionHelp.textContent = 'Suggestion sent to Admin successfully.';
+        suggestionHelp.style.color = '#166534';
+      } else {
+        suggestionHelp.textContent = 'Suggestion saved locally, but cloud sync failed.';
+        suggestionHelp.style.color = '#b91c1c';
+      }
+      addNotification('New suggestion sent to Admin.');
+    });
+
     searchConnectInput.addEventListener('input', renderSearchUsers);
 
     profileSearchBtn.addEventListener("click", () => {
@@ -5824,12 +6110,14 @@ function openDashboard(userName) {
     renderQuizScores();
     renderNotifications();
     renderAnnouncements();
+    renderSuggestionsPanel();
     applyAppTheme('light', false);
     updateVideoWatermarks();
 
     (async () => {
       await refreshAccountsFromCloud();
       await refreshProfilesFromCloud();
+      await refreshSuggestionsFromCloud();
       const activeSession = loadSession();
       if (activeSession && activeSession.email) {
         const email = normalizeEmail(activeSession.email);
