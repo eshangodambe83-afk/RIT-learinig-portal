@@ -3337,6 +3337,29 @@ async function upsertCloudProfiles(profilesMap) {
   }
 }
 
+async function upsertCloudProfileByEmail(email, profile) {
+  if (!isCloudAccountsConfigured()) return false;
+  const row = toCloudProfileRow(email, profile);
+  if (!row.email) return false;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_PROFILES_TABLE}?on_conflict=email`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: buildCloudHeaders({
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal'
+      }),
+      body: JSON.stringify([row])
+    });
+    if (!response.ok) throw new Error(`Cloud profile save failed (${response.status})`);
+    return true;
+  } catch (error) {
+    console.warn('Cloud profile save failed.', error);
+    return false;
+  }
+}
+
 async function deleteCloudProfile(email) {
   if (!isCloudAccountsConfigured()) return false;
   try {
@@ -5068,6 +5091,15 @@ function openDashboard(userName) {
       if (target === 'courses') {
         renderCoursesShowcase();
       }
+      if (target === 'search' || target === 'profile') {
+        refreshProfilesFromCloud().then(() => {
+          if (target === 'search') renderSearchUsers();
+          if (target === 'profile') {
+            renderUserProfile();
+            updateNavbarProfileAvatar();
+          }
+        });
+      }
     }
 
     loginForm.addEventListener('submit', async (event) => {
@@ -5240,7 +5272,7 @@ function openDashboard(userName) {
       }
     });
 
-    profileForm.addEventListener('submit', (event) => {
+    profileForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!currentUserName) {
         profileHelp.textContent = 'Please login first.';
@@ -5266,10 +5298,16 @@ function openDashboard(userName) {
         profileHelp.style.color = '#b91c1c';
         return;
       }
+      const cloudSaved = await upsertCloudProfileByEmail(key, profilesByUser[key]);
       renderUserProfile();
       renderSearchUsers();
-      profileHelp.textContent = 'Profile updated successfully.';
-      profileHelp.style.color = '#166534';
+      if (cloudSaved || !isCloudAccountsConfigured()) {
+        profileHelp.textContent = 'Profile updated successfully.';
+        profileHelp.style.color = '#166534';
+      } else {
+        profileHelp.textContent = 'Profile saved locally, but cloud sync failed. Please try again.';
+        profileHelp.style.color = '#b91c1c';
+      }
       addNotification('Profile updated.');
     });
 
@@ -5520,6 +5558,17 @@ function openDashboard(userName) {
         if (coursesFocusVideo) coursesFocusVideo.pause();
       }
     });
+
+    setInterval(() => {
+      if (!currentUserName) return;
+      refreshProfilesFromCloud().then(() => {
+        renderSearchUsers();
+        if (document.getElementById('section-profile')?.classList.contains('active')) {
+          renderUserProfile();
+          updateNavbarProfileAvatar();
+        }
+      });
+    }, 12000);
 
     renderCourseViews();
     renderSubmittedAssignments();
