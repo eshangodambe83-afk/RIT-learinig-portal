@@ -1349,6 +1349,28 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-promote-toggle-btn {
+  min-width: 42px;
+  padding: 8px 10px;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.admin-promote-menu {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.admin-promote-role-btn {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .profile-open-view {
@@ -4064,6 +4086,7 @@ let connectionsByUser = loadConnections();
 let currentThemeId = 'light';
 let selectedProfilePhotoData = '';
 let selectedSearchProfileEmail = '';
+let adminPromoteMenuEmail = '';
 let currentMiniQuiz = [];
 let currentCourseVideos = [];
 const PROFILE_FALLBACK_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODIiIGhlaWdodD0iODIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgyIiBoZWlnaHQ9IjgyIiBmaWxsPSIjZTJlOGYwIi8+PGNpcmNsZSBjeD0iNDEiIGN5PSIzMiIgcj0iMTYiIGZpbGw9IiM5NGEzYjgiLz48cmVjdCB4PSIxOCIgeT0iNTIiIHdpZHRoPSI0NiIgaGVpZ2h0PSIxOCIgcng9IjkiIGZpbGw9IiM5NGEzYjgiLz48L3N2Zz4=';
@@ -5317,7 +5340,7 @@ function renderOwnProfileCard() {
 
 function canAdminDemoteUser(email) {
   const key = normalizeEmail(email || '');
-  if (!key || currentUserRole !== 'Admin') return false;
+  if (!key || !currentUserRoles.includes('Admin')) return false;
   if (key === normalizeEmail(currentUserName || '')) return false;
   const roles = getAccountRoles(key);
   return roles.includes('Teacher') || roles.includes('Admin') || roles.includes('HOD');
@@ -5325,7 +5348,7 @@ function canAdminDemoteUser(email) {
 
 function canAdminDeleteUser(email) {
   const key = normalizeEmail(email || '');
-  if (!key || currentUserRole !== 'Admin') return false;
+  if (!key || !currentUserRoles.includes('Admin')) return false;
   if (key === normalizeEmail(currentUserName || '')) return false;
   const roles = getAccountRoles(key);
   return roles.some((role) => role === 'Student' || role === 'Teacher' || role === 'HOD');
@@ -5333,10 +5356,52 @@ function canAdminDeleteUser(email) {
 
 function canAdminRemoveRole(email, role) {
   const key = normalizeEmail(email || '');
-  if (!key || currentUserRole !== 'Admin') return false;
+  if (!key || !currentUserRoles.includes('Admin')) return false;
   if (key === normalizeEmail(currentUserName || '')) return false;
   const roles = getAccountRoles(key);
   return roles.includes(role);
+}
+
+function canAdminPromoteToRole(email, role) {
+  const key = normalizeEmail(email || '');
+  if (!key || !currentUserRoles.includes('Admin')) return false;
+  if (key === normalizeEmail(currentUserName || '')) return false;
+  if (!accountsByEmail[key]) return false;
+  const roles = getAccountRoles(key);
+  if (roles.includes('Admin')) return false;
+  if (role === 'Teacher') {
+    return !roles.includes('Teacher') && !roles.includes('HOD');
+  }
+  if (role === 'HOD') {
+    return !roles.includes('HOD');
+  }
+  return false;
+}
+
+function promoteUserToRole(email, role) {
+  const key = normalizeEmail(email || '');
+  if (!canAdminPromoteToRole(key, role)) return;
+  const account = accountsByEmail[key];
+  if (!account) return;
+  const previousRoles = getAccountRoles(key);
+  const nextRoles = normalizeRoles([...previousRoles, role]);
+  setAccountRoles(key, nextRoles);
+
+  if (!saveAccounts(accountsByEmail)) {
+    setAccountRoles(key, previousRoles);
+    searchConnectHelp.textContent = 'Could not promote user on this device (storage full).';
+    searchConnectHelp.style.color = '#b91c1c';
+    return;
+  }
+
+  adminPromoteMenuEmail = '';
+  addNotification(`Role updated: ${key} promoted to ${role}.`);
+  searchConnectHelp.textContent = `${key} promoted to ${role}.`;
+  searchConnectHelp.style.color = '#166534';
+  renderNotifications();
+  renderSearchUsers();
+  renderConnectionsList();
+  renderSearchProfileViewer(key);
 }
 
 function removeUserActivityData(email) {
@@ -5493,6 +5558,12 @@ function renderSearchProfileViewer(email) {
     return;
   }
   const adminActionButtons = [];
+  if (canAdminPromoteToRole(email, 'Teacher')) {
+    adminActionButtons.push('<button type="button" class="video-open-btn admin-promote-role-btn" id="admin-promote-teacher-btn">Promote Teacher</button>');
+  }
+  if (canAdminPromoteToRole(email, 'HOD')) {
+    adminActionButtons.push('<button type="button" class="video-open-btn admin-promote-role-btn" id="admin-promote-hod-btn">Promote HOD</button>');
+  }
   if (canAdminDemoteUser(email)) {
     adminActionButtons.push('<button type="button" class="video-open-btn admin-demote-btn" id="admin-demote-btn">Remove From Post</button>');
   }
@@ -5547,6 +5618,26 @@ function renderSearchProfileViewer(email) {
       const ok = window.confirm(`Remove Teacher role from ${profile.displayName}?`);
       if (!ok) return;
       removeRoleFromUser(email, 'Teacher');
+    });
+  }
+
+  const promoteTeacherBtn = document.getElementById('admin-promote-teacher-btn');
+  if (promoteTeacherBtn) {
+    promoteTeacherBtn.addEventListener('click', () => {
+      const profile = getUserProfileSummary(email);
+      const ok = window.confirm(`Promote ${profile.displayName} to Teacher?`);
+      if (!ok) return;
+      promoteUserToRole(email, 'Teacher');
+    });
+  }
+
+  const promoteHodBtn = document.getElementById('admin-promote-hod-btn');
+  if (promoteHodBtn) {
+    promoteHodBtn.addEventListener('click', () => {
+      const profile = getUserProfileSummary(email);
+      const ok = window.confirm(`Promote ${profile.displayName} to HOD?`);
+      if (!ok) return;
+      promoteUserToRole(email, 'HOD');
     });
   }
 }
@@ -5718,6 +5809,8 @@ function renderSearchUsers() {
   const q = (searchConnectInput.value || '').trim().toLowerCase();
   const me = currentUserName ? currentUserName.toLowerCase() : '';
   const myRole = currentUserRole || '';
+  const isAdminView = currentUserRoles.includes('Admin');
+  if (!isAdminView) adminPromoteMenuEmail = '';
   const connectionSet = getConnectionSet();
 
   if (!isConnectableRole(myRole)) {
@@ -5753,6 +5846,16 @@ function renderSearchUsers() {
   searchResults.innerHTML = users.map((u) => {
     const connected = connectionSet.has(u.email);
     const activeClass = selectedSearchProfileEmail === u.email ? ' style="outline:2px solid rgba(59, 130, 246, 0.35);"' : '';
+    const canPromoteTeacher = isAdminView && canAdminPromoteToRole(u.email, 'Teacher');
+    const canPromoteHod = isAdminView && canAdminPromoteToRole(u.email, 'HOD');
+    const showPromoteMenu = adminPromoteMenuEmail === u.email && (canPromoteTeacher || canPromoteHod);
+    const promoteControls = (canPromoteTeacher || canPromoteHod)
+      ? `<button type="button" class="video-open-btn admin-promote-toggle-btn" data-email="${u.email}" title="Promote user" aria-label="Promote user">✏️</button>
+         <div class="admin-promote-menu ${showPromoteMenu ? '' : 'hidden'}" data-menu-email="${u.email}">
+           ${canPromoteTeacher ? `<button type="button" class="video-open-btn admin-promote-role-btn" data-email="${u.email}" data-role="Teacher">Teacher</button>` : ''}
+           ${canPromoteHod ? `<button type="button" class="video-open-btn admin-promote-role-btn" data-email="${u.email}" data-role="HOD">HOD</button>` : ''}
+         </div>`
+      : '';
     return `<article class="search-profile-card" data-email="${u.email}"${activeClass}>
       <div class="search-profile-head">
         <img class="search-profile-avatar" src="${u.avatar}" alt="${escapeHtml(u.name)} avatar" />
@@ -5764,6 +5867,7 @@ function renderSearchUsers() {
       </div>
       <div class="connect-meta">${escapeHtml(u.bio || 'No bio added yet.')}</div>
       <div class="search-profile-actions">
+        ${promoteControls}
         <button type="button" class="video-open-btn connect-btn" data-email="${u.email}">${connected ? 'Connected' : 'Connect'}</button>
       </div>
     </article>`;
@@ -5792,6 +5896,29 @@ function renderSearchUsers() {
       saveConnections();
       renderSearchUsers();
       renderConnectionsList();
+    });
+  });
+
+  searchResults.querySelectorAll('.admin-promote-toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const email = normalizeEmail(btn.dataset.email || '');
+      if (!email) return;
+      adminPromoteMenuEmail = adminPromoteMenuEmail === email ? '' : email;
+      renderSearchUsers();
+    });
+  });
+
+  searchResults.querySelectorAll('.admin-promote-role-btn').forEach((btn) => {
+    btn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const email = normalizeEmail(btn.dataset.email || '');
+      const role = String(btn.dataset.role || '');
+      if (!email || (role !== 'Teacher' && role !== 'HOD')) return;
+      const profile = getUserProfileSummary(email);
+      const ok = window.confirm(`Promote ${profile.displayName} to ${role}?`);
+      if (!ok) return;
+      promoteUserToRole(email, role);
     });
   });
 
@@ -5846,6 +5973,7 @@ function openDashboard(userName) {
       currentUserName = userName;
       currentUserRoles = getAccountRoles(userName);
       currentUserRole = getPrimaryRoleFromRoles(currentUserRoles);
+      adminPromoteMenuEmail = '';
       updateVideoWatermarks();
       saveSession(userName);
       if (currentUserRole === 'Student' && !watchTimeByStudent[userName]) {
@@ -5924,6 +6052,7 @@ function openDashboard(userName) {
       currentUserName = '';
       currentUserRole = '';
       currentUserRoles = [];
+      adminPromoteMenuEmail = '';
       updateVideoWatermarks();
       if (profileNavAvatar) profileNavAvatar.src = PROFILE_FALLBACK_AVATAR;
       setBackgroundForDashboard(false);
