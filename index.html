@@ -2801,8 +2801,20 @@ const ACCOUNTS_STORAGE_KEY = 'ritp_accounts_v1';
 const SESSION_STORAGE_KEY = 'ritp_session_v1';
 const ROLE_REQUESTS_STORAGE_KEY = 'ritp_role_requests_v1';
 const COURSE_ACCESS_STORAGE_KEY = 'ritp_course_access_v1';
+// Optional cloud sync: set these once to share accounts across all devices/admins.
+// Example:
+// window.RITP_SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+// window.RITP_SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+window.RITP_SUPABASE_URL = 'https://sqowewitayyhoorofwxp.supabase.co';
+window.RITP_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNxb3dld2l0YXl5aG9vcm9md3hwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2NzMzNTQsImV4cCI6MjA4NzI0OTM1NH0.qV4itb9RxFVqXdcLdunLoL7D4-p_18Y3BKU0Wj-y0rA';
+const SUPABASE_URL = String(window.RITP_SUPABASE_URL || '').trim();
+const SUPABASE_ANON_KEY = String(window.RITP_SUPABASE_ANON_KEY || '').trim();
+const SUPABASE_ACCOUNTS_TABLE = 'ritp_accounts';
 const MAX_PROFILE_PHOTO_DIMENSION = 320;
 const PROFILE_PHOTO_QUALITY = 0.8;
+let pendingCloudAccountsSync = null;
+let cloudAccountsSyncTimer = null;
+let cloudAccountsSyncInFlight = false;
 
 function saveLocalJSON(key, value) {
   try {
@@ -2871,8 +2883,141 @@ function loadAccounts() {
   }
 }
 
+function isCloudAccountsConfigured() {
+  return SUPABASE_URL.startsWith('http') && SUPABASE_ANON_KEY.length > 20;
+}
+
+function buildCloudHeaders(extra = {}) {
+  return {
+    apikey: SUPABASE_ANON_KEY,
+    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    ...extra
+  };
+}
+
+function toCloudAccountRow(email, account) {
+  return {
+    email: normalizeEmail(email || ''),
+    password: String(account.password || ''),
+    role: account.role || getPrimaryRoleFromRoles(normalizeRoles(account.roles || [account.role || 'Student'])),
+    roles: normalizeRoles(account.roles || [account.role || 'Student'])
+  };
+}
+
+function fromCloudAccountRow(row) {
+  const email = normalizeEmail(row.email || '');
+  if (!email) return null;
+  const roles = normalizeRoles(Array.isArray(row.roles) ? row.roles : [row.role || 'Student']);
+  return {
+    email,
+    account: {
+      password: String(row.password || ''),
+      role: getPrimaryRoleFromRoles(roles),
+      roles
+    }
+  };
+}
+
+async function fetchCloudAccounts() {
+  if (!isCloudAccountsConfigured()) return null;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_ACCOUNTS_TABLE}?select=email,password,role,roles`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: buildCloudHeaders()
+    });
+    if (!response.ok) throw new Error(`Cloud load failed (${response.status})`);
+    const rows = await response.json();
+    const mapped = {};
+    (rows || []).forEach((row) => {
+      const normalized = fromCloudAccountRow(row);
+      if (normalized) mapped[normalized.email] = normalized.account;
+    });
+    return mapped;
+  } catch (error) {
+    console.warn('Cloud account fetch failed. Using local fallback.', error);
+    return null;
+  }
+}
+
+async function upsertCloudAccounts(accountsMap) {
+  if (!isCloudAccountsConfigured()) return false;
+  const rows = Object.entries(accountsMap || {})
+    .map(([email, account]) => toCloudAccountRow(email, account))
+    .filter((row) => row.email);
+  if (!rows.length) return true;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_ACCOUNTS_TABLE}?on_conflict=email`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: buildCloudHeaders({
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal'
+      }),
+      body: JSON.stringify(rows)
+    });
+    if (!response.ok) throw new Error(`Cloud sync failed (${response.status})`);
+    return true;
+  } catch (error) {
+    console.warn('Cloud account sync failed.', error);
+    return false;
+  }
+}
+
+async function deleteCloudAccount(email) {
+  if (!isCloudAccountsConfigured()) return false;
+  try {
+    const key = encodeURIComponent(normalizeEmail(email || ''));
+    if (!key) return false;
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_ACCOUNTS_TABLE}?email=eq.${key}`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: buildCloudHeaders({ Prefer: 'return=minimal' })
+    });
+    if (!response.ok) throw new Error(`Cloud delete failed (${response.status})`);
+    return true;
+  } catch (error) {
+    console.warn('Cloud account delete failed.', error);
+    return false;
+  }
+}
+
+function queueCloudAccountsSync(accounts) {
+  if (!isCloudAccountsConfigured()) return;
+  pendingCloudAccountsSync = JSON.parse(JSON.stringify(accounts || {}));
+  if (cloudAccountsSyncTimer || cloudAccountsSyncInFlight) return;
+  cloudAccountsSyncTimer = setTimeout(flushCloudAccountsSync, 350);
+}
+
+async function flushCloudAccountsSync() {
+  cloudAccountsSyncTimer = null;
+  if (cloudAccountsSyncInFlight || !pendingCloudAccountsSync) return;
+  cloudAccountsSyncInFlight = true;
+  const snapshot = pendingCloudAccountsSync;
+  pendingCloudAccountsSync = null;
+  await upsertCloudAccounts(snapshot);
+  cloudAccountsSyncInFlight = false;
+  if (pendingCloudAccountsSync) {
+    cloudAccountsSyncTimer = setTimeout(flushCloudAccountsSync, 350);
+  }
+}
+
+async function refreshAccountsFromCloud() {
+  const cloudAccounts = await fetchCloudAccounts();
+  if (!cloudAccounts) return false;
+  accountsByEmail = { ...accountsByEmail, ...cloudAccounts };
+  normalizeAccountRoles();
+  saveLocalJSON(ACCOUNTS_STORAGE_KEY, accountsByEmail);
+  return true;
+}
+
 function saveAccounts(accounts) {
-  return saveLocalJSON(ACCOUNTS_STORAGE_KEY, accounts);
+  const savedLocal = saveLocalJSON(ACCOUNTS_STORAGE_KEY, accounts);
+  if (savedLocal) queueCloudAccountsSync(accounts);
+  return savedLocal;
 }
 
 function loadRoleRequests() {
@@ -4375,6 +4520,7 @@ function deleteUserAccount(email) {
   delete profilesByUser[key];
   delete themePrefByUser[key];
   removeUserActivityData(key);
+  deleteCloudAccount(key);
 
   const allSaved = (
     saveAccounts(accountsByEmail) &&
@@ -4723,6 +4869,10 @@ function openDashboard(userName) {
       updateThemeButton();
       setBackgroundForDashboard(true);
       setActiveSection('dashboard');
+      refreshAccountsFromCloud().then(() => {
+        renderSearchUsers();
+        renderConnectionsList();
+      });
     }
 
     function logout() {
@@ -4778,8 +4928,9 @@ function openDashboard(userName) {
       }
     }
 
-    loginForm.addEventListener('submit', (event) => {
+    loginForm.addEventListener('submit', async (event) => {
   event.preventDefault();
+  await refreshAccountsFromCloud();
   const email = normalizeEmail(usernameInput.value);
   const password = passwordInput.value.trim();
 
@@ -4814,8 +4965,9 @@ function openDashboard(userName) {
   openDashboard(email);
 });
 
-    signupForm.addEventListener('submit', (event) => {
+    signupForm.addEventListener('submit', async (event) => {
   event.preventDefault();
+  await refreshAccountsFromCloud();
   const email = normalizeEmail(signupUsernameInput.value);
   const password = signupPasswordInput.value.trim();
   const confirmPassword = signupConfirmPasswordInput.value.trim();
@@ -5238,20 +5390,23 @@ function openDashboard(userName) {
     applyAppTheme('light', false);
     updateVideoWatermarks();
 
-    const activeSession = loadSession();
-    if (activeSession && activeSession.email) {
-      const email = normalizeEmail(activeSession.email);
-      const account = accountsByEmail[email];
-      if (account) {
-        usernameInput.value = email;
-        openDashboard(email);
+    (async () => {
+      await refreshAccountsFromCloud();
+      const activeSession = loadSession();
+      if (activeSession && activeSession.email) {
+        const email = normalizeEmail(activeSession.email);
+        const account = accountsByEmail[email];
+        if (account) {
+          usernameInput.value = email;
+          openDashboard(email);
+        } else {
+          clearSession();
+          showLoginScreen("");
+        }
       } else {
-        clearSession();
         showLoginScreen("");
       }
-    } else {
-      showLoginScreen("");
-    }
+    })();
   </script>
 </body>
 </html>
