@@ -6,7 +6,7 @@
   <title>RITP Learning Portal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
       --bg-start: #0f766e;
@@ -2191,37 +2191,45 @@
 
     .dashboard.theme-stranger {
       background:
-        radial-gradient(1200px 500px at 80% -10%, rgba(255, 60, 60, 0.15), transparent 56%),
-        radial-gradient(900px 460px at 10% 110%, rgba(220, 38, 38, 0.16), transparent 58%),
-        linear-gradient(180deg, #120708 0%, #0a0a0c 55%, #08080a 100%);
+        radial-gradient(circle at 50% -25%, rgba(220, 38, 38, 0.22), transparent 55%),
+        linear-gradient(180deg, #000 0%, #070707 58%, #000 100%);
       position: relative;
       overflow: hidden;
     }
 
-    .dashboard.theme-stranger::before,
+    .dashboard.theme-stranger::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0.16;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          rgba(255, 255, 255, 0.08) 0,
+          rgba(255, 255, 255, 0.08) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+      mix-blend-mode: soft-light;
+    }
+
     .dashboard.theme-stranger::after {
       content: "";
       position: fixed;
+      right: 1.2rem;
       bottom: 0;
-      width: 210px;
-      height: 340px;
-      pointer-events: none;
-      opacity: 0.26;
+      width: 190px;
+      height: 330px;
       z-index: 1;
-      filter: drop-shadow(0 0 18px rgba(239, 68, 68, 0.34));
+      pointer-events: none;
+      opacity: 0.18;
       background:
-        radial-gradient(circle at 50% 16%, rgba(248, 113, 113, 0.8) 0 18px, transparent 18px),
-        linear-gradient(180deg, rgba(239, 68, 68, 0.35) 0%, rgba(30, 3, 3, 0.95) 62%);
-      clip-path: polygon(40% 0%, 60% 0%, 69% 15%, 77% 37%, 86% 63%, 100% 100%, 0% 100%, 14% 63%, 23% 37%, 31% 15%);
-    }
-
-    .dashboard.theme-stranger::before {
-      left: 14px;
-    }
-
-    .dashboard.theme-stranger::after {
-      right: 14px;
-      transform: scaleX(-1);
+        radial-gradient(circle at 50% 18%, rgba(239, 68, 68, 0.75) 0 16px, transparent 16px),
+        linear-gradient(180deg, rgba(239, 68, 68, 0.4) 0%, rgba(10, 10, 10, 0.96) 62%);
+      clip-path: polygon(40% 0%, 60% 0%, 70% 18%, 80% 39%, 88% 63%, 100% 100%, 0 100%, 12% 63%, 20% 39%, 30% 18%);
+      filter: drop-shadow(0 0 16px rgba(220, 38, 38, 0.5));
     }
 
     .dashboard.theme-stranger .navbar,
@@ -2231,89 +2239,111 @@
     .dashboard.theme-stranger .notifications-panel {
       position: relative;
       z-index: 2;
-      background: linear-gradient(155deg, rgba(17, 17, 20, 0.9), rgba(36, 8, 8, 0.88));
-      border-color: rgba(248, 113, 113, 0.38);
-      color: #fee2e2;
-      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(239, 68, 68, 0.12);
+      background: rgba(5, 5, 5, 0.92);
+      border-color: rgba(220, 38, 38, 0.34);
+      border-radius: 0;
+      color: #f5f5f5;
+      box-shadow: 0 0 24px rgba(127, 29, 29, 0.26);
     }
 
     .dashboard.theme-stranger .title,
+    .dashboard.theme-stranger .panel h2 {
+      color: #ef4444;
+      font-family: "Oswald", "Bebas Neue", "Manrope", sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      animation: strangerFlicker 3.4s infinite steps(2, end);
+      text-shadow: 0 0 10px rgba(220, 38, 38, 0.6), 0 0 20px rgba(220, 38, 38, 0.3);
+    }
+
     .dashboard.theme-stranger .welcome,
-    .dashboard.theme-stranger .panel h2,
     .dashboard.theme-stranger .card span,
     .dashboard.theme-stranger .field label,
     .dashboard.theme-stranger .video-hint,
     .dashboard.theme-stranger .assignment-meta,
     .dashboard.theme-stranger .course-app-name {
-      color: #fda4af;
-      text-shadow: 0 0 10px rgba(220, 38, 38, 0.4);
-      letter-spacing: 0.02em;
-    }
-
-    .dashboard.theme-stranger .card h3 {
-      color: #ffe4e6;
-      text-shadow: 0 0 16px rgba(248, 113, 113, 0.32);
+      color: #e5e5e5;
     }
 
     .dashboard.theme-stranger .menu button {
-      color: #fecaca;
+      color: #f87171;
+      border-radius: 0;
     }
 
     .dashboard.theme-stranger .menu button:hover,
     .dashboard.theme-stranger .menu button.active {
-      background: linear-gradient(90deg, rgba(127, 29, 29, 0.35), rgba(69, 10, 10, 0.2));
-      color: #fff1f2;
+      background: rgba(220, 38, 38, 0.24);
+      color: #fff;
+      box-shadow: inset 0 0 0 1px rgba(248, 113, 113, 0.35), 0 0 14px rgba(220, 38, 38, 0.22);
     }
 
     .dashboard.theme-stranger th,
     .dashboard.theme-stranger td {
-      color: #ffe4e6;
-      border-bottom-color: rgba(248, 113, 113, 0.24);
+      color: #ededed;
+      border-bottom-color: rgba(220, 38, 38, 0.22);
     }
 
     .dashboard.theme-stranger thead th {
-      background: rgba(127, 29, 29, 0.68);
-      color: #fff1f2;
+      background: rgba(127, 29, 29, 0.72);
+      color: #fff;
+      font-family: "Oswald", "Bebas Neue", "Manrope", sans-serif;
+      letter-spacing: 0.04em;
     }
 
     .dashboard.theme-stranger tbody tr:hover {
-      background: rgba(127, 29, 29, 0.26);
+      background: rgba(127, 29, 29, 0.24);
     }
 
     .dashboard.theme-stranger .list li,
     .dashboard.theme-stranger .notifications-list li {
-      background: linear-gradient(145deg, rgba(16, 16, 18, 0.9), rgba(39, 8, 8, 0.7));
-      border-color: rgba(248, 113, 113, 0.32);
-      color: #ffe4e6;
+      background: rgba(3, 3, 3, 0.95);
+      border-color: rgba(220, 38, 38, 0.26);
+      color: #efefef;
+      border-radius: 0;
     }
 
     .dashboard.theme-stranger .notifications-list li.unread {
-      background: linear-gradient(145deg, rgba(153, 27, 27, 0.45), rgba(69, 10, 10, 0.35));
-      border-color: rgba(251, 113, 133, 0.54);
+      background: rgba(127, 29, 29, 0.42);
+      border-color: rgba(248, 113, 113, 0.45);
     }
 
     .dashboard.theme-stranger input,
     .dashboard.theme-stranger select {
-      color: #fff1f2;
-      background: rgba(10, 10, 12, 0.88);
-      border-color: rgba(248, 113, 113, 0.45);
+      color: #fff;
+      background: #0a0a0a;
+      border-color: rgba(220, 38, 38, 0.42);
+      border-radius: 0;
     }
 
     .dashboard.theme-stranger input::placeholder {
-      color: #fca5a5;
+      color: #b1b1b1;
     }
 
     .dashboard.theme-stranger .video-open-btn,
     .dashboard.theme-stranger .nav-icon-btn {
-      color: #fff1f2;
-      background: linear-gradient(150deg, rgba(69, 10, 10, 0.85), rgba(127, 29, 29, 0.6));
-      border-color: rgba(248, 113, 113, 0.55);
-      box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.22), 0 0 14px rgba(239, 68, 68, 0.26);
+      color: #fff;
+      background: #210909;
+      border-color: rgba(220, 38, 38, 0.55);
+      border-radius: 0;
+      box-shadow: 0 0 12px rgba(220, 38, 38, 0.28);
     }
 
     .dashboard.theme-stranger .panel-head {
-      background: linear-gradient(90deg, rgba(35, 7, 7, 0.96), rgba(20, 6, 6, 0.92));
-      border-bottom-color: rgba(248, 113, 113, 0.34);
+      background: rgba(16, 0, 0, 0.88);
+      border-bottom-color: rgba(220, 38, 38, 0.4);
+      border-radius: 0;
+    }
+
+    @keyframes strangerFlicker {
+      0%, 19%, 21%, 23%, 80%, 100% {
+        opacity: 1;
+      }
+      20%, 22% {
+        opacity: 0.55;
+      }
+      81% {
+        opacity: 0.7;
+      }
     }
   </style>
 </head>
