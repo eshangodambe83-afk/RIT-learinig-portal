@@ -2747,6 +2747,20 @@
               <p class="assignment-meta" id="suggestions-list-title">Suggestions history</p>
               <ul class="list" id="suggestions-list"></ul>
             </article>
+            <article class="panel">
+              <div class="panel-head"><h2>Report Bug</h2></div>
+              <form class="upload-form" id="bug-report-form">
+                <div class="field">
+                  <label for="bug-report-input">Report a bug to Admin</label>
+                  <input id="bug-report-input" type="text" placeholder="Describe the bug you found" maxlength="260" />
+                </div>
+                <button class="btn" id="bug-report-submit-btn" type="submit">Send Bug Report</button>
+                <p class="success-msg" id="bug-report-help" aria-live="polite"></p>
+              </form>
+              <div class="panel-head"><h2>Bug Report Updates</h2></div>
+              <p class="assignment-meta" id="bug-reports-list-title">Bug report history</p>
+              <ul class="list" id="bug-reports-list"></ul>
+            </article>
           </div>
         </section>
         <section class="section" id="section-search">
@@ -2944,6 +2958,12 @@ const classAssignmentsFeed = document.getElementById('class-assignments-feed');
     const suggestionHelp = document.getElementById('suggestion-help');
     const suggestionsList = document.getElementById('suggestions-list');
     const suggestionsListTitle = document.getElementById('suggestions-list-title');
+    const bugReportForm = document.getElementById('bug-report-form');
+    const bugReportInput = document.getElementById('bug-report-input');
+    const bugReportSubmitBtn = document.getElementById('bug-report-submit-btn');
+    const bugReportHelp = document.getElementById('bug-report-help');
+    const bugReportsList = document.getElementById('bug-reports-list');
+    const bugReportsListTitle = document.getElementById('bug-reports-list-title');
     const profileRoleTitle = document.getElementById('profile-role-title');
     const searchConnectForm = document.getElementById('search-connect-form');
     const searchConnectInput = document.getElementById('search-connect-input');
@@ -2990,6 +3010,7 @@ const SUPABASE_ANON_KEY = String(window.RITP_SUPABASE_ANON_KEY || '').trim();
 const SUPABASE_ACCOUNTS_TABLE = 'ritp_accounts';
 const SUPABASE_PROFILES_TABLE = 'ritp_profiles';
 const SUPABASE_SUGGESTIONS_TABLE = 'ritp_suggestions';
+const SUPABASE_BUG_REPORTS_TABLE = 'ritp_bug_reports';
 const MAX_PROFILE_PHOTO_DIMENSION = 320;
 const PROFILE_PHOTO_QUALITY = 0.8;
 let pendingCloudAccountsSync = null;
@@ -3751,6 +3772,139 @@ async function refreshSuggestionsFromCloud() {
 let profilesByUser = loadProfiles();
 let themePrefByUser = loadThemePrefs();
 let suggestionsData = loadSuggestions().map(normalizeSuggestion);
+const BUG_REPORTS_STORAGE_KEY = 'ritp_bug_reports_v1';
+function loadBugReports() {
+  try {
+    const raw = localStorage.getItem(BUG_REPORTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function normalizeBugReport(item) {
+  const idRaw = Number(item && item.id);
+  return {
+    id: Number.isFinite(idRaw) && idRaw > 0 ? idRaw : Date.now(),
+    email: normalizeEmail((item && item.email) || ''),
+    fromRole: String((item && item.fromRole) || 'Student'),
+    text: String((item && item.text) || '').trim(),
+    status: String((item && item.status) || 'open'),
+    createdAt: Number(item && item.createdAt) || Date.now(),
+    reviewedBy: String((item && item.reviewedBy) || ''),
+    reviewedAt: Number(item && item.reviewedAt) || 0
+  };
+}
+
+function saveBugReports() {
+  return saveLocalJSON(BUG_REPORTS_STORAGE_KEY, bugReportsData);
+}
+
+function toCloudBugReportRow(item) {
+  const b = normalizeBugReport(item);
+  return {
+    id: b.id,
+    email: b.email,
+    from_role: b.fromRole,
+    text: b.text,
+    status: b.status,
+    created_at: new Date(b.createdAt).toISOString(),
+    reviewed_by: b.reviewedBy || null,
+    reviewed_at: b.reviewedAt ? new Date(b.reviewedAt).toISOString() : null
+  };
+}
+
+function fromCloudBugReportRow(row) {
+  return normalizeBugReport({
+    id: row.id,
+    email: row.email,
+    fromRole: row.from_role,
+    text: row.text,
+    status: row.status,
+    createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+    reviewedBy: row.reviewed_by || '',
+    reviewedAt: row.reviewed_at ? new Date(row.reviewed_at).getTime() : 0
+  });
+}
+
+async function fetchCloudBugReports() {
+  if (!isCloudAccountsConfigured()) return null;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_BUG_REPORTS_TABLE}?select=id,email,from_role,text,status,created_at,reviewed_by,reviewed_at&order=created_at.desc`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: buildCloudHeaders()
+    });
+    if (!response.ok) throw new Error(`Cloud bug reports load failed (${response.status})`);
+    const rows = await response.json();
+    return (rows || []).map(fromCloudBugReportRow);
+  } catch (error) {
+    console.warn('Cloud bug reports fetch failed. Using local fallback.', error);
+    return null;
+  }
+}
+
+async function insertCloudBugReport(item) {
+  if (!isCloudAccountsConfigured()) return false;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_BUG_REPORTS_TABLE}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: buildCloudHeaders({
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      }),
+      body: JSON.stringify([toCloudBugReportRow(item)])
+    });
+    if (!response.ok) throw new Error(`Cloud bug report insert failed (${response.status})`);
+    return true;
+  } catch (error) {
+    console.warn('Cloud bug report insert failed.', error);
+    return false;
+  }
+}
+
+async function updateCloudBugReportStatus(item) {
+  if (!isCloudAccountsConfigured()) return false;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const id = Number(item && item.id);
+    if (!Number.isFinite(id)) return false;
+    const url = `${base}/rest/v1/${SUPABASE_BUG_REPORTS_TABLE}?id=eq.${id}`;
+    const payload = toCloudBugReportRow(item);
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: buildCloudHeaders({
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      }),
+      body: JSON.stringify({
+        status: payload.status,
+        reviewed_by: payload.reviewed_by,
+        reviewed_at: payload.reviewed_at
+      })
+    });
+    if (!response.ok) throw new Error(`Cloud bug report update failed (${response.status})`);
+    return true;
+  } catch (error) {
+    console.warn('Cloud bug report update failed.', error);
+    return false;
+  }
+}
+
+async function refreshBugReportsFromCloud() {
+  const cloudItems = await fetchCloudBugReports();
+  if (!cloudItems) return false;
+  bugReportsData = cloudItems
+    .filter((item) => item.text)
+    .sort((a, b) => b.createdAt - a.createdAt);
+  saveBugReports();
+  return true;
+}
+
+let bugReportsData = loadBugReports().map(normalizeBugReport);
 let lastProtectionNoticeAt = 0;
 const unskippableVideoProgressBySrc = {};
 const CONNECTIONS_STORAGE_KEY = 'ritp_connections_v1';
@@ -5325,6 +5479,77 @@ function renderSuggestionsPanel() {
   });
 }
 
+function renderBugReportsPanel() {
+  if (!bugReportsList || !bugReportsListTitle || !bugReportForm) return;
+  const isAdmin = currentUserRole === 'Admin';
+  const canSubmit = currentUserRoles.includes('Student') || currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD');
+
+  bugReportForm.classList.toggle('hidden', !canSubmit);
+  if (bugReportHelp && !canSubmit) {
+    bugReportHelp.textContent = '';
+  }
+
+  if (!currentUserName) {
+    bugReportsListTitle.textContent = 'Login to view bug reports.';
+    bugReportsList.innerHTML = '<li>Please login first.</li>';
+    return;
+  }
+
+  let visible = [];
+  if (isAdmin) {
+    visible = bugReportsData.slice().sort((a, b) => b.createdAt - a.createdAt);
+    bugReportsListTitle.textContent = 'All bug reports sent to Admin';
+  } else {
+    const key = normalizeEmail(currentUserName);
+    visible = bugReportsData
+      .filter((item) => normalizeEmail(item.email) === key)
+      .sort((a, b) => b.createdAt - a.createdAt);
+    bugReportsListTitle.textContent = 'Your bug reports';
+  }
+
+  if (!visible.length) {
+    bugReportsList.innerHTML = '<li>No bug reports yet.</li>';
+    return;
+  }
+
+  bugReportsList.innerHTML = visible.map((item) => {
+    const when = item.createdAt ? new Date(item.createdAt).toLocaleString() : '-';
+    const reviewedText = item.reviewedBy
+      ? `Reviewed by: ${escapeHtml(item.reviewedBy)}${item.reviewedAt ? ` | ${new Date(item.reviewedAt).toLocaleString()}` : ''}`
+      : 'Not reviewed yet';
+    const status = item.status === 'reviewed' ? 'Reviewed' : 'Open';
+    const adminAction = isAdmin && item.status !== 'reviewed'
+      ? `<div style="margin-top:8px;"><button type="button" class="video-open-btn bug-report-review-btn" data-id="${item.id}">Mark Reviewed</button></div>`
+      : '';
+    return `<li>
+      <strong>${escapeHtml(item.text)}</strong>
+      <div class="assignment-meta">From: ${escapeHtml(item.email)} (${escapeHtml(item.fromRole)}) | ${when} | Status: ${status}</div>
+      <div class="assignment-meta">${reviewedText}</div>
+      ${adminAction}
+    </li>`;
+  }).join('');
+
+  bugReportsList.querySelectorAll('.bug-report-review-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!isAdmin) return;
+      const id = Number(btn.dataset.id);
+      const item = bugReportsData.find((entry) => Number(entry.id) === id);
+      if (!item) return;
+      item.status = 'reviewed';
+      item.reviewedBy = currentUserName;
+      item.reviewedAt = Date.now();
+      if (!saveBugReports()) {
+        bugReportHelp.textContent = 'Could not update bug report status on this device.';
+        bugReportHelp.style.color = '#b91c1c';
+        return;
+      }
+      await updateCloudBugReportStatus(item);
+      renderBugReportsPanel();
+      addNotification(`Bug report reviewed: ${item.email}`);
+    });
+  });
+}
+
 function renderSearchUsers() {
   if (!searchResults) return;
   const q = (searchConnectInput.value || '').trim().toLowerCase();
@@ -5490,6 +5715,7 @@ function openDashboard(userName) {
       renderNotifications();
       renderAnnouncements();
       renderSuggestionsPanel();
+      renderBugReportsPanel();
       if (currentPlaylistCourse) {
         renderCourseAccessPanel({ name: currentPlaylistCourse });
         bindCourseAccessActions(currentPlaylistCourse);
@@ -5497,12 +5723,13 @@ function openDashboard(userName) {
       updateThemeButton();
       setBackgroundForDashboard(true);
       setActiveSection('dashboard');
-      Promise.all([refreshAccountsFromCloud(), refreshProfilesFromCloud(), refreshSuggestionsFromCloud()]).then(() => {
+      Promise.all([refreshAccountsFromCloud(), refreshProfilesFromCloud(), refreshSuggestionsFromCloud(), refreshBugReportsFromCloud()]).then(() => {
         renderUserProfile();
         updateNavbarProfileAvatar();
         renderSearchUsers();
         renderConnectionsList();
         renderSuggestionsPanel();
+        renderBugReportsPanel();
       });
     }
 
@@ -5562,8 +5789,9 @@ function openDashboard(userName) {
         renderMyTeacherCourses();
       }
       if (target === 'settings') {
-        refreshSuggestionsFromCloud().then(() => {
+        Promise.all([refreshSuggestionsFromCloud(), refreshBugReportsFromCloud()]).then(() => {
           renderSuggestionsPanel();
+          renderBugReportsPanel();
         });
       }
       if (target === 'search' || target === 'profile') {
@@ -5892,6 +6120,59 @@ function openDashboard(userName) {
       addNotification('New suggestion sent to Admin.');
     });
 
+    bugReportForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!currentUserName) {
+        bugReportHelp.textContent = 'Please login first.';
+        bugReportHelp.style.color = '#b91c1c';
+        return;
+      }
+      const canSubmit = currentUserRoles.includes('Student') || currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD');
+      if (!canSubmit) {
+        bugReportHelp.textContent = 'Only Student, Teacher, or HOD can send bug reports.';
+        bugReportHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      const text = String(bugReportInput.value || '').trim();
+      if (!text) {
+        bugReportHelp.textContent = 'Please describe the bug.';
+        bugReportHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      const item = normalizeBugReport({
+        id: Date.now(),
+        email: currentUserName,
+        fromRole: currentUserRole,
+        text,
+        status: 'open',
+        createdAt: Date.now(),
+        reviewedBy: '',
+        reviewedAt: 0
+      });
+
+      bugReportsData.unshift(item);
+      if (!saveBugReports()) {
+        bugReportsData = bugReportsData.filter((entry) => Number(entry.id) !== Number(item.id));
+        bugReportHelp.textContent = 'Could not save bug report on this device.';
+        bugReportHelp.style.color = '#b91c1c';
+        return;
+      }
+
+      const cloudSaved = await insertCloudBugReport(item);
+      renderBugReportsPanel();
+      bugReportForm.reset();
+      if (cloudSaved || !isCloudAccountsConfigured()) {
+        bugReportHelp.textContent = 'Bug report sent to Admin successfully.';
+        bugReportHelp.style.color = '#166534';
+      } else {
+        bugReportHelp.textContent = 'Bug report saved locally, but cloud sync failed.';
+        bugReportHelp.style.color = '#b91c1c';
+      }
+      addNotification('New bug report sent to Admin.');
+    });
+
     searchConnectInput.addEventListener('input', renderSearchUsers);
 
     profileSearchBtn.addEventListener("click", () => {
@@ -6111,6 +6392,7 @@ function openDashboard(userName) {
     renderNotifications();
     renderAnnouncements();
     renderSuggestionsPanel();
+    renderBugReportsPanel();
     applyAppTheme('light', false);
     updateVideoWatermarks();
 
@@ -6118,6 +6400,7 @@ function openDashboard(userName) {
       await refreshAccountsFromCloud();
       await refreshProfilesFromCloud();
       await refreshSuggestionsFromCloud();
+      await refreshBugReportsFromCloud();
       const activeSession = loadSession();
       if (activeSession && activeSession.email) {
         const email = normalizeEmail(activeSession.email);
