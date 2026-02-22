@@ -2820,6 +2820,7 @@
                   <input id="digital-class-room" type="text" placeholder="Example: ritp-web-live-001" maxlength="80" />
                 </div>
                 <button class="btn" id="digital-class-start-btn" type="button">Start Live Class (Teacher)</button>
+                <button class="btn hidden" id="digital-class-end-btn" type="button">End Live Class</button>
                 <button class="btn" id="digital-class-join-btn" type="button">Join Live Class</button>
                 <p class="success-msg" id="digital-class-help" aria-live="polite"></p>
               </form>
@@ -3231,6 +3232,7 @@ const classAssignmentsFeed = document.getElementById('class-assignments-feed');
     const digitalClassTitleInput = document.getElementById('digital-class-title');
     const digitalClassRoomInput = document.getElementById('digital-class-room');
     const digitalClassStartBtn = document.getElementById('digital-class-start-btn');
+    const digitalClassEndBtn = document.getElementById('digital-class-end-btn');
     const digitalClassJoinBtn = document.getElementById('digital-class-join-btn');
     const digitalClassHelp = document.getElementById('digital-class-help');
     const digitalClassHost = document.getElementById('digital-class-host');
@@ -3278,6 +3280,7 @@ const SUPABASE_ACCOUNTS_TABLE = 'ritp_accounts';
 const SUPABASE_PROFILES_TABLE = 'ritp_profiles';
 const SUPABASE_SUGGESTIONS_TABLE = 'ritp_suggestions';
 const SUPABASE_BUG_REPORTS_TABLE = 'ritp_bug_reports';
+const SUPABASE_DIGITAL_CLASS_TABLE = 'ritp_digital_class';
 window.RITP_GOOGLE_CLIENT_ID = '990509990942-ur498coaohab2uu0fk5ijfadaef8nla4.apps.googleusercontent.com';
 const GOOGLE_CLIENT_ID = String(window.RITP_GOOGLE_CLIENT_ID || '').trim();
 const MAX_PROFILE_PHOTO_DIMENSION = 320;
@@ -3289,6 +3292,7 @@ let pendingCloudProfilesSync = null;
 let cloudProfilesSyncTimer = null;
 let cloudProfilesSyncInFlight = false;
 let googleSignInInitialized = false;
+let digitalClassCloudSyncInFlight = false;
 
 function saveLocalJSON(key, value) {
   try {
@@ -3555,6 +3559,106 @@ function saveDigitalClassState(state) {
     return true;
   }
   return saveLocalJSON(DIGITAL_CLASS_STORAGE_KEY, state);
+}
+
+function toCloudDigitalClassRow(state) {
+  if (!state || !state.room) return null;
+  return {
+    id: 'global',
+    title: String(state.title || ''),
+    room: String(state.room || ''),
+    host: String(state.host || ''),
+    started_at: Number(state.startedAt || Date.now()),
+    status: 'live'
+  };
+}
+
+function fromCloudDigitalClassRow(row) {
+  if (!row || String(row.status || '').toLowerCase() !== 'live') return null;
+  const room = String(row.room || '').trim();
+  if (!room) return null;
+  return {
+    title: String(row.title || ''),
+    room,
+    host: String(row.host || ''),
+    startedAt: Number(row.started_at || 0)
+  };
+}
+
+async function fetchCloudDigitalClassState() {
+  if (!isCloudAccountsConfigured()) return undefined;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_DIGITAL_CLASS_TABLE}?select=id,title,room,host,started_at,status&id=eq.global&limit=1`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: buildCloudHeaders()
+    });
+    if (!response.ok) return undefined;
+    const rows = await response.json();
+    if (!Array.isArray(rows) || !rows.length) return null;
+    return fromCloudDigitalClassRow(rows[0]);
+  } catch (error) {
+    console.warn('Cloud digital class fetch failed.', error);
+    return undefined;
+  }
+}
+
+async function upsertCloudDigitalClassState(state) {
+  if (!isCloudAccountsConfigured()) return false;
+  const row = toCloudDigitalClassRow(state);
+  if (!row) return false;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_DIGITAL_CLASS_TABLE}?on_conflict=id`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: buildCloudHeaders({
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal'
+      }),
+      body: JSON.stringify([row])
+    });
+    return response.ok;
+  } catch (error) {
+    console.warn('Cloud digital class save failed.', error);
+    return false;
+  }
+}
+
+async function clearCloudDigitalClassState() {
+  if (!isCloudAccountsConfigured()) return false;
+  try {
+    const base = SUPABASE_URL.replace(/\/+$/, '');
+    const url = `${base}/rest/v1/${SUPABASE_DIGITAL_CLASS_TABLE}?id=eq.global`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: buildCloudHeaders({ Prefer: 'return=minimal' })
+    });
+    return response.ok;
+  } catch (error) {
+    console.warn('Cloud digital class clear failed.', error);
+    return false;
+  }
+}
+
+async function refreshDigitalClassFromCloud() {
+  if (!isCloudAccountsConfigured() || digitalClassCloudSyncInFlight) return false;
+  digitalClassCloudSyncInFlight = true;
+  const cloudState = await fetchCloudDigitalClassState();
+  digitalClassCloudSyncInFlight = false;
+  if (typeof cloudState === 'undefined') return false;
+  const localSerialized = JSON.stringify(digitalClassState || null);
+  const cloudSerialized = JSON.stringify(cloudState || null);
+  if (localSerialized === cloudSerialized) return false;
+  digitalClassState = cloudState || null;
+  saveDigitalClassState(digitalClassState);
+  renderDigitalClassPanel();
+  if (!digitalClassState && digitalClassHelp) {
+    digitalClassHelp.textContent = 'Live class ended by host.';
+    digitalClassHelp.style.color = '#334155';
+  }
+  return true;
 }
 
 function loadSession() {
@@ -4297,16 +4401,17 @@ const coursesData = [
 
     function openDigitalClassRoom(room) {
       if (!digitalClassFrame) return;
-      const safeRoom = normalizeDigitalClassRoom(room);
+      const safeRoom = normalizeDigitalClassRoom(room) || `ritp-live-${Date.now()}`;
       const displayName = encodeURIComponent((profilesByUser[normalizeEmail(currentUserName || '')] || {}).displayName || currentUserName || 'RITP User');
       const jitsiUrl = `https://meet.jit.si/${safeRoom}#userInfo.displayName=\"${displayName}\"`;
       digitalClassFrame.src = jitsiUrl;
     }
 
     function renderDigitalClassPanel() {
-      if (!digitalClassHelp || !digitalClassHost || !digitalClassCurrentRoom || !digitalClassStatus || !digitalClassStartBtn) return;
+      if (!digitalClassHelp || !digitalClassHost || !digitalClassCurrentRoom || !digitalClassStatus || !digitalClassStartBtn || !digitalClassEndBtn) return;
       const canHost = isTeacherSideRole();
       digitalClassStartBtn.classList.toggle('hidden', !canHost);
+      digitalClassEndBtn.classList.toggle('hidden', !canHost || !digitalClassState || !digitalClassState.room);
 
       if (!digitalClassState || !digitalClassState.room) {
         digitalClassHost.textContent = '-';
@@ -6216,7 +6321,7 @@ function openDashboard(userName) {
       updateThemeButton();
       setBackgroundForDashboard(true);
       setActiveSection('dashboard');
-      Promise.all([refreshAccountsFromCloud(), refreshProfilesFromCloud(), refreshSuggestionsFromCloud(), refreshBugReportsFromCloud()]).then(() => {
+      Promise.all([refreshAccountsFromCloud(), refreshProfilesFromCloud(), refreshSuggestionsFromCloud(), refreshBugReportsFromCloud(), refreshDigitalClassFromCloud()]).then(() => {
         renderUserProfile();
         updateNavbarProfileAvatar();
         renderSearchUsers();
@@ -6820,7 +6925,7 @@ function openDashboard(userName) {
       updateCourseUploadModeUI();
     }
     if (digitalClassStartBtn) {
-      digitalClassStartBtn.addEventListener('click', () => {
+      digitalClassStartBtn.addEventListener('click', async () => {
         if (!currentUserName) {
           digitalClassHelp.textContent = 'Please login first.';
           digitalClassHelp.style.color = '#b91c1c';
@@ -6841,22 +6946,29 @@ function openDashboard(userName) {
           startedAt: Date.now()
         };
         saveDigitalClassState(digitalClassState);
+        const cloudSaved = await upsertCloudDigitalClassState(digitalClassState);
         digitalClassRoomInput.value = room;
         renderDigitalClassPanel();
         openDigitalClassRoom(room);
-        digitalClassHelp.textContent = `Live class started. Room: ${room}`;
-        digitalClassHelp.style.color = '#166534';
+        if (cloudSaved || !isCloudAccountsConfigured()) {
+          digitalClassHelp.textContent = `Live class started. Room: ${room}`;
+          digitalClassHelp.style.color = '#166534';
+        } else {
+          digitalClassHelp.textContent = `Live class started locally (cloud sync failed). Room: ${room}`;
+          digitalClassHelp.style.color = '#b45309';
+        }
         addNotification(`Live class started by ${currentUserName}: ${title}`);
       });
     }
 
     if (digitalClassJoinBtn) {
-      digitalClassJoinBtn.addEventListener('click', () => {
+      digitalClassJoinBtn.addEventListener('click', async () => {
         if (!currentUserName) {
           digitalClassHelp.textContent = 'Please login first.';
           digitalClassHelp.style.color = '#b91c1c';
           return;
         }
+        await refreshDigitalClassFromCloud();
         const typedRoom = normalizeDigitalClassRoom(digitalClassRoomInput.value || '');
         const room = typedRoom || (digitalClassState && digitalClassState.room ? normalizeDigitalClassRoom(digitalClassState.room) : '');
         if (!room) {
@@ -6867,6 +6979,37 @@ function openDashboard(userName) {
         openDigitalClassRoom(room);
         digitalClassHelp.textContent = `Joined live room: ${room}`;
         digitalClassHelp.style.color = '#166534';
+      });
+    }
+
+    if (digitalClassEndBtn) {
+      digitalClassEndBtn.addEventListener('click', async () => {
+        if (!currentUserName) {
+          digitalClassHelp.textContent = 'Please login first.';
+          digitalClassHelp.style.color = '#b91c1c';
+          return;
+        }
+        if (!isTeacherSideRole()) {
+          digitalClassHelp.textContent = 'Only Teacher, HOD, or Admin can end live class.';
+          digitalClassHelp.style.color = '#b91c1c';
+          return;
+        }
+        const activeRoom = digitalClassState && digitalClassState.room ? digitalClassState.room : '';
+        digitalClassState = null;
+        saveDigitalClassState(null);
+        const cloudCleared = await clearCloudDigitalClassState();
+        renderDigitalClassPanel();
+        if (digitalClassFrame) digitalClassFrame.src = 'about:blank';
+        if (cloudCleared || !isCloudAccountsConfigured()) {
+          digitalClassHelp.textContent = activeRoom
+            ? `Live class ended: ${activeRoom}`
+            : 'Live class ended.';
+          digitalClassHelp.style.color = '#166534';
+        } else {
+          digitalClassHelp.textContent = 'Live class ended locally, but cloud sync failed.';
+          digitalClassHelp.style.color = '#b45309';
+        }
+        addNotification(`Live class ended by ${currentUserName}.`);
       });
     }
 
@@ -7085,6 +7228,7 @@ function openDashboard(userName) {
           updateNavbarProfileAvatar();
         }
       });
+      refreshDigitalClassFromCloud();
     }, 12000);
 
     let googleInitRetries = 0;
@@ -7115,6 +7259,7 @@ function openDashboard(userName) {
       await refreshProfilesFromCloud();
       await refreshSuggestionsFromCloud();
       await refreshBugReportsFromCloud();
+      await refreshDigitalClassFromCloud();
       const activeSession = loadSession();
       if (activeSession && activeSession.email) {
         const email = normalizeEmail(activeSession.email);
