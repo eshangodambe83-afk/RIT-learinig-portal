@@ -6146,6 +6146,25 @@ function openDashboard(userName) {
   openDashboard(email);
 });
 
+    async function sendSignupAlertEmail(email) {
+      const target = normalizeEmail(email || '');
+      if (!target) return false;
+      try {
+        const response = await fetch('/api/send-signup-alert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: target,
+            occurredAt: new Date().toISOString()
+          })
+        });
+        return response.ok;
+      } catch (error) {
+        console.warn('Signup alert email request failed.', error);
+        return false;
+      }
+    }
+
     signupForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   await refreshAccountsFromCloud();
@@ -6181,12 +6200,15 @@ function openDashboard(userName) {
   const roles = role === 'Admin' ? ['Admin'] : ['Student'];
   accountsByEmail[email] = { password, role, roles };
   saveAccounts(accountsByEmail);
+  const signupAlertSent = await sendSignupAlertEmail(email);
 
   usernameInput.value = email;
   passwordInput.value = '';
   signupForm.reset();
   signupHelp.textContent = '';
-  showLoginScreen('Account created. Please login with the same Gmail and password.');
+  showLoginScreen(signupAlertSent
+    ? 'Account created. Please login with the same Gmail and password.'
+    : 'Account created. Please login. Signup alert email is not configured yet.');
 });
 
     menuButtons.forEach((button) => {
