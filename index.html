@@ -253,6 +253,18 @@
       margin-bottom: 8px;
     }
 
+    .google-fallback-btn {
+      min-width: 260px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      background: rgba(255, 255, 255, 0.14);
+      color: #f8fafc;
+      font-weight: 700;
+      padding: 10px 14px;
+      text-align: center;
+      font-size: 0.88rem;
+    }
+
     .dashboard {
       position: relative;
       z-index: 3;
@@ -3215,7 +3227,7 @@ const SUPABASE_ACCOUNTS_TABLE = 'ritp_accounts';
 const SUPABASE_PROFILES_TABLE = 'ritp_profiles';
 const SUPABASE_SUGGESTIONS_TABLE = 'ritp_suggestions';
 const SUPABASE_BUG_REPORTS_TABLE = 'ritp_bug_reports';
-window.RITP_GOOGLE_CLIENT_ID = window.RITP_GOOGLE_CLIENT_ID || '';
+window.RITP_GOOGLE_CLIENT_ID = 'YOUR_REAL_GOOGLE_CLIENT_ID';
 const GOOGLE_CLIENT_ID = String(window.RITP_GOOGLE_CLIENT_ID || '').trim();
 const MAX_PROFILE_PHOTO_DIMENSION = 320;
 const PROFILE_PHOTO_QUALITY = 0.8;
@@ -6250,13 +6262,28 @@ function openDashboard(userName) {
       openDashboard(email);
     }
 
+    function renderGoogleFallback(message) {
+      const loginBtn = document.getElementById('google-login-btn');
+      const signupBtn = document.getElementById('google-signup-btn');
+      const text = message || 'Continue with Google (setup required)';
+      const html = `<div class="google-fallback-btn">${escapeHtml(text)}</div>`;
+      if (loginBtn && !loginBtn.innerHTML.trim()) loginBtn.innerHTML = html;
+      if (signupBtn && !signupBtn.innerHTML.trim()) signupBtn.innerHTML = html;
+    }
+
     function initGoogleSignInButtons() {
       if (googleSignInInitialized) return;
-      if (!GOOGLE_CLIENT_ID || !window.google || !window.google.accounts || !window.google.accounts.id) return;
-
       const loginBtn = document.getElementById('google-login-btn');
       const signupBtn = document.getElementById('google-signup-btn');
       if (!loginBtn || !signupBtn) return;
+      if (!GOOGLE_CLIENT_ID) {
+        renderGoogleFallback('Continue with Google (add client ID)');
+        return;
+      }
+      if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+        renderGoogleFallback('Continue with Google (loading...)');
+        return;
+      }
 
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
