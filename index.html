@@ -227,6 +227,32 @@
       transform: translateY(0);
     }
 
+    .auth-divider {
+      margin: 14px 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #dbeafe;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .google-auth-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
     .dashboard {
       position: relative;
       z-index: 3;
@@ -2517,6 +2543,10 @@
         <p class="help" id="signup-help" aria-live="polite"></p>
         <button class="btn" type="submit">Create Account</button>
       </form>
+      <div class="auth-divider">or</div>
+      <div class="google-auth-wrap">
+        <div id="google-signup-btn"></div>
+      </div>
 
       <p class="switch-line">Already have an account?<button class="switch-btn" id="go-login-btn" type="button">Login</button></p>
     </section>
@@ -2543,6 +2573,10 @@
         <p class="help" id="login-help" aria-live="polite"></p>
         <button class="btn" type="submit">Login</button>
       </form>
+      <div class="auth-divider">or</div>
+      <div class="google-auth-wrap">
+        <div id="google-login-btn"></div>
+      </div>
 
       <p class="switch-line">New here?<button class="switch-btn" id="go-signup-btn" type="button">Signup</button></p>
     </section>
@@ -2995,6 +3029,7 @@
     </div>
   </main>
 
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
     const authBgVideo = document.getElementById('auth-bg-video');
     const authBgOverlay = document.getElementById('auth-bg-overlay');
@@ -3180,6 +3215,8 @@ const SUPABASE_ACCOUNTS_TABLE = 'ritp_accounts';
 const SUPABASE_PROFILES_TABLE = 'ritp_profiles';
 const SUPABASE_SUGGESTIONS_TABLE = 'ritp_suggestions';
 const SUPABASE_BUG_REPORTS_TABLE = 'ritp_bug_reports';
+window.RITP_GOOGLE_CLIENT_ID = window.RITP_GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_ID = String(window.RITP_GOOGLE_CLIENT_ID || '').trim();
 const MAX_PROFILE_PHOTO_DIMENSION = 320;
 const PROFILE_PHOTO_QUALITY = 0.8;
 let pendingCloudAccountsSync = null;
@@ -3188,6 +3225,7 @@ let cloudAccountsSyncInFlight = false;
 let pendingCloudProfilesSync = null;
 let cloudProfilesSyncTimer = null;
 let cloudProfilesSyncInFlight = false;
+let googleSignInInitialized = false;
 
 function saveLocalJSON(key, value) {
   try {
@@ -3253,6 +3291,19 @@ function loadAccounts() {
     return raw ? JSON.parse(raw) : {};
   } catch (error) {
     return {};
+  }
+}
+
+function decodeGoogleJwtPayload(credential) {
+  try {
+    const parts = String(credential || '').split('.');
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const json = atob(padded);
+    return JSON.parse(json);
+  } catch (error) {
+    return null;
   }
 }
 
@@ -5961,6 +6012,7 @@ function renderSearchUsers() {
       signupScreen.classList.remove('hidden');
       setAuthVisualVisibility(true);
       setBackgroundForDashboard(false);
+      initGoogleSignInButtons();
     }
 
     function showLoginScreen(message) {
@@ -5969,6 +6021,7 @@ function renderSearchUsers() {
       loginScreen.classList.remove('hidden');
       setAuthVisualVisibility(true);
       setBackgroundForDashboard(false);
+      initGoogleSignInButtons();
       if (message) {
         loginHelp.style.color = '#166534';
         loginHelp.textContent = message;
@@ -6163,6 +6216,70 @@ function openDashboard(userName) {
         console.warn('Signup alert email request failed.', error);
         return false;
       }
+    }
+
+    async function handleGoogleSignInResponse(response) {
+      const payload = decodeGoogleJwtPayload(response && response.credential ? response.credential : '');
+      const email = normalizeEmail(payload && payload.email ? payload.email : '');
+      const emailVerified = Boolean(payload && payload.email_verified);
+      if (!email || !isValidGmail(email)) {
+        const msg = 'Google account email is invalid for this portal.';
+        signupHelp.textContent = msg;
+        loginHelp.textContent = msg;
+        return;
+      }
+      if (!emailVerified) {
+        const msg = 'Google account email is not verified.';
+        signupHelp.textContent = msg;
+        loginHelp.textContent = msg;
+        return;
+      }
+
+      await refreshAccountsFromCloud();
+      const existing = accountsByEmail[email];
+      if (!existing) {
+        const tempPassword = `google_${Math.random().toString(36).slice(2, 12)}`;
+        const role = AUTO_ADMIN_EMAILS.has(email) ? 'Admin' : 'Student';
+        const roles = role === 'Admin' ? ['Admin'] : ['Student'];
+        accountsByEmail[email] = { password: tempPassword, role, roles };
+        saveAccounts(accountsByEmail);
+        await sendSignupAlertEmail(email);
+      }
+
+      saveSession(email);
+      openDashboard(email);
+    }
+
+    function initGoogleSignInButtons() {
+      if (googleSignInInitialized) return;
+      if (!GOOGLE_CLIENT_ID || !window.google || !window.google.accounts || !window.google.accounts.id) return;
+
+      const loginBtn = document.getElementById('google-login-btn');
+      const signupBtn = document.getElementById('google-signup-btn');
+      if (!loginBtn || !signupBtn) return;
+
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleSignInResponse
+      });
+
+      loginBtn.innerHTML = '';
+      signupBtn.innerHTML = '';
+      window.google.accounts.id.renderButton(loginBtn, {
+        theme: 'outline',
+        size: 'large',
+        shape: 'pill',
+        text: 'signin_with',
+        width: 260
+      });
+      window.google.accounts.id.renderButton(signupBtn, {
+        theme: 'outline',
+        size: 'large',
+        shape: 'pill',
+        text: 'signup_with',
+        width: 260
+      });
+      googleSignInInitialized = true;
     }
 
     signupForm.addEventListener('submit', async (event) => {
@@ -6757,6 +6874,15 @@ function openDashboard(userName) {
         }
       });
     }, 12000);
+
+    let googleInitRetries = 0;
+    const googleInitTimer = setInterval(() => {
+      initGoogleSignInButtons();
+      if (googleSignInInitialized || googleInitRetries >= 20) {
+        clearInterval(googleInitTimer);
+      }
+      googleInitRetries += 1;
+    }, 500);
 
     renderCourseViews();
     renderSubmittedAssignments();
