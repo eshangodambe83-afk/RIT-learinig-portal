@@ -2624,6 +2624,7 @@
         <nav class="menu" id="menu-buttons">
           <button data-target="dashboard" class="active" type="button">Dashboard</button>
           <button data-target="courses" type="button">Courses</button>
+          <button data-target="digital-class" id="digital-class-menu" type="button">Digital Class</button>
           <button data-target="progress" type="button">Progress</button>
           <button data-target="search" id="search-menu" class="hidden" type="button">Search</button>
           <button data-target="upload-course" id="upload-course-menu" class="hidden" type="button">Upload Course</button>
@@ -2803,6 +2804,44 @@
               <div class="course-icon-grid suggestions-row" id="playlist-suggestions-list"></div>
             </div>
           </article>
+        </section>
+
+        <section class="section" id="section-digital-class">
+          <div class="grid-2">
+            <article class="panel">
+              <div class="panel-head"><h2>Digital Class (Live)</h2></div>
+              <form class="upload-form" id="digital-class-form">
+                <div class="field">
+                  <label for="digital-class-title">Class Title</label>
+                  <input id="digital-class-title" type="text" placeholder="Example: Web Programming Live" maxlength="80" />
+                </div>
+                <div class="field">
+                  <label for="digital-class-room">Class Code (Room)</label>
+                  <input id="digital-class-room" type="text" placeholder="Example: ritp-web-live-001" maxlength="80" />
+                </div>
+                <button class="btn" id="digital-class-start-btn" type="button">Start Live Class (Teacher)</button>
+                <button class="btn" id="digital-class-join-btn" type="button">Join Live Class</button>
+                <p class="success-msg" id="digital-class-help" aria-live="polite"></p>
+              </form>
+              <ul class="list">
+                <li>Current Host: <strong id="digital-class-host">-</strong></li>
+                <li>Current Room: <strong id="digital-class-current-room">-</strong></li>
+                <li>Status: <strong id="digital-class-status">No live class</strong></li>
+              </ul>
+            </article>
+            <article class="panel">
+              <div class="panel-head"><h2>Live Classroom</h2></div>
+              <div style="padding:14px;">
+                <iframe
+                  id="digital-class-frame"
+                  title="Digital Class Room"
+                  src="about:blank"
+                  allow="camera; microphone; fullscreen; display-capture"
+                  style="width:100%; min-height:500px; border:1px solid rgba(148,163,184,0.35); border-radius:12px; background:#0f172a;"
+                ></iframe>
+              </div>
+            </article>
+          </div>
         </section>
 
         <section class="section" id="section-progress">
@@ -3067,6 +3106,7 @@
     const notifMarkReadBtn = document.getElementById('notif-mark-read-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const uploadCourseMenu = document.getElementById('upload-course-menu');
+    const digitalClassMenu = document.getElementById('digital-class-menu');
     const myCoursesTeacherMenu = document.getElementById('my-courses-teacher-menu');
     const uploadAssignmentMenu = document.getElementById('upload-assignment-menu');
     const settingsNavBtn = document.getElementById('settings-nav-btn');
@@ -3187,6 +3227,16 @@ const classAssignmentsFeed = document.getElementById('class-assignments-feed');
     const searchProfileViewer = document.getElementById('search-profile-viewer');
     const connectionsList = document.getElementById('connections-list');
     const searchConnectHelp = document.getElementById('search-connect-help');
+    const digitalClassForm = document.getElementById('digital-class-form');
+    const digitalClassTitleInput = document.getElementById('digital-class-title');
+    const digitalClassRoomInput = document.getElementById('digital-class-room');
+    const digitalClassStartBtn = document.getElementById('digital-class-start-btn');
+    const digitalClassJoinBtn = document.getElementById('digital-class-join-btn');
+    const digitalClassHelp = document.getElementById('digital-class-help');
+    const digitalClassHost = document.getElementById('digital-class-host');
+    const digitalClassCurrentRoom = document.getElementById('digital-class-current-room');
+    const digitalClassStatus = document.getElementById('digital-class-status');
+    const digitalClassFrame = document.getElementById('digital-class-frame');
     const menuButtons = Array.from(document.querySelectorAll('#menu-buttons button[data-target]'));
     const sections = Array.from(document.querySelectorAll('.section'));
     let currentUserName = '';
@@ -3215,6 +3265,7 @@ const ACCOUNTS_STORAGE_KEY = 'ritp_accounts_v1';
 const SESSION_STORAGE_KEY = 'ritp_session_v1';
 const ROLE_REQUESTS_STORAGE_KEY = 'ritp_role_requests_v1';
 const COURSE_ACCESS_STORAGE_KEY = 'ritp_course_access_v1';
+const DIGITAL_CLASS_STORAGE_KEY = 'ritp_digital_class_v1';
 // Optional cloud sync: set these once to share accounts across all devices/admins.
 // Example:
 // window.RITP_SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
@@ -3480,6 +3531,30 @@ function loadCourseAccess() {
 
 function saveCourseAccess() {
   return saveLocalJSON(COURSE_ACCESS_STORAGE_KEY, courseAccessByCourse);
+}
+
+function loadDigitalClassState() {
+  try {
+    const raw = localStorage.getItem(DIGITAL_CLASS_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (!parsed || typeof parsed !== 'object') return null;
+    return {
+      title: String(parsed.title || ''),
+      room: String(parsed.room || ''),
+      host: String(parsed.host || ''),
+      startedAt: Number(parsed.startedAt || 0)
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+function saveDigitalClassState(state) {
+  if (!state) {
+    removeLocalValue(DIGITAL_CLASS_STORAGE_KEY);
+    return true;
+  }
+  return saveLocalJSON(DIGITAL_CLASS_STORAGE_KEY, state);
 }
 
 function loadSession() {
@@ -4158,6 +4233,7 @@ let currentThemeId = 'light';
 let selectedProfilePhotoData = '';
 let selectedSearchProfileEmail = '';
 let adminPromoteMenuEmail = '';
+let digitalClassState = loadDigitalClassState();
 let currentMiniQuiz = [];
 let currentCourseVideos = [];
 const PROFILE_FALLBACK_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODIiIGhlaWdodD0iODIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgyIiBoZWlnaHQ9IjgyIiBmaWxsPSIjZTJlOGYwIi8+PGNpcmNsZSBjeD0iNDEiIGN5PSIzMiIgcj0iMTYiIGZpbGw9IiM5NGEzYjgiLz48cmVjdCB4PSIxOCIgeT0iNTIiIHdpZHRoPSI0NiIgaGVpZ2h0PSIxOCIgcng9IjkiIGZpbGw9IiM5NGEzYjgiLz48L3N2Zz4=';
@@ -4204,6 +4280,53 @@ const coursesData = [
       } else {
         courseVideoInput.value = '';
       }
+    }
+
+    function normalizeDigitalClassRoom(value) {
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9-_\s]/g, '')
+        .replace(/\s+/g, '-')
+        .slice(0, 80);
+    }
+
+    function isTeacherSideRole() {
+      return currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
+    }
+
+    function openDigitalClassRoom(room) {
+      if (!digitalClassFrame) return;
+      const safeRoom = normalizeDigitalClassRoom(room);
+      const displayName = encodeURIComponent((profilesByUser[normalizeEmail(currentUserName || '')] || {}).displayName || currentUserName || 'RITP User');
+      const jitsiUrl = `https://meet.jit.si/${safeRoom}#userInfo.displayName=\"${displayName}\"`;
+      digitalClassFrame.src = jitsiUrl;
+    }
+
+    function renderDigitalClassPanel() {
+      if (!digitalClassHelp || !digitalClassHost || !digitalClassCurrentRoom || !digitalClassStatus || !digitalClassStartBtn) return;
+      const canHost = isTeacherSideRole();
+      digitalClassStartBtn.classList.toggle('hidden', !canHost);
+
+      if (!digitalClassState || !digitalClassState.room) {
+        digitalClassHost.textContent = '-';
+        digitalClassCurrentRoom.textContent = '-';
+        digitalClassStatus.textContent = 'No live class';
+        if (digitalClassTitleInput) digitalClassTitleInput.value = '';
+        if (digitalClassRoomInput) digitalClassRoomInput.value = '';
+        if (digitalClassFrame) digitalClassFrame.src = 'about:blank';
+        return;
+      }
+
+      if (digitalClassTitleInput && !digitalClassTitleInput.value.trim()) {
+        digitalClassTitleInput.value = digitalClassState.title || '';
+      }
+      if (digitalClassRoomInput && !digitalClassRoomInput.value.trim()) {
+        digitalClassRoomInput.value = digitalClassState.room || '';
+      }
+      digitalClassHost.textContent = digitalClassState.host || '-';
+      digitalClassCurrentRoom.textContent = digitalClassState.room;
+      digitalClassStatus.textContent = `Live now: ${digitalClassState.title || digitalClassState.room}`;
     }
 
     function renderMyTeacherCourses() {
@@ -6063,6 +6186,7 @@ function openDashboard(userName) {
       }
       const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('Admin') || currentUserRoles.includes('HOD');
       uploadCourseMenu.classList.toggle('hidden', !(currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD')));
+      if (digitalClassMenu) digitalClassMenu.classList.remove('hidden');
       if (myCoursesTeacherMenu) myCoursesTeacherMenu.classList.toggle('hidden', !isTeacherSide);
       uploadAssignmentMenu.classList.toggle('hidden', !(currentUserRole === 'Student' || isTeacherSide));
       if (settingsNavBtn) settingsNavBtn.classList.remove('hidden');
@@ -6084,6 +6208,7 @@ function openDashboard(userName) {
       renderAnnouncements();
       renderSuggestionsPanel();
       renderBugReportsPanel();
+      renderDigitalClassPanel();
       if (currentPlaylistCourse) {
         renderCourseAccessPanel({ name: currentPlaylistCourse });
         bindCourseAccessActions(currentPlaylistCourse);
@@ -6114,6 +6239,7 @@ function openDashboard(userName) {
       loginHelp.style.color = '#b91c1c';
       uploadMessage.textContent = '';
       uploadCourseMenu.classList.add('hidden');
+      if (digitalClassMenu) digitalClassMenu.classList.add('hidden');
       if (myCoursesTeacherMenu) myCoursesTeacherMenu.classList.add('hidden');
       assignmentUploadMessage.textContent = '';
       playlistAssignmentHelp.textContent = '';
@@ -6156,6 +6282,9 @@ function openDashboard(userName) {
       }
       if (target === 'my-courses-teacher') {
         renderMyTeacherCourses();
+      }
+      if (target === 'digital-class') {
+        renderDigitalClassPanel();
       }
       if (target === 'settings') {
         Promise.all([refreshSuggestionsFromCloud(), refreshBugReportsFromCloud()]).then(() => {
@@ -6690,6 +6819,62 @@ function openDashboard(userName) {
       courseUploadModeSelect.addEventListener('change', updateCourseUploadModeUI);
       updateCourseUploadModeUI();
     }
+    if (digitalClassStartBtn) {
+      digitalClassStartBtn.addEventListener('click', () => {
+        if (!currentUserName) {
+          digitalClassHelp.textContent = 'Please login first.';
+          digitalClassHelp.style.color = '#b91c1c';
+          return;
+        }
+        if (!isTeacherSideRole()) {
+          digitalClassHelp.textContent = 'Only Teacher, HOD, or Admin can start live class.';
+          digitalClassHelp.style.color = '#b91c1c';
+          return;
+        }
+
+        const title = String(digitalClassTitleInput.value || '').trim() || 'RITP Live Class';
+        const room = normalizeDigitalClassRoom(digitalClassRoomInput.value || title) || `ritp-live-${Date.now()}`;
+        digitalClassState = {
+          title,
+          room,
+          host: currentUserName,
+          startedAt: Date.now()
+        };
+        saveDigitalClassState(digitalClassState);
+        digitalClassRoomInput.value = room;
+        renderDigitalClassPanel();
+        openDigitalClassRoom(room);
+        digitalClassHelp.textContent = `Live class started. Room: ${room}`;
+        digitalClassHelp.style.color = '#166534';
+        addNotification(`Live class started by ${currentUserName}: ${title}`);
+      });
+    }
+
+    if (digitalClassJoinBtn) {
+      digitalClassJoinBtn.addEventListener('click', () => {
+        if (!currentUserName) {
+          digitalClassHelp.textContent = 'Please login first.';
+          digitalClassHelp.style.color = '#b91c1c';
+          return;
+        }
+        const typedRoom = normalizeDigitalClassRoom(digitalClassRoomInput.value || '');
+        const room = typedRoom || (digitalClassState && digitalClassState.room ? normalizeDigitalClassRoom(digitalClassState.room) : '');
+        if (!room) {
+          digitalClassHelp.textContent = 'Enter class code or wait for teacher to start class.';
+          digitalClassHelp.style.color = '#b91c1c';
+          return;
+        }
+        openDigitalClassRoom(room);
+        digitalClassHelp.textContent = `Joined live room: ${room}`;
+        digitalClassHelp.style.color = '#166534';
+      });
+    }
+
+    if (digitalClassForm) {
+      digitalClassForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+      });
+    }
     uploadCourseForm.addEventListener('submit', (event) => {
       event.preventDefault();
       const name = document.getElementById('course-name').value.trim();
@@ -6921,6 +7106,7 @@ function openDashboard(userName) {
     renderAnnouncements();
     renderSuggestionsPanel();
     renderBugReportsPanel();
+    renderDigitalClassPanel();
     applyAppTheme('light', false);
     updateVideoWatermarks();
 
