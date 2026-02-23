@@ -4598,8 +4598,7 @@ function renderCoursesShowcase() {
   }
 
   const selectedCourse = coursesData.find((course) => normalizeCourseName(course.name) === normalizeCourseName(currentPlaylistCourse)) || null;
-  const isStudentOnlyView = currentUserRoles.includes('Student') && !currentUserRoles.includes('Teacher') && !currentUserRoles.includes('HOD') && !currentUserRoles.includes('Admin');
-  if (isStudentOnlyView && !selectedCourse) {
+  if (!selectedCourse) {
     coursesFocusTitle.textContent = 'SELECT A COURSE TO START';
     if (coursesInlinePicker) {
       coursesInlinePicker.classList.remove('hidden');
