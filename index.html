@@ -3272,6 +3272,7 @@ const classAssignmentsFeed = document.getElementById('class-assignments-feed');
     let currentUserRoles = [];
     let watchSessionStartedAt = null;
     let currentPlaylistCourse = '';
+    let hasExplicitCourseSelection = false;
     const submittedAssignments = [
       'Network Topologies Report',
       'DBMS Query Practice',
@@ -4564,6 +4565,7 @@ const coursesData = [
       myCoursesList.querySelectorAll('.course-app-click').forEach((item) => {
         item.addEventListener('click', () => {
           currentPlaylistCourse = item.dataset.courseName || '';
+          hasExplicitCourseSelection = Boolean(currentPlaylistCourse);
           renderCoursesShowcase();
         });
       });
@@ -4600,7 +4602,7 @@ function renderCoursesShowcase() {
   }
 
   const selectedCourse = coursesData.find((course) => normalizeCourseName(course.name) === normalizeCourseName(currentPlaylistCourse)) || null;
-  if (!selectedCourse) {
+  if (!hasExplicitCourseSelection || !selectedCourse) {
     coursesFocusTitle.textContent = 'SELECT A COURSE TO START';
     if (coursesFocusVideoWrap) coursesFocusVideoWrap.classList.add('hidden');
     if (coursesInlinePicker) {
@@ -4611,6 +4613,7 @@ function renderCoursesShowcase() {
       coursesInlinePicker.querySelectorAll('.courses-inline-picker-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           currentPlaylistCourse = btn.dataset.courseName || '';
+          hasExplicitCourseSelection = Boolean(currentPlaylistCourse);
           renderCoursesShowcase();
         });
       });
@@ -5239,6 +5242,7 @@ function renderAttendanceRecords() {
         coursesFocusVideo.pause();
       }
       currentPlaylistCourse = courseName;
+      hasExplicitCourseSelection = true;
       playlistAssignmentList.innerHTML = '<li>Loading assignments...</li>';
       playlistAssignmentHelp.textContent = '';
       const targetKeys = new Set(getCourseNameVariants(courseName));
@@ -6461,6 +6465,8 @@ function openDashboard(userName) {
       currentUserName = userName;
       currentUserRoles = getAccountRoles(userName);
       currentUserRole = getPrimaryRoleFromRoles(currentUserRoles);
+      currentPlaylistCourse = '';
+      hasExplicitCourseSelection = false;
       adminPromoteMenuEmail = '';
       updateVideoWatermarks();
       saveSession(userName);
@@ -6543,6 +6549,8 @@ function openDashboard(userName) {
       currentUserName = '';
       currentUserRole = '';
       currentUserRoles = [];
+      currentPlaylistCourse = '';
+      hasExplicitCourseSelection = false;
       adminPromoteMenuEmail = '';
       updateVideoWatermarks();
       if (profileNavAvatar) profileNavAvatar.src = PROFILE_FALLBACK_AVATAR;
