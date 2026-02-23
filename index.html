@@ -3527,7 +3527,12 @@ function saveRoleRequests() {
 function loadCourseAccess() {
   try {
     const raw = localStorage.getItem(COURSE_ACCESS_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
+    const parsed = raw ? JSON.parse(raw) : {};
+    if (!parsed || typeof parsed !== 'object') return {};
+    Object.keys(parsed).forEach((courseName) => {
+      parsed[courseName] = normalizeCourseAccessRecordShape(parsed[courseName]);
+    });
+    return parsed;
   } catch (error) {
     return {};
   }
@@ -4835,49 +4840,70 @@ function bindCourseAccessActions(courseName) {
       const record = getCourseAccessRecord(courseName);
       const email = normalizeEmail(currentUserName);
       if (!record.requests.includes(email) && !record.approved.includes(email)) {
+        record.rejected = record.rejected.filter((item) => normalizeEmail(item) !== email);
         record.requests.push(email);
+        record.requestedAt[email] = Date.now();
+        delete record.reviewedAt[email];
+        delete record.reviewedBy[email];
         if (!updateCourseAccess(courseName, record)) {
           courseAccessHelp.textContent = 'Could not send request (storage full).';
           courseAccessHelp.style.color = '#b91c1c';
           return;
         }
+        addNotification(`New course access request: ${email} -> ${courseName}`);
         courseAccessHelp.textContent = 'Request sent. Waiting for approval.';
         courseAccessHelp.style.color = '#166534';
       }
       renderCourseAccessPanel({ name: courseName });
+      renderNotifications();
     };
   }
 
   courseAccessPanel.querySelectorAll('.course-approve-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const email = normalizeEmail(btn.dataset.email || '');
-      const record = getCourseAccessRecord(courseName);
-      record.requests = record.requests.filter((item) => normalizeEmail(item) !== email);
-      if (!record.approved.includes(email)) record.approved.push(email);
-      if (!updateCourseAccess(courseName, record)) {
-        courseAccessHelp.textContent = 'Could not approve (storage full).';
-        courseAccessHelp.style.color = '#b91c1c';
-        return;
-      }
-      addNotification(`Approved ${email} for ${courseName}.`);
-      renderCourseAccessPanel({ name: courseName });
+      handleCourseAccessDecision(courseName, btn.dataset.email || '', 'approve');
     });
   });
 
   courseAccessPanel.querySelectorAll('.course-reject-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const email = normalizeEmail(btn.dataset.email || '');
-      const record = getCourseAccessRecord(courseName);
-      record.requests = record.requests.filter((item) => normalizeEmail(item) !== email);
-      if (!updateCourseAccess(courseName, record)) {
-        courseAccessHelp.textContent = 'Could not reject (storage full).';
-        courseAccessHelp.style.color = '#b91c1c';
-        return;
-      }
-      addNotification(`Rejected ${email} for ${courseName}.`);
-      renderCourseAccessPanel({ name: courseName });
+      handleCourseAccessDecision(courseName, btn.dataset.email || '', 'reject');
     });
   });
+}
+
+function handleCourseAccessDecision(courseName, emailRaw, action) {
+  const canReview = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
+  if (!canReview || !courseName) return;
+
+  const email = normalizeEmail(emailRaw || '');
+  const record = getCourseAccessRecord(courseName);
+  record.requests = record.requests.filter((item) => normalizeEmail(item) !== email);
+  record.requestedAt = record.requestedAt || {};
+  record.reviewedAt = record.reviewedAt || {};
+  record.reviewedBy = record.reviewedBy || {};
+  delete record.requestedAt[email];
+  record.reviewedAt[email] = Date.now();
+  record.reviewedBy[email] = normalizeEmail(currentUserName || '');
+
+  if (action === 'approve') {
+    record.rejected = record.rejected.filter((item) => normalizeEmail(item) !== email);
+    if (!record.approved.includes(email)) record.approved.push(email);
+  } else {
+    record.approved = record.approved.filter((item) => normalizeEmail(item) !== email);
+    if (!record.rejected.includes(email)) record.rejected.push(email);
+  }
+
+  if (!updateCourseAccess(courseName, record)) {
+    courseAccessHelp.textContent = action === 'approve' ? 'Could not approve (storage full).' : 'Could not reject (storage full).';
+    courseAccessHelp.style.color = '#b91c1c';
+    return;
+  }
+
+  addNotification(`${action === 'approve' ? 'Approved' : 'Rejected'} ${email} for ${courseName}.`);
+  renderCourseAccessPanel({ name: courseName });
+  renderNotifications();
+  renderCoursesShowcase();
 }
 
 function renderSubmittedAssignments() {
@@ -5214,6 +5240,7 @@ function renderAttendanceRecords() {
     }
 
     function renderNotifications() {
+      const isCourseAccessManager = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
       const roleItems = roleRequests
         .filter((req) => currentUserRole === 'Admin' || req.email === currentUserName)
         .slice()
@@ -5229,7 +5256,40 @@ function renderAttendanceRecords() {
           reviewedBy: req.reviewedBy || ''
         }));
 
-      const allItems = [...roleItems, ...notificationsData];
+      const courseItems = [];
+      Object.keys(courseAccessByCourse).forEach((courseName) => {
+        const record = getCourseAccessRecord(courseName);
+
+        if (isCourseAccessManager) {
+          record.requests.forEach((email) => {
+            const requestedAt = Number(record.requestedAt[email] || 0);
+            courseItems.push({
+              id: `${courseName}::${email}`,
+              type: 'course_request',
+              courseName,
+              email,
+              text: `${email} requested access for ${courseName}`,
+              time: requestedAt ? new Date(requestedAt).toLocaleString() : 'Now',
+              status: 'pending'
+            });
+          });
+          return;
+        }
+
+        if (!currentUserName) return;
+        const myEmail = normalizeEmail(currentUserName);
+        if (record.rejected.includes(myEmail)) {
+          courseItems.push({
+            id: `${courseName}::${myEmail}::rejected`,
+            type: 'course_result',
+            text: `${courseName}: access request rejected. Tap Join Again to request once more.`,
+            time: record.reviewedAt[myEmail] ? new Date(record.reviewedAt[myEmail]).toLocaleString() : 'Now',
+            status: 'rejected'
+          });
+        }
+      });
+
+      const allItems = [...roleItems, ...courseItems, ...notificationsData];
 
       notificationsList.innerHTML = allItems.map((item) => {
         if (item.type === 'role_request') {
@@ -5245,6 +5305,22 @@ function renderAttendanceRecords() {
             </div>` : ''}
           </li>`;
         }
+        if (item.type === 'course_request') {
+          return `<li class="unread">
+            <strong>${item.text}</strong>
+            <div class="notifications-meta">${item.time} | Status: Pending</div>
+            <div class="role-request-controls">
+              <button type="button" class="video-open-btn course-request-action-btn" data-course="${item.courseName}" data-email="${item.email}" data-action="approve">Approve</button>
+              <button type="button" class="video-open-btn course-request-action-btn" data-course="${item.courseName}" data-email="${item.email}" data-action="reject">Reject</button>
+            </div>
+          </li>`;
+        }
+        if (item.type === 'course_result') {
+          return `<li>
+            <strong>${item.text}</strong>
+            <div class="notifications-meta">${item.time}</div>
+          </li>`;
+        }
 
         return `<li class="${item.read ? '' : 'unread'}">
           <strong>${item.text}</strong>
@@ -5257,10 +5333,21 @@ function renderAttendanceRecords() {
           handleRoleRequestDecision(Number(btn.dataset.id), btn.dataset.action);
         });
       });
+      notificationsList.querySelectorAll('.course-request-action-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          handleCourseAccessDecision(btn.dataset.course, btn.dataset.email, btn.dataset.action);
+        });
+      });
 
       let unread = notificationsData.filter((item) => !item.read).length;
       if (currentUserRole === 'Admin') {
         unread += roleRequests.filter((req) => req.status === 'pending').length;
+      }
+      if (isCourseAccessManager) {
+        unread += Object.keys(courseAccessByCourse).reduce((total, courseName) => {
+          const record = getCourseAccessRecord(courseName);
+          return total + record.requests.length;
+        }, 0);
       } else if (currentUserName) {
         unread += roleRequests.filter((req) => req.email === currentUserName && req.status === 'pending').length;
       }
@@ -5310,10 +5397,11 @@ function getBadgeClass(role) {
 }
 
 function getCourseAccessRecord(courseName) {
-  if (!courseName) return { requests: [], approved: [] };
+  if (!courseName) return { requests: [], approved: [], rejected: [], requestedAt: {}, reviewedAt: {}, reviewedBy: {} };
   if (!courseAccessByCourse[courseName]) {
-    courseAccessByCourse[courseName] = { requests: [], approved: [] };
+    courseAccessByCourse[courseName] = { requests: [], approved: [], rejected: [], requestedAt: {}, reviewedAt: {}, reviewedBy: {} };
   }
+  courseAccessByCourse[courseName] = normalizeCourseAccessRecordShape(courseAccessByCourse[courseName]);
   return courseAccessByCourse[courseName];
 }
 
@@ -5327,9 +5415,26 @@ function isStudentRequestedForCourse(courseName, email) {
   return record.requests.includes(normalizeEmail(email));
 }
 
+function isStudentRejectedForCourse(courseName, email) {
+  const record = getCourseAccessRecord(courseName);
+  return record.rejected.includes(normalizeEmail(email));
+}
+
 function updateCourseAccess(courseName, record) {
-  courseAccessByCourse[courseName] = record;
+  courseAccessByCourse[courseName] = normalizeCourseAccessRecordShape(record);
   return saveCourseAccess();
+}
+
+function normalizeCourseAccessRecordShape(record) {
+  const safe = record && typeof record === 'object' ? record : {};
+  return {
+    requests: Array.isArray(safe.requests) ? safe.requests.map((item) => normalizeEmail(item)).filter(Boolean) : [],
+    approved: Array.isArray(safe.approved) ? safe.approved.map((item) => normalizeEmail(item)).filter(Boolean) : [],
+    rejected: Array.isArray(safe.rejected) ? safe.rejected.map((item) => normalizeEmail(item)).filter(Boolean) : [],
+    requestedAt: safe.requestedAt && typeof safe.requestedAt === 'object' ? safe.requestedAt : {},
+    reviewedAt: safe.reviewedAt && typeof safe.reviewedAt === 'object' ? safe.reviewedAt : {},
+    reviewedBy: safe.reviewedBy && typeof safe.reviewedBy === 'object' ? safe.reviewedBy : {}
+  };
 }
 
 function renderCourseAccessPanel(course) {
@@ -5341,6 +5446,7 @@ function renderCourseAccessPanel(course) {
   const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
   const approved = isStudent && isStudentApprovedForCourse(courseName, myEmail);
   const requested = isStudent && isStudentRequestedForCourse(courseName, myEmail);
+  const rejected = isStudent && isStudentRejectedForCourse(courseName, myEmail);
 
   courseRequestsWrap.classList.toggle('hidden', !isTeacherSide);
   if (isTeacherSide) {
@@ -5367,8 +5473,13 @@ function renderCourseAccessPanel(course) {
   } else if (requested) {
     courseAccessStatus.textContent = 'Request sent. Waiting for teacher approval.';
     courseJoinBtn.classList.add('hidden');
+  } else if (rejected) {
+    courseAccessStatus.textContent = 'Your request was rejected. You can submit again.';
+    courseJoinBtn.textContent = 'Join Again';
+    courseJoinBtn.classList.remove('hidden');
   } else {
     courseAccessStatus.textContent = 'Request access to unlock course videos.';
+    courseJoinBtn.textContent = 'Join Course';
     courseJoinBtn.classList.remove('hidden');
   }
 }
