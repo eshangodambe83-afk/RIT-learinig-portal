@@ -1921,6 +1921,13 @@
       margin-bottom: 8px;
     }
 
+    .notifications-head-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .notifications-list {
       gap: 8px;
     }
@@ -2668,7 +2675,10 @@
     <aside class="notifications-panel hidden" id="notifications-panel" aria-label="Notifications Panel">
       <div class="panel-head notifications-head">
         <h2>Notifications</h2>
-        <button class="video-open-btn" id="notif-mark-read-btn" type="button">Mark All Read</button>
+        <div class="notifications-head-actions">
+          <button class="video-open-btn" id="notif-mark-read-btn" type="button">Mark All Read</button>
+          <button class="video-open-btn" id="notif-clear-all-btn" type="button">Clear All</button>
+        </div>
       </div>
       <ul class="list notifications-list" id="notifications-list"></ul>
     </aside>
@@ -3160,6 +3170,7 @@
     const notificationsList = document.getElementById('notifications-list');
     const notifCount = document.getElementById('notif-count');
     const notifMarkReadBtn = document.getElementById('notif-mark-read-btn');
+    const notifClearAllBtn = document.getElementById('notif-clear-all-btn');
     const logoutBtn = document.getElementById('logout-btn');
     const uploadCourseMenu = document.getElementById('upload-course-menu');
     const digitalClassMenu = document.getElementById('digital-class-menu');
@@ -3315,8 +3326,8 @@ const classAssignmentsFeed = document.getElementById('class-assignments-feed');
     ];
     const watchTimeByStudent = {};
 const notificationsData = [
-  { id: 1, text: 'Welcome to RITP portal dashboard.', time: 'Just now', read: false },
-  { id: 3, text: 'Course video updated for Programming in C.', time: 'Today', read: true }
+  { id: 1, text: 'Welcome to RITP portal dashboard.', time: 'Just now', read: false, createdAt: Date.now() - 120000 },
+  { id: 3, text: 'Course video updated for Programming in C.', time: 'Today', read: true, createdAt: Date.now() - 60000 }
 ];
 const announcementsData = [
   { id: 1, text: 'Welcome to the new semester. Keep checking course videos.', by: 'Admin', time: 'Today' }
@@ -3326,6 +3337,7 @@ const SESSION_STORAGE_KEY = 'ritp_session_v1';
 const ROLE_REQUESTS_STORAGE_KEY = 'ritp_role_requests_v1';
 const COURSE_ACCESS_STORAGE_KEY = 'ritp_course_access_v1';
 const DIGITAL_CLASS_STORAGE_KEY = 'ritp_digital_class_v1';
+const NOTIFICATIONS_CLEARED_AT_STORAGE_KEY = 'ritp_notifications_cleared_at_v1';
 // Optional cloud sync: set these once to share accounts across all devices/admins.
 // Example:
 // window.RITP_SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
@@ -3351,6 +3363,7 @@ let cloudProfilesSyncTimer = null;
 let cloudProfilesSyncInFlight = false;
 let googleSignInInitialized = false;
 let digitalClassCloudSyncInFlight = false;
+let notificationsClearedAtByUser = loadNotificationsClearedAtByUser();
 
 function saveLocalJSON(key, value) {
   try {
@@ -3580,6 +3593,20 @@ function loadRoleRequests() {
 
 function saveRoleRequests() {
   return saveLocalJSON(ROLE_REQUESTS_STORAGE_KEY, roleRequests);
+}
+
+function loadNotificationsClearedAtByUser() {
+  try {
+    const raw = localStorage.getItem(NOTIFICATIONS_CLEARED_AT_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveNotificationsClearedAtByUser() {
+  return saveLocalJSON(NOTIFICATIONS_CLEARED_AT_STORAGE_KEY, notificationsClearedAtByUser);
 }
 
 function loadCourseAccess() {
@@ -5349,8 +5376,22 @@ function renderAttendanceRecords() {
       }
     }
 
+    function getCurrentNotificationsClearedAt() {
+      if (!currentUserName) return 0;
+      const key = normalizeEmail(currentUserName);
+      return Number(notificationsClearedAtByUser[key] || 0);
+    }
+
+    function clearCurrentUserNotifications() {
+      if (!currentUserName) return;
+      const key = normalizeEmail(currentUserName);
+      notificationsClearedAtByUser[key] = Date.now();
+      saveNotificationsClearedAtByUser();
+    }
+
     function renderNotifications() {
       const isCourseAccessManager = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
+      const clearedAt = getCurrentNotificationsClearedAt();
       const roleItems = roleRequests
         .filter((req) => currentUserRole === 'Admin' || req.email === currentUserName)
         .slice()
@@ -5363,8 +5404,10 @@ function renderAttendanceRecords() {
           status: req.status || 'pending',
           email: req.email,
           targetRole: req.targetRole,
-          reviewedBy: req.reviewedBy || ''
-        }));
+          reviewedBy: req.reviewedBy || '',
+          createdAt: Number(req.requestedAt || 0)
+        }))
+        .filter((item) => item.createdAt > clearedAt);
 
       const courseItems = [];
       Object.keys(courseAccessByCourse).forEach((courseName) => {
@@ -5380,7 +5423,8 @@ function renderAttendanceRecords() {
               email,
               text: `${email} requested access for ${courseName}`,
               time: requestedAt ? new Date(requestedAt).toLocaleString() : 'Now',
-              status: 'pending'
+              status: 'pending',
+              createdAt: requestedAt
             });
           });
           return;
@@ -5394,12 +5438,14 @@ function renderAttendanceRecords() {
             type: 'course_result',
             text: `${courseName}: access request rejected. Tap Join Again to request once more.`,
             time: record.reviewedAt[myEmail] ? new Date(record.reviewedAt[myEmail]).toLocaleString() : 'Now',
-            status: 'rejected'
+            status: 'rejected',
+            createdAt: Number(record.reviewedAt[myEmail] || 0)
           });
         }
       });
 
-      const allItems = [...roleItems, ...courseItems, ...notificationsData];
+      const visibleBasicNotifications = notificationsData.filter((item) => Number(item.createdAt || 0) > clearedAt);
+      const allItems = [...roleItems, ...courseItems.filter((item) => Number(item.createdAt || 0) > clearedAt), ...visibleBasicNotifications];
 
       notificationsList.innerHTML = allItems.map((item) => {
         if (item.type === 'role_request') {
@@ -5449,17 +5495,18 @@ function renderAttendanceRecords() {
         });
       });
 
-      let unread = notificationsData.filter((item) => !item.read).length;
+      let unread = visibleBasicNotifications.filter((item) => !item.read).length;
       if (currentUserRole === 'Admin') {
-        unread += roleRequests.filter((req) => req.status === 'pending').length;
+        unread += roleRequests.filter((req) => req.status === 'pending' && Number(req.requestedAt || 0) > clearedAt).length;
       }
       if (isCourseAccessManager) {
         unread += Object.keys(courseAccessByCourse).reduce((total, courseName) => {
           const record = getCourseAccessRecord(courseName);
-          return total + record.requests.length;
+          const pendingVisible = record.requests.filter((email) => Number(record.requestedAt[email] || 0) > clearedAt).length;
+          return total + pendingVisible;
         }, 0);
       } else if (currentUserName) {
-        unread += roleRequests.filter((req) => req.email === currentUserName && req.status === 'pending').length;
+        unread += roleRequests.filter((req) => req.email === currentUserName && req.status === 'pending' && Number(req.requestedAt || 0) > clearedAt).length;
       }
 
       notifCount.textContent = String(unread);
@@ -5471,7 +5518,8 @@ function renderAttendanceRecords() {
         id: Date.now(),
         text,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        read: false
+        read: false,
+        createdAt: Date.now()
       });
       renderNotifications();
     }
@@ -6849,6 +6897,11 @@ function openDashboard(userName) {
       notificationsData.forEach((item) => {
         item.read = true;
       });
+      renderNotifications();
+    });
+
+    notifClearAllBtn.addEventListener('click', () => {
+      clearCurrentUserNotifications();
       renderNotifications();
     });
 
