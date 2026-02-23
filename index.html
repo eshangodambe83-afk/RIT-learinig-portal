@@ -4568,7 +4568,34 @@ function renderCoursesShowcase() {
     return;
   }
 
-  const featuredCourse = coursesData.find((course) => normalizeCourseName(course.name) === normalizeCourseName(currentPlaylistCourse)) || coursesData[0];
+  const selectedCourse = coursesData.find((course) => normalizeCourseName(course.name) === normalizeCourseName(currentPlaylistCourse)) || null;
+  const isStudentOnlyView = currentUserRoles.includes('Student') && !currentUserRoles.includes('Teacher') && !currentUserRoles.includes('HOD') && !currentUserRoles.includes('Admin');
+  if (isStudentOnlyView && !selectedCourse) {
+    coursesFocusTitle.textContent = 'SELECT A COURSE TO START';
+    coursesProgressFill.style.width = '0%';
+    coursesProgressValue.textContent = '0%';
+    coursesTodoList.innerHTML = '<li><input type="checkbox" disabled /><span>Select a course from the list above first.</span></li>';
+    coursesNextTitle.textContent = 'No assignment';
+    coursesNextCourse.textContent = 'Course: -';
+    coursesNextDue.textContent = 'Due: -';
+    coursesNextLink.classList.add('hidden');
+    coursesNextLink.removeAttribute('href');
+    if (coursesFocusVideo) {
+      coursesFocusVideo.pause();
+      coursesFocusVideo.removeAttribute('src');
+      coursesFocusVideo.load();
+      coursesFocusVideo.dataset.src = '';
+      coursesFocusVideo.dataset.course = '';
+    }
+    if (coursesFocusOpenBtn) {
+      coursesFocusOpenBtn.textContent = 'Select Course First';
+      coursesFocusOpenBtn.onclick = null;
+      coursesFocusOpenBtn.disabled = true;
+    }
+    return;
+  }
+
+  const featuredCourse = selectedCourse || coursesData[0];
   const featuredCourseName = featuredCourse ? featuredCourse.name : '';
   const featuredTasks = classAssignments.filter((task) => normalizeCourseName(task.course) === normalizeCourseName(featuredCourseName));
   const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
@@ -4642,6 +4669,7 @@ function renderCoursesShowcase() {
   }
 
   if (coursesFocusOpenBtn) {
+    coursesFocusOpenBtn.disabled = false;
     coursesFocusOpenBtn.onclick = () => {
       openCoursePlaylist(featuredCourseName);
     };
