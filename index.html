@@ -1049,6 +1049,29 @@
       line-height: 1.25;
     }
 
+    .courses-inline-picker {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .courses-inline-picker-btn {
+      border: 1px solid rgba(15, 23, 42, 0.2);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.9);
+      color: #0f172a;
+      cursor: pointer;
+    }
+
+    .courses-inline-picker-btn:hover {
+      border-color: #f97316;
+      color: #c2410c;
+    }
+
     #courses-focus-video {
       width: 100%;
       border-radius: 12px;
@@ -2685,6 +2708,7 @@
               <div class="courses-main-head">
                 <p class="courses-kicker">Current Course</p>
                 <h2 id="courses-focus-title">INTRODUCTION TO ALGORITHMS</h2>
+                <div id="courses-inline-picker" class="courses-inline-picker hidden"></div>
               </div>
               <div class="protected-video-wrap">
                 <video id="courses-focus-video" class="protected-video" controls preload="metadata" playsinline webkit-playsinline controlsList="nodownload noplaybackrate noremoteplayback" disablePictureInPicture disableRemotePlayback></video>
@@ -3141,6 +3165,7 @@ const classAssignmentsFeed = document.getElementById('class-assignments-feed');
     const myCoursesTeacherList = document.getElementById('my-courses-teacher-list');
     const myCoursesTeacherHelp = document.getElementById('my-courses-teacher-help');
     const coursesFocusTitle = document.getElementById('courses-focus-title');
+    const coursesInlinePicker = document.getElementById('courses-inline-picker');
     const coursesFocusVideo = document.getElementById('courses-focus-video');
     const coursesVideoWatermarkA = document.getElementById('courses-video-watermark-a');
     const coursesVideoWatermarkB = document.getElementById('courses-video-watermark-b');
@@ -4547,6 +4572,10 @@ const coursesData = [
 
 function renderCoursesShowcase() {
   if (!coursesFocusTitle || !coursesProgressFill || !coursesProgressValue || !coursesTodoList) return;
+  if (coursesInlinePicker) {
+    coursesInlinePicker.classList.add('hidden');
+    coursesInlinePicker.innerHTML = '';
+  }
   if (!coursesData.length) {
     coursesFocusTitle.textContent = 'NO COURSES AVAILABLE';
     coursesProgressFill.style.width = '0%';
@@ -4572,9 +4601,21 @@ function renderCoursesShowcase() {
   const isStudentOnlyView = currentUserRoles.includes('Student') && !currentUserRoles.includes('Teacher') && !currentUserRoles.includes('HOD') && !currentUserRoles.includes('Admin');
   if (isStudentOnlyView && !selectedCourse) {
     coursesFocusTitle.textContent = 'SELECT A COURSE TO START';
+    if (coursesInlinePicker) {
+      coursesInlinePicker.classList.remove('hidden');
+      coursesInlinePicker.innerHTML = coursesData.map((course) => (
+        `<button type="button" class="courses-inline-picker-btn" data-course-name="${escapeHtml(course.name)}">${escapeHtml(course.name)}</button>`
+      )).join('');
+      coursesInlinePicker.querySelectorAll('.courses-inline-picker-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          currentPlaylistCourse = btn.dataset.courseName || '';
+          renderCoursesShowcase();
+        });
+      });
+    }
     coursesProgressFill.style.width = '0%';
     coursesProgressValue.textContent = '0%';
-    coursesTodoList.innerHTML = '<li><input type="checkbox" disabled /><span>Select a course from the list above first.</span></li>';
+    coursesTodoList.innerHTML = '<li><input type="checkbox" disabled /><span>Select a course from Current Course options above.</span></li>';
     coursesNextTitle.textContent = 'No assignment';
     coursesNextCourse.textContent = 'Course: -';
     coursesNextDue.textContent = 'Due: -';
