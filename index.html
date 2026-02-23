@@ -1065,11 +1065,36 @@
       background: rgba(255, 255, 255, 0.9);
       color: #0f172a;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .courses-inline-picker-btn:hover {
       border-color: #f97316;
       color: #c2410c;
+    }
+
+    .courses-inline-picker-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.2);
+      background: #f8fafc;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #0f172a;
+      text-transform: uppercase;
+    }
+
+    .courses-inline-picker-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     #courses-focus-video {
@@ -4608,7 +4633,10 @@ function renderCoursesShowcase() {
     if (coursesInlinePicker) {
       coursesInlinePicker.classList.remove('hidden');
       coursesInlinePicker.innerHTML = coursesData.map((course) => (
-        `<button type="button" class="courses-inline-picker-btn" data-course-name="${escapeHtml(course.name)}">${escapeHtml(course.name)}</button>`
+        `<button type="button" class="courses-inline-picker-btn" data-course-name="${escapeHtml(course.name)}">
+          <span class="courses-inline-picker-icon">${course.iconUrl ? `<img src="${course.iconUrl}" alt="${escapeHtml(course.name)} icon" />` : escapeHtml(course.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase())}</span>
+          <span>${escapeHtml(course.name)}</span>
+        </button>`
       )).join('');
       coursesInlinePicker.querySelectorAll('.courses-inline-picker-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
