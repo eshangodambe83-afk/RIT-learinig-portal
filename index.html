@@ -2710,7 +2710,7 @@
                 <h2 id="courses-focus-title">INTRODUCTION TO ALGORITHMS</h2>
                 <div id="courses-inline-picker" class="courses-inline-picker hidden"></div>
               </div>
-              <div class="protected-video-wrap">
+              <div class="protected-video-wrap" id="courses-focus-video-wrap">
                 <video id="courses-focus-video" class="protected-video" controls preload="metadata" playsinline webkit-playsinline controlsList="nodownload noplaybackrate noremoteplayback" disablePictureInPicture disableRemotePlayback></video>
                 <div class="video-watermark" aria-hidden="true">
                   <span id="courses-video-watermark-a">RITP Protected Content</span>
@@ -3165,6 +3165,7 @@ const classAssignmentsFeed = document.getElementById('class-assignments-feed');
     const myCoursesTeacherList = document.getElementById('my-courses-teacher-list');
     const myCoursesTeacherHelp = document.getElementById('my-courses-teacher-help');
     const coursesFocusTitle = document.getElementById('courses-focus-title');
+    const coursesFocusVideoWrap = document.getElementById('courses-focus-video-wrap');
     const coursesInlinePicker = document.getElementById('courses-inline-picker');
     const coursesFocusVideo = document.getElementById('courses-focus-video');
     const coursesVideoWatermarkA = document.getElementById('courses-video-watermark-a');
@@ -4594,12 +4595,14 @@ function renderCoursesShowcase() {
       coursesFocusVideo.dataset.src = '';
       coursesFocusVideo.dataset.course = '';
     }
+    if (coursesFocusVideoWrap) coursesFocusVideoWrap.classList.add('hidden');
     return;
   }
 
   const selectedCourse = coursesData.find((course) => normalizeCourseName(course.name) === normalizeCourseName(currentPlaylistCourse)) || null;
   if (!selectedCourse) {
     coursesFocusTitle.textContent = 'SELECT A COURSE TO START';
+    if (coursesFocusVideoWrap) coursesFocusVideoWrap.classList.add('hidden');
     if (coursesInlinePicker) {
       coursesInlinePicker.classList.remove('hidden');
       coursesInlinePicker.innerHTML = coursesData.map((course) => (
@@ -4636,6 +4639,7 @@ function renderCoursesShowcase() {
   }
 
   const featuredCourse = selectedCourse || coursesData[0];
+  if (coursesFocusVideoWrap) coursesFocusVideoWrap.classList.remove('hidden');
   const featuredCourseName = featuredCourse ? featuredCourse.name : '';
   const featuredTasks = classAssignments.filter((task) => normalizeCourseName(task.course) === normalizeCourseName(featuredCourseName));
   const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
