@@ -2429,10 +2429,26 @@
     }
 
     .dashboard.theme-bw-premium {
-      background:
-        radial-gradient(circle at 10% -10%, rgba(255, 255, 255, 0.09), transparent 36%),
-        radial-gradient(circle at 90% 120%, rgba(255, 255, 255, 0.06), transparent 38%),
-        linear-gradient(180deg, #0a0a0a 0%, #060606 100%);
+      background: #0b0b0b;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dashboard.theme-bw-premium::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.1;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          rgba(255, 255, 255, 0.05) 0,
+          rgba(255, 255, 255, 0.05) 1px,
+          transparent 1px,
+          transparent 3px
+        );
     }
 
     .dashboard.theme-bw-premium .navbar,
@@ -2440,12 +2456,12 @@
     .dashboard.theme-bw-premium .panel,
     .dashboard.theme-bw-premium .card,
     .dashboard.theme-bw-premium .notifications-panel {
-      background: #111111;
-      border-color: rgba(255, 255, 255, 0.14);
+      background: #121212;
+      border-color: rgba(255, 255, 255, 0.12);
       color: #f4f4f5;
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
     }
 
     .dashboard.theme-bw-premium .title,
@@ -2466,9 +2482,9 @@
 
     .dashboard.theme-bw-premium .menu button:hover,
     .dashboard.theme-bw-premium .menu button.active {
-      background: #1d1d1d;
+      background: #1a1a1a;
       color: #ffffff;
-      border-color: rgba(255, 255, 255, 0.22);
+      border-color: rgba(255, 255, 255, 0.16);
     }
 
     .dashboard.theme-bw-premium th,
@@ -2516,7 +2532,7 @@
     .dashboard.theme-bw-premium .nav-icon-btn {
       color: #ffffff;
       background: #141414;
-      border-color: rgba(255, 255, 255, 0.22);
+      border-color: rgba(255, 255, 255, 0.16);
       box-shadow: none;
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
