@@ -588,26 +588,26 @@
       isolation: isolate;
       mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
       -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
-      pointer-events: none;
+      pointer-events: auto;
     }
 
     .navbar-float-chip {
       position: absolute;
       left: -240px;
       top: var(--top, 8px);
-      border: 1px solid rgba(71, 85, 105, 0.42);
+      border: 1px solid rgba(90, 102, 114, 0.34);
       border-radius: 999px;
       padding: 5px 11px;
       font-size: 0.82rem;
       font-weight: 900;
-      color: #0f172a;
+      color: #1b2633;
       background: linear-gradient(
         145deg,
-        #69727d 0%,
-        #b3bbc3 24%,
-        #edf0f3 50%,
-        #a4adb6 74%,
-        #626b76 100%
+        #6f7883 0%,
+        #b5bcc4 24%,
+        #e2e5e8 50%,
+        #aab1b9 74%,
+        #68707b 100%
       );
       line-height: 1.1;
       letter-spacing: 0.02em;
@@ -616,15 +616,29 @@
       animation: navbarChipFloat var(--dur, 14s) linear infinite;
       animation-delay: var(--delay, 0s);
       opacity: 1;
-      pointer-events: none;
+      cursor: pointer;
+      pointer-events: auto;
       text-shadow: none;
       backface-visibility: visible;
       -webkit-font-smoothing: subpixel-antialiased;
       text-rendering: optimizeLegibility;
+      appearance: none;
+      -webkit-appearance: none;
       box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.52),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.22),
-        0 1px 2px rgba(15, 23, 42, 0.22);
+        inset 0 1px 0 rgba(255, 255, 255, 0.38),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+        0 1px 2px rgba(15, 23, 42, 0.18);
+      transition: transform 150ms ease, box-shadow 150ms ease;
+    }
+
+    .navbar-float-chip:hover,
+    .navbar-float-chip:focus-visible {
+      transform: translateX(0) translateY(-1px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.44),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.24),
+        0 3px 8px rgba(15, 23, 42, 0.24);
+      outline: none;
     }
 
     @keyframes navbarChipFloat {
@@ -1733,6 +1747,7 @@
         min-height: 64px;
         padding: 10px 12px;
         gap: 8px;
+        flex-wrap: wrap;
       }
 
       .navbar .title {
@@ -1740,7 +1755,10 @@
       }
 
       .navbar-float-cloud {
-        display: none;
+        display: block;
+        height: 32px;
+        order: 3;
+        flex: 1 0 100%;
       }
 
       .layout {
@@ -2542,19 +2560,19 @@
     .dashboard.theme-bw-premium .navbar-float-chip {
       background: linear-gradient(
         145deg,
-        #3f454e 0%,
-        #8f98a3 24%,
-        #d6dce2 50%,
-        #7f8892 74%,
-        #373d45 100%
+        #474d56 0%,
+        #8f97a2 24%,
+        #ccd2d8 50%,
+        #808892 74%,
+        #414850 100%
       );
-      color: #fafafa;
-      border: 1px solid rgba(220, 220, 220, 0.62);
+      color: #f5f5f5;
+      border: 1px solid rgba(220, 220, 220, 0.52);
       text-shadow: none;
       box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.34),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.38),
-        0 1px 2px rgba(0, 0, 0, 0.42);
+        inset 0 1px 0 rgba(255, 255, 255, 0.26),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.34),
+        0 1px 2px rgba(0, 0, 0, 0.34);
     }
 
     .dashboard.theme-bw-premium .title,
@@ -2927,7 +2945,7 @@
   <main class="screen dashboard hidden" id="dashboard-screen" aria-label="Dashboard Screen">
     <header class="navbar">
       <div class="title">RITP Learning Portal</div>
-      <div class="navbar-float-cloud" id="navbar-float-cloud" aria-hidden="true"></div>
+      <div class="navbar-float-cloud" id="navbar-float-cloud" aria-label="Quick Navigation"></div>
       <div class="navbar-actions">
         <button class="nav-icon-btn" id="notifications-toggle-btn" type="button" aria-label="Open notifications" title="Notifications">🔔
           <span class="notif-badge hidden" id="notif-count">0</span>
@@ -3627,17 +3645,17 @@ window.RITP_GOOGLE_CLIENT_ID = '990509990942-ur498coaohab2uu0fk5ijfadaef8nla4.ap
 const GOOGLE_CLIENT_ID = String(window.RITP_GOOGLE_CLIENT_ID || '').trim();
 const MAX_PROFILE_PHOTO_DIMENSION = 320;
 const PROFILE_PHOTO_QUALITY = 0.8;
-const NAVBAR_FLOAT_TEXT_POOL = [
-  'RITP Learning Portal',
-  'My Courses',
-  'Course',
-  'Basic Electrics and Electronics',
-  'Digital Class',
-  'Live Classroom',
-  'Web Page Programming',
-  'Programming in C',
-  'Introduction to AI',
-  'Artificial Intelligence'
+const NAVBAR_FLOAT_ITEMS = [
+  { label: 'RITP Learning Portal', type: 'section', target: 'dashboard' },
+  { label: 'My Courses', type: 'section', target: 'courses' },
+  { label: 'Course', type: 'section', target: 'courses' },
+  { label: 'Basic Electrics and Electronics', type: 'course', target: 'Basic Electrics and Electronics' },
+  { label: 'Digital Class', type: 'section', target: 'digital-class' },
+  { label: 'Live Classroom', type: 'section', target: 'digital-class' },
+  { label: 'Web Page Programming', type: 'course', target: 'Web Programming' },
+  { label: 'Programming in C', type: 'course', target: 'Programming in C' },
+  { label: 'Introduction to AI', type: 'course', target: 'Introduction to AI' },
+  { label: 'Artificial Intelligence', type: 'course', target: 'Introduction to AI' }
 ];
 let pendingCloudAccountsSync = null;
 let cloudAccountsSyncTimer = null;
@@ -3672,17 +3690,43 @@ function randomInRange(min, max) {
   return Math.random() * (max - min) + min;
 }
 
+function findCourseNameByHint(hint) {
+  const normalizedHint = normalizeCourseName(hint);
+  if (!normalizedHint) return '';
+  const exact = coursesData.find((course) => normalizeCourseName(course.name) === normalizedHint);
+  if (exact) return exact.name;
+  const direct = resolveCourseByName(hint);
+  if (direct) return direct.name;
+  const fuzzy = coursesData.find((course) => normalizeCourseName(course.name).includes(normalizedHint) || normalizedHint.includes(normalizeCourseName(course.name)));
+  return fuzzy ? fuzzy.name : '';
+}
+
+function handleNavbarFloatChipClick(item) {
+  if (!item || !item.type) return;
+  if (item.type === 'section') {
+    setActiveSection(item.target || 'dashboard');
+    return;
+  }
+  if (item.type === 'course') {
+    const resolvedCourse = findCourseNameByHint(item.target || item.label);
+    if (resolvedCourse) {
+      openCoursePlaylist(resolvedCourse);
+    } else {
+      setActiveSection('courses');
+    }
+  }
+}
+
 function renderNavbarFloatCloud() {
   if (!navbarFloatCloud) return;
   navbarFloatCloud.innerHTML = '';
-
-  if (window.matchMedia('(max-width: 760px)').matches) return;
 
   const rect = navbarFloatCloud.getBoundingClientRect();
   if (!rect.width || !rect.height) return;
 
   const travel = Math.round(rect.width + 520);
-  const laneTops = [5, 22];
+  const isMobile = window.matchMedia('(max-width: 760px)').matches;
+  const laneTops = isMobile ? [7] : [5, 22];
   const durationSec = randomInRange(30, 36);
   const speedPxPerSec = travel / durationSec;
   const laneCursorPx = laneTops.map(() => randomInRange(0, 140));
@@ -3691,18 +3735,22 @@ function renderNavbarFloatCloud() {
     let safety = 0;
     while (laneCursorPx[laneIndex] < travel - 160 && safety < 50) {
       safety += 1;
-      const text = NAVBAR_FLOAT_TEXT_POOL[Math.floor(Math.random() * NAVBAR_FLOAT_TEXT_POOL.length)];
-      const approxWidth = Math.round(30 + text.length * 8.3);
-      const gapPx = randomInRange(54, 94);
+      const item = NAVBAR_FLOAT_ITEMS[Math.floor(Math.random() * NAVBAR_FLOAT_ITEMS.length)];
+      const text = item.label;
+      const approxWidth = Math.round(32 + text.length * (isMobile ? 7.2 : 8.3));
+      const gapPx = randomInRange(isMobile ? 34 : 54, isMobile ? 62 : 94);
       const delaySec = -(laneCursorPx[laneIndex] / speedPxPerSec);
 
-      const chip = document.createElement('span');
+      const chip = document.createElement('button');
       chip.className = 'navbar-float-chip';
+      chip.type = 'button';
       chip.textContent = text;
+      chip.title = text;
       chip.style.setProperty('--top', `${top}px`);
       chip.style.setProperty('--dur', `${durationSec.toFixed(2)}s`);
       chip.style.setProperty('--delay', `${delaySec.toFixed(2)}s`);
       chip.style.setProperty('--travel', `${travel}px`);
+      chip.addEventListener('click', () => handleNavbarFloatChipClick(item));
       navbarFloatCloud.appendChild(chip);
 
       laneCursorPx[laneIndex] += approxWidth + gapPx;
