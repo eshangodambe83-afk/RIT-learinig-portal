@@ -3446,6 +3446,12 @@
               <div class="panel-head"><h2>Digital Class (Live)</h2></div>
               <form class="upload-form" id="digital-class-form">
                 <div class="field">
+                  <label for="digital-class-course">Course</label>
+                  <select id="digital-class-course">
+                    <option value="">Select course</option>
+                  </select>
+                </div>
+                <div class="field">
                   <label for="digital-class-title">Class Title</label>
                   <input id="digital-class-title" type="text" placeholder="Example: Web Programming Live" maxlength="80" />
                 </div>
@@ -3460,6 +3466,7 @@
               </form>
               <ul class="list">
                 <li>Current Host: <strong id="digital-class-host">-</strong></li>
+                <li>Current Course: <strong id="digital-class-current-course">-</strong></li>
                 <li>Current Room: <strong id="digital-class-current-room">-</strong></li>
                 <li>Status: <strong id="digital-class-status">No live class</strong></li>
               </ul>
@@ -3871,6 +3878,7 @@ const classAssignmentsFeed = document.getElementById('class-assignments-feed');
     const connectionsList = document.getElementById('connections-list');
     const searchConnectHelp = document.getElementById('search-connect-help');
     const digitalClassForm = document.getElementById('digital-class-form');
+    const digitalClassCourseSelect = document.getElementById('digital-class-course');
     const digitalClassTitleInput = document.getElementById('digital-class-title');
     const digitalClassRoomInput = document.getElementById('digital-class-room');
     const digitalClassStartBtn = document.getElementById('digital-class-start-btn');
@@ -3878,6 +3886,7 @@ const classAssignmentsFeed = document.getElementById('class-assignments-feed');
     const digitalClassJoinBtn = document.getElementById('digital-class-join-btn');
     const digitalClassHelp = document.getElementById('digital-class-help');
     const digitalClassHost = document.getElementById('digital-class-host');
+    const digitalClassCurrentCourse = document.getElementById('digital-class-current-course');
     const digitalClassCurrentRoom = document.getElementById('digital-class-current-room');
     const digitalClassStatus = document.getElementById('digital-class-status');
     const digitalClassFrame = document.getElementById('digital-class-frame');
@@ -4570,13 +4579,44 @@ function saveCourseAccess() {
   return saveLocalJSON(COURSE_ACCESS_STORAGE_KEY, courseAccessByCourse);
 }
 
+function packDigitalClassTitle(rawTitle, rawCourseName) {
+  const title = String(rawTitle || '').trim() || 'RITP Live Class';
+  const courseName = String(rawCourseName || '').trim();
+  if (!courseName) return title;
+  return `[RITP_COURSE:${encodeURIComponent(courseName)}] ${title}`;
+}
+
+function unpackDigitalClassTitle(rawTitle) {
+  const value = String(rawTitle || '');
+  const match = value.match(/^\[RITP_COURSE:([^\]]+)\]\s*(.*)$/);
+  if (!match) {
+    return {
+      title: value.trim() || 'RITP Live Class',
+      courseName: ''
+    };
+  }
+  let decodedCourse = '';
+  try {
+    decodedCourse = decodeURIComponent(match[1] || '');
+  } catch (error) {
+    decodedCourse = String(match[1] || '').trim();
+  }
+  return {
+    title: String(match[2] || '').trim() || 'RITP Live Class',
+    courseName: String(decodedCourse || '').trim()
+  };
+}
+
 function loadDigitalClassState() {
   try {
     const raw = localStorage.getItem(DIGITAL_CLASS_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
     if (!parsed || typeof parsed !== 'object') return null;
+    const meta = unpackDigitalClassTitle(parsed.title || '');
+    const courseName = String(parsed.courseName || meta.courseName || '').trim();
     return {
-      title: String(parsed.title || ''),
+      title: String(meta.title || ''),
+      courseName,
       room: String(parsed.room || ''),
       host: String(parsed.host || ''),
       startedAt: Number(parsed.startedAt || 0)
@@ -4591,14 +4631,22 @@ function saveDigitalClassState(state) {
     removeLocalValue(DIGITAL_CLASS_STORAGE_KEY);
     return true;
   }
-  return saveLocalJSON(DIGITAL_CLASS_STORAGE_KEY, state);
+  const normalized = {
+    title: String(state.title || '').trim(),
+    courseName: String(state.courseName || '').trim(),
+    room: String(state.room || '').trim(),
+    host: String(state.host || '').trim(),
+    startedAt: Number(state.startedAt || Date.now())
+  };
+  return saveLocalJSON(DIGITAL_CLASS_STORAGE_KEY, normalized);
 }
 
 function toCloudDigitalClassRow(state) {
   if (!state || !state.room) return null;
+  const courseName = String(state.courseName || '').trim();
   return {
     id: 'global',
-    title: String(state.title || ''),
+    title: packDigitalClassTitle(state.title, courseName),
     room: String(state.room || ''),
     host: String(state.host || ''),
     started_at: Number(state.startedAt || Date.now()),
@@ -4610,8 +4658,10 @@ function fromCloudDigitalClassRow(row) {
   if (!row || String(row.status || '').toLowerCase() !== 'live') return null;
   const room = String(row.room || '').trim();
   if (!room) return null;
+  const meta = unpackDigitalClassTitle(row.title || '');
   return {
-    title: String(row.title || ''),
+    title: String(meta.title || ''),
+    courseName: String(meta.courseName || '').trim(),
     room,
     host: String(row.host || ''),
     startedAt: Number(row.started_at || 0)
@@ -5539,18 +5589,93 @@ const coursesData = [
       digitalClassFrame.src = jitsiUrl;
     }
 
+    function renderDigitalClassCourseOptions(preferredCourseName = '') {
+      if (!digitalClassCourseSelect) return;
+      const previous = String(digitalClassCourseSelect.value || '').trim();
+      const preferred = String(preferredCourseName || '').trim() || previous || currentPlaylistCourse || '';
+      const resolvedPreferred = resolveCourseByName(preferred);
+      const selectedName = resolvedPreferred ? resolvedPreferred.name : '';
+      digitalClassCourseSelect.innerHTML = `<option value="">Select course</option>${coursesData.map((course) => (
+        `<option value="${escapeHtml(course.name)}">${escapeHtml(course.name)}</option>`
+      )).join('')}`;
+      if (selectedName) {
+        digitalClassCourseSelect.value = selectedName;
+      } else {
+        digitalClassCourseSelect.value = '';
+      }
+    }
+
+    function getDigitalClassJoinDecision(roomOverride = '') {
+      const typedRoom = normalizeDigitalClassRoom(roomOverride || '');
+      const activeRoom = digitalClassState && digitalClassState.room ? normalizeDigitalClassRoom(digitalClassState.room) : '';
+      const isStaff = isTeacherSideRole();
+
+      if (!currentUserName) {
+        return { allowed: false, room: '', message: 'Please login first.' };
+      }
+
+      if (isStaff) {
+        const room = typedRoom || activeRoom;
+        if (!room) {
+          return { allowed: false, room: '', message: 'Enter class code or start a live class first.' };
+        }
+        return { allowed: true, room, message: '' };
+      }
+
+      if (!currentUserRoles.includes('Student')) {
+        return { allowed: false, room: '', message: 'Live class access is available for approved students only.' };
+      }
+
+      if (!activeRoom) {
+        return { allowed: false, room: '', message: 'No live class is running right now.' };
+      }
+
+      const liveCourse = resolveCourseByName(digitalClassState && digitalClassState.courseName ? digitalClassState.courseName : '');
+      const liveCourseName = liveCourse ? liveCourse.name : String(digitalClassState && digitalClassState.courseName ? digitalClassState.courseName : '').trim();
+      if (!liveCourseName) {
+        return { allowed: false, room: '', message: 'Live class is not linked to a course. Ask teacher to restart class.' };
+      }
+
+      if (!isStudentApprovedForCourse(liveCourseName, currentUserName)) {
+        return { allowed: false, room: '', message: `Access denied. Get approved for ${liveCourseName} first.` };
+      }
+
+      return { allowed: true, room: activeRoom, message: '' };
+    }
+
+    function canCurrentUserViewCourse(courseName) {
+      const name = String(courseName || '').trim();
+      if (!name || !currentUserName) return false;
+      if (currentUserRoles.includes('Admin') || currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD')) {
+        return true;
+      }
+      if (!currentUserRoles.includes('Student')) return false;
+      const resolved = resolveCourseByName(name);
+      const normalizedName = resolved ? resolved.name : name;
+      return isStudentApprovedForCourse(normalizedName, currentUserName);
+    }
+
     function renderDigitalClassPanel() {
-      if (!digitalClassHelp || !digitalClassHost || !digitalClassCurrentRoom || !digitalClassStatus || !digitalClassStartBtn || !digitalClassEndBtn) return;
+      if (!digitalClassHelp || !digitalClassHost || !digitalClassCurrentCourse || !digitalClassCurrentRoom || !digitalClassStatus || !digitalClassStartBtn || !digitalClassEndBtn || !digitalClassJoinBtn) return;
       const canHost = isTeacherSideRole();
+      const isStudent = currentUserRoles.includes('Student');
       digitalClassStartBtn.classList.toggle('hidden', !canHost);
       digitalClassEndBtn.classList.toggle('hidden', !canHost || !digitalClassState || !digitalClassState.room);
+      renderDigitalClassCourseOptions(digitalClassState && digitalClassState.courseName ? digitalClassState.courseName : '');
 
       if (!digitalClassState || !digitalClassState.room) {
         digitalClassHost.textContent = '-';
+        digitalClassCurrentCourse.textContent = '-';
         digitalClassCurrentRoom.textContent = '-';
         digitalClassStatus.textContent = 'No live class';
         if (digitalClassTitleInput) digitalClassTitleInput.value = '';
         if (digitalClassRoomInput) digitalClassRoomInput.value = '';
+        if (digitalClassJoinBtn) {
+          const decision = getDigitalClassJoinDecision(digitalClassRoomInput ? digitalClassRoomInput.value : '');
+          digitalClassJoinBtn.disabled = !decision.allowed;
+          digitalClassJoinBtn.textContent = isStudent ? 'Access Locked' : 'Join Live Class';
+          digitalClassJoinBtn.title = decision.allowed ? 'Join live class' : decision.message;
+        }
         if (digitalClassFrame) digitalClassFrame.src = 'about:blank';
         return;
       }
@@ -5561,9 +5686,24 @@ const coursesData = [
       if (digitalClassRoomInput && !digitalClassRoomInput.value.trim()) {
         digitalClassRoomInput.value = digitalClassState.room || '';
       }
+      if (digitalClassCourseSelect) {
+        const resolvedCourse = resolveCourseByName(digitalClassState.courseName || '');
+        digitalClassCourseSelect.value = resolvedCourse ? resolvedCourse.name : '';
+      }
       digitalClassHost.textContent = digitalClassState.host || '-';
+      const resolvedLiveCourse = resolveCourseByName(digitalClassState.courseName || '');
+      const liveCourseName = resolvedLiveCourse ? resolvedLiveCourse.name : String(digitalClassState.courseName || '').trim();
+      digitalClassCurrentCourse.textContent = liveCourseName || '-';
       digitalClassCurrentRoom.textContent = digitalClassState.room;
-      digitalClassStatus.textContent = `Live now: ${digitalClassState.title || digitalClassState.room}`;
+      digitalClassStatus.textContent = `Live now: ${digitalClassState.title || digitalClassState.room}${liveCourseName ? ` (${liveCourseName})` : ''}`;
+
+      const decision = getDigitalClassJoinDecision(digitalClassRoomInput ? digitalClassRoomInput.value : '');
+      digitalClassJoinBtn.disabled = !decision.allowed;
+      digitalClassJoinBtn.textContent = decision.allowed ? 'Join Live Class' : (isStudent ? 'Access Locked' : 'Join Live Class');
+      digitalClassJoinBtn.title = decision.allowed ? 'Join live class' : decision.message;
+      if (!decision.allowed && !isTeacherSideRole() && digitalClassFrame && digitalClassFrame.src !== 'about:blank') {
+        digitalClassFrame.src = 'about:blank';
+      }
     }
 
     function renderMyTeacherCourses() {
@@ -5748,10 +5888,7 @@ function renderCoursesShowcase() {
   if (coursesFocusVideoWrap) coursesFocusVideoWrap.classList.remove('hidden');
   const featuredCourseName = featuredCourse ? featuredCourse.name : '';
   const featuredTasks = classAssignments.filter((task) => normalizeCourseName(task.course) === normalizeCourseName(featuredCourseName));
-  const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
-  const isStudent = currentUserRoles.includes('Student');
-  const approved = isStudent && isStudentApprovedForCourse(featuredCourseName, currentUserName);
-  const canViewCourseVideo = isTeacherSide || approved;
+  const canViewCourseVideo = canCurrentUserViewCourse(featuredCourseName);
   coursesFocusTitle.textContent = featuredCourseName.toUpperCase();
 
   if (coursesFocusVideo) {
@@ -6082,6 +6219,7 @@ function handleCourseAccessDecision(courseName, emailRaw, action) {
   renderCourseAccessPanel({ name: courseName });
   renderNotifications();
   renderCoursesShowcase();
+  renderDigitalClassPanel();
 }
 
 function renderSubmittedAssignments() {
@@ -6374,11 +6512,7 @@ function renderAttendanceRecords() {
         renderCourseAccessPanel(course);
         bindCourseAccessActions(course.name);
 
-        const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
-        const isStudent = currentUserRoles.includes('Student');
-        const approved = isStudent && isStudentApprovedForCourse(course.name, currentUserName);
-
-        const canView = isTeacherSide || approved;
+        const canView = canCurrentUserViewCourse(course.name);
         playlistVideoPlayer.classList.toggle('hidden', !canView);
         playlistVideoList.classList.toggle('hidden', !canView);
         miniQuizPanel.classList.toggle('hidden', !canView);
@@ -8298,10 +8432,18 @@ function openDashboard(userName) {
           return;
         }
 
+        const selectedCourse = resolveCourseByName(digitalClassCourseSelect ? digitalClassCourseSelect.value : '');
+        if (!selectedCourse) {
+          digitalClassHelp.textContent = 'Select course before starting live class.';
+          digitalClassHelp.style.color = '#b91c1c';
+          return;
+        }
+
         const title = String(digitalClassTitleInput.value || '').trim() || 'RITP Live Class';
         const room = normalizeDigitalClassRoom(digitalClassRoomInput.value || title) || `ritp-live-${Date.now()}`;
         digitalClassState = {
           title,
+          courseName: selectedCourse.name,
           room,
           host: currentUserName,
           startedAt: Date.now()
@@ -8312,33 +8454,32 @@ function openDashboard(userName) {
         renderDigitalClassPanel();
         openDigitalClassRoom(room);
         if (cloudSaved || !isCloudAccountsConfigured()) {
-          digitalClassHelp.textContent = `Live class started. Room: ${room}`;
+          digitalClassHelp.textContent = `Live class started for ${selectedCourse.name}. Room: ${room}`;
           digitalClassHelp.style.color = '#166534';
         } else {
-          digitalClassHelp.textContent = `Live class started locally (cloud sync failed). Room: ${room}`;
+          digitalClassHelp.textContent = `Live class started locally for ${selectedCourse.name} (cloud sync failed). Room: ${room}`;
           digitalClassHelp.style.color = '#b45309';
         }
-        addNotification(`Live class started by ${currentUserName}: ${title}`);
+        addNotification(`Live class started by ${currentUserName}: ${title} (${selectedCourse.name})`);
       });
     }
 
     if (digitalClassJoinBtn) {
       digitalClassJoinBtn.addEventListener('click', async () => {
-        if (!currentUserName) {
-          digitalClassHelp.textContent = 'Please login first.';
-          digitalClassHelp.style.color = '#b91c1c';
-          return;
-        }
         await refreshDigitalClassFromCloud();
-        const typedRoom = normalizeDigitalClassRoom(digitalClassRoomInput.value || '');
-        const room = typedRoom || (digitalClassState && digitalClassState.room ? normalizeDigitalClassRoom(digitalClassState.room) : '');
-        if (!room) {
-          digitalClassHelp.textContent = 'Enter class code or wait for teacher to start class.';
+        const decision = getDigitalClassJoinDecision(digitalClassRoomInput ? digitalClassRoomInput.value : '');
+        if (!decision.allowed) {
+          if (digitalClassFrame && !isTeacherSideRole()) {
+            digitalClassFrame.src = 'about:blank';
+          }
+          digitalClassHelp.textContent = decision.message || 'Live class access denied.';
           digitalClassHelp.style.color = '#b91c1c';
           return;
         }
-        openDigitalClassRoom(room);
-        digitalClassHelp.textContent = `Joined live room: ${room}`;
+        openDigitalClassRoom(decision.room);
+        const liveCourse = resolveCourseByName(digitalClassState && digitalClassState.courseName ? digitalClassState.courseName : '');
+        const courseSuffix = liveCourse ? ` (${liveCourse.name})` : '';
+        digitalClassHelp.textContent = `Joined live room: ${decision.room}${courseSuffix}`;
         digitalClassHelp.style.color = '#166534';
       });
     }
