@@ -596,32 +596,31 @@
       top: var(--top, 8px);
       border: 1px solid rgba(71, 85, 105, 0.42);
       border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 0.78rem;
-      font-weight: 800;
+      padding: 5px 11px;
+      font-size: 0.82rem;
+      font-weight: 900;
       color: #0f172a;
-      background: rgba(255, 255, 255, 0.46);
-      line-height: 1;
-      letter-spacing: 0.01em;
+      background: rgba(255, 255, 255, 0.88);
+      line-height: 1.1;
+      letter-spacing: 0.02em;
       white-space: nowrap;
-      transform: translateX(0) scale(var(--scale, 1)) rotate(var(--tilt, 0deg));
+      transform: translateX(0);
       animation: navbarChipFloat var(--dur, 14s) linear infinite;
       animation-delay: var(--delay, 0s);
-      opacity: var(--alpha, 0.9);
+      opacity: 1;
       pointer-events: none;
-      text-shadow: 0 0 0.01px rgba(15, 23, 42, 0.75);
-      backface-visibility: hidden;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: geometricPrecision;
-      will-change: transform;
+      text-shadow: none;
+      backface-visibility: visible;
+      -webkit-font-smoothing: subpixel-antialiased;
+      text-rendering: optimizeLegibility;
     }
 
     @keyframes navbarChipFloat {
       from {
-        transform: translateX(0) scale(var(--scale, 1)) rotate(var(--tilt, 0deg));
+        transform: translateX(0);
       }
       to {
-        transform: translateX(var(--travel, 960px)) scale(var(--scale, 1)) rotate(var(--tilt, 0deg));
+        transform: translateX(var(--travel, 960px));
       }
     }
 
@@ -2529,10 +2528,10 @@
     }
 
     .dashboard.theme-bw-premium .navbar-float-chip {
-      background: rgba(255, 255, 255, 0.05);
-      color: #f3f4f6;
-      border: 1px solid rgba(192, 192, 192, 0.48);
-      text-shadow: 0 0 0.01px rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.12);
+      color: #fafafa;
+      border: 1px solid rgba(220, 220, 220, 0.62);
+      text-shadow: none;
     }
 
     .dashboard.theme-bw-premium .title,
@@ -3668,13 +3667,10 @@ function renderNavbarFloatCloud() {
     const chip = document.createElement('span');
     chip.className = 'navbar-float-chip';
     chip.textContent = text;
-    chip.style.setProperty('--top', `${randomInRange(3, topMax).toFixed(1)}px`);
-    chip.style.setProperty('--dur', `${randomInRange(16, 28).toFixed(2)}s`);
-    chip.style.setProperty('--delay', `${(-randomInRange(0, 20)).toFixed(2)}s`);
+    chip.style.setProperty('--top', `${Math.round(randomInRange(3, topMax))}px`);
+    chip.style.setProperty('--dur', `${randomInRange(22, 34).toFixed(2)}s`);
+    chip.style.setProperty('--delay', `${(-randomInRange(0, 24)).toFixed(2)}s`);
     chip.style.setProperty('--travel', `${travel}px`);
-    chip.style.setProperty('--scale', `${randomInRange(0.98, 1.04).toFixed(2)}`);
-    chip.style.setProperty('--tilt', `${randomInRange(-0.6, 0.6).toFixed(2)}deg`);
-    chip.style.setProperty('--alpha', `${randomInRange(0.9, 1).toFixed(2)}`);
     navbarFloatCloud.appendChild(chip);
   }
 }
