@@ -7504,9 +7504,7 @@ function openDashboard(userName) {
         watchTimeByStudent[userName] = 0;
       }
       if (welcomeUser) {
-      if (welcomeUser) {
         welcomeUser.textContent = `Welcome ${currentUserRole}: ${userName}`;
-      }
       }
       const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('Admin') || currentUserRoles.includes('HOD');
       uploadCourseMenu.classList.toggle('hidden', !(currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD')));
@@ -7514,9 +7512,9 @@ function openDashboard(userName) {
       if (myCoursesTeacherMenu) myCoursesTeacherMenu.classList.toggle('hidden', !isTeacherSide);
       uploadAssignmentMenu.classList.toggle('hidden', !(currentUserRole === 'Student' || isTeacherSide));
       if (settingsNavBtn) settingsNavBtn.classList.remove('hidden');
-      searchMenu.classList.remove('hidden');
+      if (searchMenu) searchMenu.classList.remove('hidden');
       notificationsPanel.classList.add('hidden');
-      profileSearchBtn.classList.remove("hidden");
+      if (profileSearchBtn) profileSearchBtn.classList.remove("hidden");
       if (profileNavBtn) profileNavBtn.classList.remove('hidden');
       const savedTheme = themePrefByUser[userName.toLowerCase()] || 'light';
       applyAppTheme(savedTheme, false);
@@ -7572,10 +7570,10 @@ function openDashboard(userName) {
       playlistAssignmentHelp.textContent = '';
       uploadAssignmentMenu.classList.add('hidden');
       if (settingsNavBtn) settingsNavBtn.classList.add('hidden');
-      searchMenu.classList.add('hidden');
+      if (searchMenu) searchMenu.classList.add('hidden');
       announcementHelp.textContent = '';
       notificationsPanel.classList.add('hidden');
-      profileSearchBtn.classList.add("hidden");
+      if (profileSearchBtn) profileSearchBtn.classList.add("hidden");
       if (profileNavBtn) profileNavBtn.classList.add('hidden');
       clearSession();
       applyAppTheme('light', false);
@@ -7839,8 +7837,10 @@ function openDashboard(userName) {
     function positionNotificationsPanel() {
       if (!notificationsPanel || !notificationsToggleBtn) return;
       const rect = notificationsToggleBtn.getBoundingClientRect();
-      const panelWidth = Math.min(360, Math.max(260, window.innerWidth - 24));
-      const right = Math.max(10, window.innerWidth - rect.right);
+      const panelWidth = Math.max(220, Math.min(360, window.innerWidth - 20));
+      const idealRight = Math.max(10, window.innerWidth - rect.right);
+      const maxRight = Math.max(10, window.innerWidth - panelWidth - 10);
+      const right = Math.min(idealRight, maxRight);
       const top = Math.max(74, Math.round(rect.bottom + 10));
       notificationsPanel.style.position = 'fixed';
       notificationsPanel.style.width = `${panelWidth}px`;
