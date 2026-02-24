@@ -575,31 +575,25 @@
       flex: 0 0 auto;
     }
 
-    .navbar-float-ticker {
+    .navbar-float-cloud {
       flex: 1 1 auto;
       min-width: 0;
-      height: 34px;
+      height: 36px;
       border: 1px solid rgba(148, 163, 184, 0.35);
       border-radius: 12px;
       background: linear-gradient(140deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.32));
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      padding: 0 8px;
+      position: relative;
+      padding: 0;
       mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
       -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+      pointer-events: none;
     }
 
-    .navbar-float-track {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      width: max-content;
-      white-space: nowrap;
-      animation: navbarFloatLeftRight 15s ease-in-out infinite alternate;
-    }
-
-    .navbar-float-item {
+    .navbar-float-chip {
+      position: absolute;
+      left: -240px;
+      top: var(--top, 8px);
       border: 1px solid rgba(148, 163, 184, 0.38);
       border-radius: 999px;
       padding: 4px 10px;
@@ -609,11 +603,21 @@
       background: rgba(255, 255, 255, 0.72);
       line-height: 1;
       letter-spacing: 0.01em;
+      white-space: nowrap;
+      transform: translateX(0) scale(var(--scale, 1)) rotate(var(--tilt, 0deg));
+      animation: navbarChipFloat var(--dur, 14s) linear infinite;
+      animation-delay: var(--delay, 0s);
+      opacity: var(--alpha, 0.9);
+      pointer-events: none;
     }
 
-    @keyframes navbarFloatLeftRight {
-      0% { transform: translateX(-10%); }
-      100% { transform: translateX(8%); }
+    @keyframes navbarChipFloat {
+      from {
+        transform: translateX(0) scale(var(--scale, 1)) rotate(var(--tilt, 0deg));
+      }
+      to {
+        transform: translateX(var(--travel, 960px)) scale(var(--scale, 1)) rotate(var(--tilt, 0deg));
+      }
     }
 
     .welcome {
@@ -1719,7 +1723,7 @@
         font-size: 0.92rem;
       }
 
-      .navbar-float-ticker {
+      .navbar-float-cloud {
         display: none;
       }
 
@@ -2512,14 +2516,14 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
     }
 
-    .dashboard.theme-bw-premium .navbar-float-ticker {
+    .dashboard.theme-bw-premium .navbar-float-cloud {
       background: #161616;
       border-color: rgba(192, 192, 192, 0.28);
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
     }
 
-    .dashboard.theme-bw-premium .navbar-float-item {
+    .dashboard.theme-bw-premium .navbar-float-chip {
       background: #1b1b1b;
       color: #d4d4d8;
       border-color: rgba(192, 192, 192, 0.34);
@@ -2895,20 +2899,7 @@
   <main class="screen dashboard hidden" id="dashboard-screen" aria-label="Dashboard Screen">
     <header class="navbar">
       <div class="title">RITP Learning Portal</div>
-      <div class="navbar-float-ticker" aria-hidden="true">
-        <div class="navbar-float-track">
-          <span class="navbar-float-item">RITP Learning Portal</span>
-          <span class="navbar-float-item">My Courses</span>
-          <span class="navbar-float-item">Course</span>
-          <span class="navbar-float-item">Basic Electrics and Electronics</span>
-          <span class="navbar-float-item">Digital Class</span>
-          <span class="navbar-float-item">Live Classroom</span>
-          <span class="navbar-float-item">Web Page Programming</span>
-          <span class="navbar-float-item">Programming in C</span>
-          <span class="navbar-float-item">Introduction to AI</span>
-          <span class="navbar-float-item">Artificial Intelligence</span>
-        </div>
-      </div>
+      <div class="navbar-float-cloud" id="navbar-float-cloud" aria-hidden="true"></div>
       <div class="navbar-actions">
         <button class="nav-icon-btn" id="notifications-toggle-btn" type="button" aria-label="Open notifications" title="Notifications">🔔
           <span class="notif-badge hidden" id="notif-count">0</span>
@@ -3416,6 +3407,7 @@
     const passwordInput = document.getElementById('password');
     const goLoginBtn = document.getElementById('go-login-btn');
     const goSignupBtn = document.getElementById('go-signup-btn');
+    const navbarFloatCloud = document.getElementById('navbar-float-cloud');
     const welcomeUser = document.getElementById('welcome-user');
     const notificationsToggleBtn = document.getElementById('notifications-toggle-btn');
     const notificationsPanel = document.getElementById('notifications-panel');
@@ -3607,6 +3599,18 @@ window.RITP_GOOGLE_CLIENT_ID = '990509990942-ur498coaohab2uu0fk5ijfadaef8nla4.ap
 const GOOGLE_CLIENT_ID = String(window.RITP_GOOGLE_CLIENT_ID || '').trim();
 const MAX_PROFILE_PHOTO_DIMENSION = 320;
 const PROFILE_PHOTO_QUALITY = 0.8;
+const NAVBAR_FLOAT_TEXT_POOL = [
+  'RITP Learning Portal',
+  'My Courses',
+  'Course',
+  'Basic Electrics and Electronics',
+  'Digital Class',
+  'Live Classroom',
+  'Web Page Programming',
+  'Programming in C',
+  'Introduction to AI',
+  'Artificial Intelligence'
+];
 let pendingCloudAccountsSync = null;
 let cloudAccountsSyncTimer = null;
 let cloudAccountsSyncInFlight = false;
@@ -3616,6 +3620,7 @@ let cloudProfilesSyncInFlight = false;
 let googleSignInInitialized = false;
 let digitalClassCloudSyncInFlight = false;
 let notificationsClearedAtByUser = loadNotificationsClearedAtByUser();
+let navbarFloatRebuildTimer = null;
 
 function saveLocalJSON(key, value) {
   try {
@@ -3632,6 +3637,39 @@ function removeLocalValue(key) {
     localStorage.removeItem(key);
   } catch (error) {
     console.warn(`Local remove failed for ${key}`, error);
+  }
+}
+
+function randomInRange(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function renderNavbarFloatCloud() {
+  if (!navbarFloatCloud) return;
+  navbarFloatCloud.innerHTML = '';
+
+  if (window.matchMedia('(max-width: 760px)').matches) return;
+
+  const rect = navbarFloatCloud.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+
+  const chipCount = Math.max(10, Math.min(18, Math.round(rect.width / 85)));
+  const topMax = Math.max(4, rect.height - 24);
+  const travel = Math.round(rect.width + 460);
+
+  for (let i = 0; i < chipCount; i += 1) {
+    const text = NAVBAR_FLOAT_TEXT_POOL[Math.floor(Math.random() * NAVBAR_FLOAT_TEXT_POOL.length)];
+    const chip = document.createElement('span');
+    chip.className = 'navbar-float-chip';
+    chip.textContent = text;
+    chip.style.setProperty('--top', `${randomInRange(3, topMax).toFixed(1)}px`);
+    chip.style.setProperty('--dur', `${randomInRange(9.5, 19).toFixed(2)}s`);
+    chip.style.setProperty('--delay', `${(-randomInRange(0, 20)).toFixed(2)}s`);
+    chip.style.setProperty('--travel', `${travel}px`);
+    chip.style.setProperty('--scale', `${randomInRange(0.9, 1.08).toFixed(2)}`);
+    chip.style.setProperty('--tilt', `${randomInRange(-2.4, 2.4).toFixed(2)}deg`);
+    chip.style.setProperty('--alpha', `${randomInRange(0.64, 0.96).toFixed(2)}`);
+    navbarFloatCloud.appendChild(chip);
   }
 }
 
@@ -6838,6 +6876,7 @@ function openDashboard(userName) {
       renderSuggestionsPanel();
       renderBugReportsPanel();
       renderDigitalClassPanel();
+      requestAnimationFrame(renderNavbarFloatCloud);
       if (currentPlaylistCourse) {
         renderCourseAccessPanel({ name: currentPlaylistCourse });
         bindCourseAccessActions(currentPlaylistCourse);
@@ -7166,6 +7205,8 @@ function openDashboard(userName) {
       if (!notificationsPanel.classList.contains('hidden')) {
         positionNotificationsPanel();
       }
+      if (navbarFloatRebuildTimer) clearTimeout(navbarFloatRebuildTimer);
+      navbarFloatRebuildTimer = setTimeout(renderNavbarFloatCloud, 140);
     });
 
     document.addEventListener('contextmenu', (event) => {
