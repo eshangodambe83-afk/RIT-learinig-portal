@@ -2428,6 +2428,105 @@
       border-bottom-color: #6f4b1d;
     }
 
+    .dashboard.theme-bw-premium {
+      background:
+        radial-gradient(circle at 10% -10%, rgba(255, 255, 255, 0.09), transparent 36%),
+        radial-gradient(circle at 90% 120%, rgba(255, 255, 255, 0.06), transparent 38%),
+        linear-gradient(180deg, #0a0a0a 0%, #060606 100%);
+    }
+
+    .dashboard.theme-bw-premium .navbar,
+    .dashboard.theme-bw-premium .sidebar,
+    .dashboard.theme-bw-premium .panel,
+    .dashboard.theme-bw-premium .card,
+    .dashboard.theme-bw-premium .notifications-panel {
+      background: #111111;
+      border-color: rgba(255, 255, 255, 0.14);
+      color: #f4f4f5;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+    }
+
+    .dashboard.theme-bw-premium .title,
+    .dashboard.theme-bw-premium .welcome,
+    .dashboard.theme-bw-premium .panel h2,
+    .dashboard.theme-bw-premium .card span,
+    .dashboard.theme-bw-premium .field label,
+    .dashboard.theme-bw-premium .video-hint,
+    .dashboard.theme-bw-premium .assignment-meta,
+    .dashboard.theme-bw-premium .course-app-name,
+    .dashboard.theme-bw-premium .notifications-meta {
+      color: #e4e4e7;
+    }
+
+    .dashboard.theme-bw-premium .menu button {
+      color: #f4f4f5;
+    }
+
+    .dashboard.theme-bw-premium .menu button:hover,
+    .dashboard.theme-bw-premium .menu button.active {
+      background: #1d1d1d;
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.22);
+    }
+
+    .dashboard.theme-bw-premium th,
+    .dashboard.theme-bw-premium td {
+      color: #f4f4f5;
+      border-bottom-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .dashboard.theme-bw-premium thead th {
+      background: #1a1a1a;
+      color: #ffffff;
+    }
+
+    .dashboard.theme-bw-premium tbody tr:hover {
+      background: #181818;
+    }
+
+    .dashboard.theme-bw-premium .list li,
+    .dashboard.theme-bw-premium .notifications-list li {
+      background: #121212;
+      border-color: rgba(255, 255, 255, 0.16);
+      color: #f4f4f5;
+    }
+
+    .dashboard.theme-bw-premium .notifications-list li.unread {
+      background: #1a1a1a;
+      border-color: rgba(255, 255, 255, 0.28);
+    }
+
+    .dashboard.theme-bw-premium input,
+    .dashboard.theme-bw-premium select {
+      color: #f5f5f5;
+      background: #0f0f0f;
+      border-color: rgba(255, 255, 255, 0.24);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      box-shadow: none;
+    }
+
+    .dashboard.theme-bw-premium input::placeholder {
+      color: #a1a1aa;
+    }
+
+    .dashboard.theme-bw-premium .video-open-btn,
+    .dashboard.theme-bw-premium .nav-icon-btn {
+      color: #ffffff;
+      background: #141414;
+      border-color: rgba(255, 255, 255, 0.22);
+      box-shadow: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .dashboard.theme-bw-premium .panel-head {
+      background: #151515;
+      border-bottom-color: rgba(255, 255, 255, 0.16);
+    }
+
     .dashboard.theme-stranger {
       background:
         radial-gradient(circle at 50% -25%, rgba(220, 38, 38, 0.22), transparent 55%),
@@ -3030,6 +3129,7 @@
                     <option value="ben10">Ben 10 Neon</option>
                     <option value="stranger">Stranger Things Red</option>
                     <option value="royal">Royal Matte Gold</option>
+                    <option value="bw-premium">Black & White Premium</option>
                   </select>
                 </div>
                 <button class="btn" type="submit">Apply Theme</button>
@@ -5526,7 +5626,7 @@ function renderAttendanceRecords() {
 
     function applyAppTheme(themeId, persist = true) {
       const next = themeId || 'light';
-      dashboardScreen.classList.remove('theme-dark', 'theme-snap-blue', 'theme-snap-night', 'theme-crimson', 'theme-amber', 'theme-rose', 'theme-ben10', 'theme-stranger', 'theme-royal');
+      dashboardScreen.classList.remove('theme-dark', 'theme-snap-blue', 'theme-snap-night', 'theme-crimson', 'theme-amber', 'theme-rose', 'theme-ben10', 'theme-stranger', 'theme-royal', 'theme-bw-premium');
       if (next === 'dark') dashboardScreen.classList.add('theme-dark');
       if (next === 'snap-blue') dashboardScreen.classList.add('theme-snap-blue');
       if (next === 'snap-night') dashboardScreen.classList.add('theme-snap-night');
@@ -5536,6 +5636,7 @@ function renderAttendanceRecords() {
       if (next === 'ben10') dashboardScreen.classList.add('theme-ben10');
       if (next === 'stranger') dashboardScreen.classList.add('theme-stranger');
       if (next === 'royal') dashboardScreen.classList.add('theme-royal');
+      if (next === 'bw-premium') dashboardScreen.classList.add('theme-bw-premium');
       currentThemeId = next;
       themeStyleSelect.value = next;
       updateThemeButton();
