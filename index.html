@@ -8072,7 +8072,7 @@ function openDashboard(userName) {
     function positionNotificationsPanel() {
       if (!notificationsPanel || !notificationsToggleBtn) return;
       const rect = notificationsToggleBtn.getBoundingClientRect();
-      const panelWidth = Math.max(220, Math.min(360, window.innerWidth - 20));
+      const panelWidth = Math.min(360, Math.max(180, window.innerWidth - 20));
       const idealRight = Math.max(10, window.innerWidth - rect.right);
       const maxRight = Math.max(10, window.innerWidth - panelWidth - 10);
       const right = Math.min(idealRight, maxRight);
