@@ -3708,7 +3708,9 @@
               </div>
               <div class="field">
                 <label for="assignment-course">Course</label>
-                <input id="assignment-course" type="text" placeholder="Enter course name" required />
+                <select id="assignment-course" required>
+                  <option value="">Select course</option>
+                </select>
               </div>
               <div class="field">
                 <label for="assignment-drive-link">Google Drive Link</label>
@@ -3771,6 +3773,7 @@
     const courseVideoInput = document.getElementById('course-video');
     const coursePlaylistVideosInput = document.getElementById('course-playlist-videos');
     const uploadAssignmentForm = document.getElementById('upload-assignment-form');
+const assignmentCourseSelect = document.getElementById('assignment-course');
 const assignmentUploadMessage = document.getElementById('assignment-upload-message');
 const assignmentDriveLinkInput = document.getElementById('assignment-drive-link');
 const announcementFormWrap = document.getElementById('announcement-form-wrap');
@@ -5553,6 +5556,37 @@ const coursesData = [
       return /^https?:\/\/(drive|docs)\.google\.com\//i.test(link);
     }
 
+    function getJoinedCoursesForStudent(email) {
+      const key = normalizeEmail(email || '');
+      if (!key) return [];
+      return coursesData.filter((course) => isStudentApprovedForCourse(course.name, key));
+    }
+
+    function renderAssignmentCourseOptions(preferredCourseName = '') {
+      if (!assignmentCourseSelect) return;
+      const previous = String(assignmentCourseSelect.value || '').trim();
+      const preferredRaw = String(preferredCourseName || '').trim() || previous || currentPlaylistCourse || '';
+      const resolvedPreferred = resolveCourseByName(preferredRaw);
+      const preferred = resolvedPreferred ? resolvedPreferred.name : preferredRaw;
+      const isStudentOnly = currentUserRoles.includes('Student') && !isTeacherSideRole();
+      const availableCourses = isStudentOnly
+        ? getJoinedCoursesForStudent(currentUserName)
+        : coursesData.slice();
+      const options = availableCourses.map((course) => (
+        `<option value="${escapeHtml(course.name)}">${escapeHtml(course.name)}</option>`
+      )).join('');
+      const emptyLabel = isStudentOnly ? 'No joined courses yet' : 'No courses available';
+
+      assignmentCourseSelect.innerHTML = `<option value="">${availableCourses.length ? 'Select course' : emptyLabel}</option>${options}`;
+      assignmentCourseSelect.disabled = !availableCourses.length;
+      assignmentCourseSelect.required = true;
+      if (preferred && availableCourses.some((course) => normalizeCourseName(course.name) === normalizeCourseName(preferred))) {
+        assignmentCourseSelect.value = preferred;
+      } else {
+        assignmentCourseSelect.value = '';
+      }
+    }
+
     function updateCourseUploadModeUI() {
       if (!courseUploadModeSelect || !singleVideoField || !playlistVideosField || !courseVideoInput || !coursePlaylistVideosInput) return;
       const mode = courseUploadModeSelect.value === 'playlist' ? 'playlist' : 'single';
@@ -6220,6 +6254,7 @@ function handleCourseAccessDecision(courseName, emailRaw, action) {
   renderNotifications();
   renderCoursesShowcase();
   renderDigitalClassPanel();
+  renderAssignmentCourseOptions(courseName);
 }
 
 function renderSubmittedAssignments() {
@@ -6620,8 +6655,35 @@ function renderAttendanceRecords() {
         }
       });
 
+      const assignmentItems = [];
+      if (currentUserRoles.includes('Student') && currentUserName) {
+        const myEmail = normalizeEmail(currentUserName);
+        classAssignments.forEach((task) => {
+          const assignedAt = Number(task.assignedAt || 0);
+          if (!assignedAt || assignedAt <= clearedAt) return;
+          const resolvedCourse = resolveCourseByName(task.course);
+          const taskCourse = resolvedCourse ? resolvedCourse.name : String(task.course || '').trim();
+          if (!taskCourse || !isStudentApprovedForCourse(taskCourse, myEmail)) return;
+          const hasSubmitted = Object.keys(task.submissions || {}).some((submittedBy) => normalizeEmail(submittedBy) === myEmail);
+          if (hasSubmitted) return;
+          assignmentItems.push({
+            id: `assignment::${task.id}::${myEmail}`,
+            type: 'assignment_posted',
+            text: `New assignment in ${taskCourse}: ${task.title}`,
+            time: new Date(assignedAt).toLocaleString(),
+            createdAt: assignedAt
+          });
+        });
+      }
+      assignmentItems.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
       const visibleBasicNotifications = notificationsData.filter((item) => Number(item.createdAt || 0) > clearedAt);
-      const allItems = [...roleItems, ...courseItems.filter((item) => Number(item.createdAt || 0) > clearedAt), ...visibleBasicNotifications];
+      const allItems = [
+        ...roleItems,
+        ...courseItems.filter((item) => Number(item.createdAt || 0) > clearedAt),
+        ...assignmentItems,
+        ...visibleBasicNotifications
+      ];
 
       notificationsList.innerHTML = allItems.map((item) => {
         if (item.type === 'role_request') {
@@ -6649,6 +6711,12 @@ function renderAttendanceRecords() {
         }
         if (item.type === 'course_result') {
           return `<li>
+            <strong>${item.text}</strong>
+            <div class="notifications-meta">${item.time}</div>
+          </li>`;
+        }
+        if (item.type === 'assignment_posted') {
+          return `<li class="unread">
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time}</div>
           </li>`;
@@ -6683,6 +6751,9 @@ function renderAttendanceRecords() {
         }, 0);
       } else if (currentUserName) {
         unread += roleRequests.filter((req) => req.email === currentUserName && req.status === 'pending' && Number(req.requestedAt || 0) > clearedAt).length;
+      }
+      if (currentUserRoles.includes('Student')) {
+        unread += assignmentItems.length;
       }
 
       notifCount.textContent = String(unread);
@@ -7761,6 +7832,7 @@ function openDashboard(userName) {
       renderAttendanceRecords();
       renderQuizScores();
       renderClassAssignmentsFeed();
+      renderAssignmentCourseOptions();
       renderNotifications();
       renderAnnouncements();
       renderSuggestionsPanel();
@@ -7844,6 +7916,9 @@ function openDashboard(userName) {
       }
       if (target === 'my-courses-teacher') {
         renderMyTeacherCourses();
+      }
+      if (target === 'upload-assignment') {
+        renderAssignmentCourseOptions();
       }
       if (target === 'digital-class') {
         renderDigitalClassPanel();
@@ -8562,6 +8637,7 @@ function openDashboard(userName) {
         uploadedByName: currentUserName || ''
       });
       renderCourseViews();
+      renderAssignmentCourseOptions(`${name} (${code})`);
 
       uploadMessage.textContent = uploadMode === 'playlist'
         ? `Playlist created with ${selectedFiles.length} videos.`
@@ -8575,41 +8651,53 @@ function openDashboard(userName) {
     uploadAssignmentForm.addEventListener('submit', (event) => {
       event.preventDefault();
       const title = document.getElementById('assignment-title').value.trim();
-      const course = document.getElementById('assignment-course').value.trim();
+      const course = assignmentCourseSelect ? assignmentCourseSelect.value.trim() : '';
       const driveLink = assignmentDriveLinkInput.value.trim();
       const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('Admin') || currentUserRoles.includes('HOD');
+      const resolvedCourse = resolveCourseByName(course);
+      const normalizedCourseName = resolvedCourse ? resolvedCourse.name : course;
 
-      if (!title || !course || !isValidDriveLink(driveLink)) {
+      if (!title || !normalizedCourseName || !isValidDriveLink(driveLink)) {
         assignmentUploadMessage.textContent = 'Please fill all details and enter a valid Google Drive link.';
         assignmentUploadMessage.style.color = '#b91c1c';
         return;
       }
 
+      if (!isTeacherSide && !isStudentApprovedForCourse(normalizedCourseName, currentUserName)) {
+        assignmentUploadMessage.textContent = 'Please select one of your joined courses.';
+        assignmentUploadMessage.style.color = '#b91c1c';
+        return;
+      }
+
       if (isTeacherSide) {
-        const resolvedCourse = resolveCourseByName(course);
-        const courseKey = normalizeCourseName(resolvedCourse ? resolvedCourse.name : course);
+        const assignedAt = Date.now();
+        const courseKey = normalizeCourseName(normalizedCourseName);
+        const approvedStudentsCount = getCourseAccessRecord(normalizedCourseName).approved.length;
         classAssignments.unshift({
-          id: Date.now(),
+          id: assignedAt,
           title,
-          course,
+          course: normalizedCourseName,
           courseKey,
           due: 'TBD',
           assignedBy: `${currentUserRole}: ${currentUserName}`,
+          assignedByEmail: normalizeEmail(currentUserName || ''),
+          assignedAt,
           completedBy: [],
           submissions: {},
           driveLink
         });
         renderClassAssignmentsFeed();
         renderMyTeacherCourses();
-        if (normalizeCourseName(currentPlaylistCourse) === normalizeCourseName(course)) {
+        if (normalizeCourseName(currentPlaylistCourse) === normalizeCourseName(normalizedCourseName)) {
           renderPlaylistAssignments(currentPlaylistCourse);
         }
+        renderAssignmentCourseOptions(normalizedCourseName);
         renderCoursesShowcase();
-        assignmentUploadMessage.textContent = 'Class assignment posted with Google Drive link.';
+        assignmentUploadMessage.textContent = `Class assignment posted and ${approvedStudentsCount} approved student(s) notified.`;
         assignmentUploadMessage.style.color = '#166534';
-        addNotification(`New assignment posted: ${title}`);
+        addNotification(`New assignment posted in ${normalizedCourseName}: ${title}`);
       } else {
-        submittedAssignments.unshift(`${title} (${course}) - ${driveLink}`);
+        submittedAssignments.unshift(`${title} (${normalizedCourseName}) - ${driveLink}`);
         renderSubmittedAssignments();
         renderCoursesShowcase();
         renderMyTeacherCourses();
@@ -8618,6 +8706,7 @@ function openDashboard(userName) {
         addNotification(`Assignment submitted: ${title}`);
       }
       uploadAssignmentForm.reset();
+      renderAssignmentCourseOptions();
     });
     announcementForm.addEventListener('submit', (event) => {
       event.preventDefault();
