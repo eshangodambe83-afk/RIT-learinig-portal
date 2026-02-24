@@ -56,6 +56,16 @@
       pointer-events: none;
     }
 
+    .login-scorpion-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      opacity: 0.96;
+      pointer-events: none;
+    }
+
     .screen {
       min-height: 100vh;
       width: 100%;
@@ -2952,6 +2962,7 @@
     <source src="./auth-bg.mov" type="video/quicktime" />
   </video>
   <div id="auth-bg-overlay" class="auth-bg-overlay"></div>
+  <canvas id="login-scorpion-canvas" class="login-scorpion-canvas hidden" aria-hidden="true"></canvas>
 
   <main class="screen login-wrap" id="signup-screen" aria-label="Signup Screen">
     <section class="login-card">
@@ -3515,6 +3526,7 @@
   <script>
     const authBgVideo = document.getElementById('auth-bg-video');
     const authBgOverlay = document.getElementById('auth-bg-overlay');
+    const loginScorpionCanvas = document.getElementById('login-scorpion-canvas');
     const signupScreen = document.getElementById('signup-screen');
     const loginScreen = document.getElementById('login-screen');
     const dashboardScreen = document.getElementById('dashboard-screen');
@@ -3743,6 +3755,254 @@ let googleSignInInitialized = false;
 let digitalClassCloudSyncInFlight = false;
 let notificationsClearedAtByUser = loadNotificationsClearedAtByUser();
 let navbarFloatRebuildTimer = null;
+const LOGIN_SCORPION_SEGMENT_COUNT = 16;
+const LOGIN_SCORPION_SEGMENT_LENGTH = 6.5;
+const LOGIN_SCORPION_LINE_COLOR = 'rgba(248, 250, 252, 0.95)';
+let loginScorpionCtx = null;
+let loginScorpionDpr = 1;
+let loginScorpionAnimFrame = 0;
+let loginScorpionActive = false;
+let loginScorpionInitialized = false;
+let loginScorpionTime = 0;
+let loginScorpionLastFrameAt = 0;
+let loginScorpionHasPointer = false;
+const loginScorpionTarget = { x: 0, y: 0 };
+const loginScorpionHead = { x: 0, y: 0, angle: 0 };
+let loginScorpionSegments = [];
+
+function handleLoginScorpionPointer(event) {
+  const x = Number(event && event.clientX);
+  const y = Number(event && event.clientY);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+  loginScorpionTarget.x = x;
+  loginScorpionTarget.y = y;
+  loginScorpionHasPointer = true;
+}
+
+function handleLoginScorpionTouch(event) {
+  const touch = event && event.touches && event.touches[0];
+  if (!touch) return;
+  handleLoginScorpionPointer(touch);
+}
+
+function resizeLoginScorpionCanvas() {
+  if (!loginScorpionCanvas || !loginScorpionCtx) return;
+  const cssWidth = Math.max(1, Math.floor(window.innerWidth));
+  const cssHeight = Math.max(1, Math.floor(window.innerHeight));
+  loginScorpionDpr = Math.min(window.devicePixelRatio || 1, 2);
+  const pixelWidth = Math.floor(cssWidth * loginScorpionDpr);
+  const pixelHeight = Math.floor(cssHeight * loginScorpionDpr);
+  if (loginScorpionCanvas.width !== pixelWidth || loginScorpionCanvas.height !== pixelHeight) {
+    loginScorpionCanvas.width = pixelWidth;
+    loginScorpionCanvas.height = pixelHeight;
+  }
+  loginScorpionCtx.setTransform(loginScorpionDpr, 0, 0, loginScorpionDpr, 0, 0);
+}
+
+function resetLoginScorpionShape() {
+  const width = window.innerWidth || 1;
+  const height = window.innerHeight || 1;
+  const startX = loginScorpionHasPointer ? loginScorpionTarget.x : width * 0.5;
+  const startY = loginScorpionHasPointer ? loginScorpionTarget.y : height * 0.5;
+  loginScorpionHead.x = startX;
+  loginScorpionHead.y = startY;
+  loginScorpionHead.angle = 0;
+  loginScorpionSegments = Array.from({ length: LOGIN_SCORPION_SEGMENT_COUNT }, (_, index) => ({
+    x: startX - ((index + 1) * LOGIN_SCORPION_SEGMENT_LENGTH),
+    y: startY,
+    angle: 0
+  }));
+}
+
+function ensureLoginScorpionReady() {
+  if (loginScorpionInitialized || !loginScorpionCanvas) return;
+  loginScorpionCtx = loginScorpionCanvas.getContext('2d');
+  if (!loginScorpionCtx) return;
+  loginScorpionInitialized = true;
+  resizeLoginScorpionCanvas();
+  if (!loginScorpionHasPointer) {
+    loginScorpionTarget.x = window.innerWidth * 0.5;
+    loginScorpionTarget.y = window.innerHeight * 0.5;
+  }
+  resetLoginScorpionShape();
+  window.addEventListener('resize', resizeLoginScorpionCanvas, { passive: true });
+  window.addEventListener('pointermove', handleLoginScorpionPointer, { passive: true });
+  window.addEventListener('pointerdown', handleLoginScorpionPointer, { passive: true });
+  window.addEventListener('touchmove', handleLoginScorpionTouch, { passive: true });
+}
+
+function drawLoginScorpion() {
+  if (!loginScorpionCtx || !loginScorpionCanvas) return;
+  const width = loginScorpionCanvas.width / loginScorpionDpr;
+  const height = loginScorpionCanvas.height / loginScorpionDpr;
+  loginScorpionCtx.clearRect(0, 0, width, height);
+
+  if (!loginScorpionHasPointer) {
+    const radiusX = Math.min(width * 0.16, 90);
+    const radiusY = Math.min(height * 0.1, 56);
+    loginScorpionTarget.x = (width * 0.5) + (Math.cos(loginScorpionTime * 0.00065) * radiusX);
+    loginScorpionTarget.y = (height * 0.48) + (Math.sin(loginScorpionTime * 0.00045) * radiusY);
+  }
+
+  const prevHeadX = loginScorpionHead.x;
+  const prevHeadY = loginScorpionHead.y;
+  loginScorpionHead.x += (loginScorpionTarget.x - loginScorpionHead.x) * 0.18;
+  loginScorpionHead.y += (loginScorpionTarget.y - loginScorpionHead.y) * 0.18;
+
+  const moveX = loginScorpionHead.x - prevHeadX;
+  const moveY = loginScorpionHead.y - prevHeadY;
+  if (Math.abs(moveX) + Math.abs(moveY) > 0.001) {
+    loginScorpionHead.angle = Math.atan2(moveY, moveX);
+  }
+
+  for (let i = 0; i < loginScorpionSegments.length; i += 1) {
+    const follower = loginScorpionSegments[i];
+    const leader = i === 0 ? loginScorpionHead : loginScorpionSegments[i - 1];
+    const deltaX = leader.x - follower.x;
+    const deltaY = leader.y - follower.y;
+    const distance = Math.hypot(deltaX, deltaY) || 1;
+    const unitX = deltaX / distance;
+    const unitY = deltaY / distance;
+    follower.x = leader.x - (unitX * LOGIN_SCORPION_SEGMENT_LENGTH);
+    follower.y = leader.y - (unitY * LOGIN_SCORPION_SEGMENT_LENGTH);
+    follower.angle = Math.atan2(unitY, unitX);
+  }
+
+  const ctx = loginScorpionCtx;
+  ctx.strokeStyle = LOGIN_SCORPION_LINE_COLOR;
+  ctx.fillStyle = 'rgba(248, 250, 252, 0.96)';
+  ctx.lineWidth = 2.05;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowColor = 'rgba(15, 23, 42, 0.55)';
+  ctx.shadowBlur = 6;
+
+  ctx.beginPath();
+  ctx.moveTo(loginScorpionHead.x, loginScorpionHead.y);
+  loginScorpionSegments.forEach((segment) => {
+    ctx.lineTo(segment.x, segment.y);
+  });
+  ctx.strokeStyle = 'rgba(15, 23, 42, 0.48)';
+  ctx.lineWidth = 3.6;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(loginScorpionHead.x, loginScorpionHead.y);
+  loginScorpionSegments.forEach((segment) => {
+    ctx.lineTo(segment.x, segment.y);
+  });
+  ctx.strokeStyle = LOGIN_SCORPION_LINE_COLOR;
+  ctx.lineWidth = 2.05;
+  ctx.stroke();
+
+  const bodyNodes = [loginScorpionHead, ...loginScorpionSegments.slice(0, 5)];
+  bodyNodes.forEach((node, index) => {
+    const radius = Math.max(2.8, 5.3 - (index * 0.46));
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  for (let i = 1; i < 8; i += 2) {
+    const segment = loginScorpionSegments[i];
+    if (!segment) continue;
+    for (let side = -1; side <= 1; side += 2) {
+      const spread = segment.angle + (side * 1.26);
+      const wiggle = Math.sin((loginScorpionTime * 0.009) + i + (side * 0.8)) * 0.16;
+      const kneeX = segment.x + (Math.cos(spread + wiggle) * 6.2);
+      const kneeY = segment.y + (Math.sin(spread + wiggle) * 6.2);
+      const footX = kneeX + (Math.cos(spread + (side * 0.25)) * 4.4);
+      const footY = kneeY + (Math.sin(spread + (side * 0.25)) * 4.4);
+      ctx.beginPath();
+      ctx.moveTo(segment.x, segment.y);
+      ctx.lineTo(kneeX, kneeY);
+      ctx.lineTo(footX, footY);
+      ctx.stroke();
+    }
+  }
+
+  for (let side = -1; side <= 1; side += 2) {
+    const baseAngle = loginScorpionHead.angle + (side * 0.78);
+    const clawBend = Math.sin((loginScorpionTime * 0.01) + (side * 0.9)) * 0.2;
+    const elbowX = loginScorpionHead.x + (Math.cos(baseAngle + clawBend) * 7.8);
+    const elbowY = loginScorpionHead.y + (Math.sin(baseAngle + clawBend) * 7.8);
+    const clawX = elbowX + (Math.cos(baseAngle + (side * 0.35)) * 5.2);
+    const clawY = elbowY + (Math.sin(baseAngle + (side * 0.35)) * 5.2);
+    ctx.beginPath();
+    ctx.moveTo(loginScorpionHead.x, loginScorpionHead.y);
+    ctx.lineTo(elbowX, elbowY);
+    ctx.lineTo(clawX, clawY);
+    ctx.stroke();
+  }
+
+  const tailBase = loginScorpionSegments[loginScorpionSegments.length - 2];
+  const tailEnd = loginScorpionSegments[loginScorpionSegments.length - 1];
+  if (tailBase && tailEnd) {
+    const tailAngle = Math.atan2(tailEnd.y - tailBase.y, tailEnd.x - tailBase.x);
+    const curlAngle = tailAngle - 0.95;
+    const stingerX = tailEnd.x + (Math.cos(curlAngle) * 9.5);
+    const stingerY = tailEnd.y + (Math.sin(curlAngle) * 9.5);
+    ctx.beginPath();
+    ctx.moveTo(tailEnd.x, tailEnd.y);
+    ctx.quadraticCurveTo(
+      tailEnd.x + (Math.cos(curlAngle - 0.35) * 6),
+      tailEnd.y + (Math.sin(curlAngle - 0.35) * 6),
+      stingerX,
+      stingerY
+    );
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(stingerX, stingerY, 1.9, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.shadowBlur = 0;
+}
+
+function animateLoginScorpion(timestamp) {
+  if (!loginScorpionActive) return;
+  if (!loginScorpionLastFrameAt) loginScorpionLastFrameAt = timestamp;
+  const delta = Math.min(34, timestamp - loginScorpionLastFrameAt);
+  loginScorpionLastFrameAt = timestamp;
+  loginScorpionTime += delta;
+  drawLoginScorpion();
+  loginScorpionAnimFrame = requestAnimationFrame(animateLoginScorpion);
+}
+
+function startLoginScorpionAnimation() {
+  ensureLoginScorpionReady();
+  if (!loginScorpionInitialized || loginScorpionActive) return;
+  loginScorpionActive = true;
+  loginScorpionLastFrameAt = 0;
+  loginScorpionAnimFrame = requestAnimationFrame(animateLoginScorpion);
+}
+
+function stopLoginScorpionAnimation() {
+  loginScorpionActive = false;
+  loginScorpionLastFrameAt = 0;
+  if (loginScorpionAnimFrame) {
+    cancelAnimationFrame(loginScorpionAnimFrame);
+    loginScorpionAnimFrame = 0;
+  }
+  if (loginScorpionCtx && loginScorpionCanvas) {
+    const width = loginScorpionCanvas.width / (loginScorpionDpr || 1);
+    const height = loginScorpionCanvas.height / (loginScorpionDpr || 1);
+    loginScorpionCtx.clearRect(0, 0, width, height);
+  }
+}
+
+function refreshLoginScorpionVisibility() {
+  if (!loginScorpionCanvas) return;
+  const isLoginVisible =
+    !loginScreen.classList.contains('hidden') &&
+    signupScreen.classList.contains('hidden') &&
+    dashboardScreen.classList.contains('hidden');
+  loginScorpionCanvas.classList.toggle('hidden', !isLoginVisible);
+  if (isLoginVisible) {
+    startLoginScorpionAnimation();
+  } else {
+    stopLoginScorpionAnimation();
+  }
+}
 
 function saveLocalJSON(key, value) {
   try {
@@ -6972,6 +7232,7 @@ function renderSearchUsers() {
       loginScreen.classList.add('hidden');
       signupScreen.classList.remove('hidden');
       setAuthVisualVisibility(true);
+      refreshLoginScorpionVisibility();
       setBackgroundForDashboard(false);
       initGoogleSignInButtons();
     }
@@ -6981,6 +7242,7 @@ function renderSearchUsers() {
       signupScreen.classList.add('hidden');
       loginScreen.classList.remove('hidden');
       setAuthVisualVisibility(true);
+      refreshLoginScorpionVisibility();
       setBackgroundForDashboard(false);
       initGoogleSignInButtons();
       if (message) {
@@ -6996,6 +7258,7 @@ function openDashboard(userName) {
       loginScreen.classList.add('hidden');
       dashboardScreen.classList.remove('hidden');
       setAuthVisualVisibility(false);
+      refreshLoginScorpionVisibility();
       currentUserName = userName;
       currentUserRoles = getAccountRoles(userName);
       currentUserRole = getPrimaryRoleFromRoles(currentUserRoles);
@@ -7063,6 +7326,7 @@ function openDashboard(userName) {
       loginScreen.classList.remove('hidden');
       signupScreen.classList.add('hidden');
       setAuthVisualVisibility(true);
+      refreshLoginScorpionVisibility();
       loginForm.reset();
       loginHelp.textContent = '';
       loginHelp.style.color = '#b91c1c';
@@ -7986,6 +8250,7 @@ function openDashboard(userName) {
     renderDigitalClassPanel();
     applyAppTheme('light', false);
     updateVideoWatermarks();
+    refreshLoginScorpionVisibility();
 
     (async () => {
       await refreshAccountsFromCloud();
