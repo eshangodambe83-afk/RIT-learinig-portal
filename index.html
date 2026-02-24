@@ -28,10 +28,20 @@
       padding: 0;
     }
 
+    html {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
     body {
       font-family: "Manrope", sans-serif;
       min-height: 100vh;
+      min-height: 100dvh;
       color: var(--ink);
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
       background:
         radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.2), transparent 40%),
         radial-gradient(circle at 85% 10%, rgba(255, 255, 255, 0.18), transparent 45%),
@@ -68,6 +78,7 @@
 
     .screen {
       min-height: 100vh;
+      min-height: 100dvh;
       width: 100%;
     }
 
@@ -278,6 +289,9 @@
     .dashboard {
       position: relative;
       z-index: 3;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
       background:
         radial-gradient(circle at 85% -10%, rgba(37, 99, 235, 0.16), transparent 40%),
         linear-gradient(180deg, #f8fbff, #f1f5f9);
@@ -349,6 +363,8 @@
 
     .main {
       padding: 24px;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .section {
@@ -358,6 +374,8 @@
 
     .section.active {
       display: block;
+      width: 100%;
+      max-width: 100%;
     }
 
     @keyframes fadeIn {
@@ -1994,6 +2012,7 @@
 
       .course-icon-grid {
         gap: 8px;
+        grid-template-columns: 1fr;
       }
     }
 
@@ -2980,14 +2999,30 @@
       }
 
       .layout {
+        display: block;
         grid-template-columns: 1fr;
         gap: 12px;
         min-height: calc(100vh - 64px);
-        padding: 76px 10px 12px;
+        width: 100%;
+        max-width: 100%;
+        padding: calc(74px + env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom));
       }
 
       .main {
         padding: 0;
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .section,
+      .panel,
+      .card,
+      .courses-wireframe,
+      .playlist-layout,
+      .grid-2 {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
       }
 
       .sidebar {
@@ -2995,8 +3030,8 @@
         top: 74px;
         left: 10px;
         bottom: 10px;
-        width: min(280px, 82vw);
-        max-width: 300px;
+        width: min(286px, 84vw);
+        max-width: calc(100vw - 20px);
         border-right: 1px solid rgba(30, 41, 59, 0.2);
         border-bottom: 0;
         padding: 12px 10px;
@@ -3074,6 +3109,15 @@
         gap: 10px;
       }
 
+      .courses-wireframe,
+      .playlist-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .course-icon-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .card,
       .panel {
         border-radius: 14px;
@@ -3092,6 +3136,11 @@
 
       .notifications-panel {
         z-index: 96;
+        width: min(360px, calc(100vw - 20px));
+      }
+
+      #digital-class-frame {
+        min-height: 320px !important;
       }
     }
 
