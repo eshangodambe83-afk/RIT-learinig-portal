@@ -565,11 +565,55 @@
       right: 0 !important;
       width: 100%;
       z-index: 40;
+      gap: 12px;
     }
 
     .navbar .title {
       color: #0f172a;
       letter-spacing: -0.02em;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .navbar-float-ticker {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 34px;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 12px;
+      background: linear-gradient(140deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.32));
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+    }
+
+    .navbar-float-track {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: max-content;
+      white-space: nowrap;
+      animation: navbarFloatLeftRight 15s ease-in-out infinite alternate;
+    }
+
+    .navbar-float-item {
+      border: 1px solid rgba(148, 163, 184, 0.38);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #1e293b;
+      background: rgba(255, 255, 255, 0.72);
+      line-height: 1;
+      letter-spacing: 0.01em;
+    }
+
+    @keyframes navbarFloatLeftRight {
+      0% { transform: translateX(-10%); }
+      100% { transform: translateX(8%); }
     }
 
     .welcome {
@@ -1675,6 +1719,10 @@
         font-size: 0.92rem;
       }
 
+      .navbar-float-ticker {
+        display: none;
+      }
+
       .layout {
         grid-template-columns: 1fr;
         min-height: auto;
@@ -2464,6 +2512,19 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
     }
 
+    .dashboard.theme-bw-premium .navbar-float-ticker {
+      background: #161616;
+      border-color: rgba(192, 192, 192, 0.28);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .dashboard.theme-bw-premium .navbar-float-item {
+      background: #1b1b1b;
+      color: #d4d4d8;
+      border-color: rgba(192, 192, 192, 0.34);
+    }
+
     .dashboard.theme-bw-premium .title,
     .dashboard.theme-bw-premium .welcome,
     .dashboard.theme-bw-premium .panel h2,
@@ -2834,6 +2895,20 @@
   <main class="screen dashboard hidden" id="dashboard-screen" aria-label="Dashboard Screen">
     <header class="navbar">
       <div class="title">RITP Learning Portal</div>
+      <div class="navbar-float-ticker" aria-hidden="true">
+        <div class="navbar-float-track">
+          <span class="navbar-float-item">RITP Learning Portal</span>
+          <span class="navbar-float-item">My Courses</span>
+          <span class="navbar-float-item">Course</span>
+          <span class="navbar-float-item">Basic Electrics and Electronics</span>
+          <span class="navbar-float-item">Digital Class</span>
+          <span class="navbar-float-item">Live Classroom</span>
+          <span class="navbar-float-item">Web Page Programming</span>
+          <span class="navbar-float-item">Programming in C</span>
+          <span class="navbar-float-item">Introduction to AI</span>
+          <span class="navbar-float-item">Artificial Intelligence</span>
+        </div>
+      </div>
       <div class="navbar-actions">
         <button class="nav-icon-btn" id="notifications-toggle-btn" type="button" aria-label="Open notifications" title="Notifications">🔔
           <span class="notif-badge hidden" id="notif-count">0</span>
