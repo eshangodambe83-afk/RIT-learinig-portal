@@ -2476,6 +2476,37 @@
       color: #e4e4e7;
     }
 
+    .dashboard.theme-bw-premium .navbar .title {
+      font-weight: 900;
+      background-image: linear-gradient(
+        110deg,
+        #7a7a7a 0%,
+        #c5c5c5 20%,
+        #f5f5f5 34%,
+        #9a9a9a 50%,
+        #ececec 68%,
+        #7a7a7a 100%
+      );
+      background-size: 220% auto;
+      background-position: 200% 50%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      animation: bwPremiumSilverShine 4.2s linear infinite;
+    }
+
+    @keyframes bwPremiumSilverShine {
+      0% { background-position: 200% 50%; }
+      100% { background-position: -20% 50%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .dashboard.theme-bw-premium .navbar .title {
+        animation: none;
+      }
+    }
+
     .dashboard.theme-bw-premium .menu button {
       color: #f4f4f5;
     }
