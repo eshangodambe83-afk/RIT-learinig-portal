@@ -759,6 +759,11 @@
       font-weight: 700;
     }
 
+    .mobile-sidebar-handle,
+    .mobile-sidebar-backdrop {
+      display: none;
+    }
+
     .layout {
       min-height: calc(100vh - 68px);
       gap: 14px;
@@ -2954,6 +2959,142 @@
       border-radius: 0;
     }
 
+    @media (max-width: 760px) {
+      .navbar {
+        height: 64px;
+        min-height: 64px;
+        padding: 0 10px 0 20px;
+        gap: 10px;
+        flex-wrap: nowrap;
+      }
+
+      .navbar .title {
+        font-size: 0.9rem;
+        max-width: 48vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .navbar-float-cloud {
+        display: none;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        min-height: calc(100vh - 64px);
+        padding: 76px 10px 12px;
+      }
+
+      .main {
+        padding: 0;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 74px;
+        left: 10px;
+        bottom: 10px;
+        width: min(280px, 82vw);
+        max-width: 300px;
+        border-right: 1px solid rgba(30, 41, 59, 0.2);
+        border-bottom: 0;
+        padding: 12px 10px;
+        overflow: auto;
+        z-index: 85;
+        transform: translateX(calc(-100% - 22px));
+        transition: transform 230ms cubic-bezier(0.2, 0.7, 0, 1);
+      }
+
+      .dashboard.mobile-sidebar-open .sidebar {
+        transform: translateX(0);
+      }
+
+      .menu {
+        display: grid;
+        gap: 8px;
+        overflow: visible;
+        padding-bottom: 0;
+      }
+
+      .menu button {
+        min-width: 0;
+        white-space: normal;
+        padding: 10px 12px;
+      }
+
+      .mobile-sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        opacity: 0;
+        pointer-events: none;
+        background: rgba(2, 6, 23, 0.34);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        transition: opacity 200ms ease;
+      }
+
+      .mobile-sidebar-backdrop.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .mobile-sidebar-handle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        top: 50%;
+        left: 6px;
+        transform: translateY(-50%);
+        width: 14px;
+        height: 90px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.55);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(226, 232, 240, 0.56));
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.26);
+        z-index: 86;
+        cursor: pointer;
+      }
+
+      .mobile-sidebar-handle span {
+        width: 2px;
+        height: 34px;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.72);
+      }
+
+      .dashboard.mobile-sidebar-open .mobile-sidebar-handle {
+        left: min(294px, calc(82vw + 12px));
+      }
+
+      .cards {
+        gap: 10px;
+      }
+
+      .card,
+      .panel {
+        border-radius: 14px;
+      }
+
+      .panel-head {
+        padding: 14px 14px;
+      }
+
+      .upload-form,
+      .list,
+      .profile-preview {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .notifications-panel {
+        z-index: 96;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -3057,6 +3198,10 @@
       </div>
       <ul class="list notifications-list" id="notifications-list"></ul>
     </aside>
+    <button class="mobile-sidebar-handle" id="mobile-sidebar-handle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu-buttons">
+      <span aria-hidden="true"></span>
+    </button>
+    <div class="mobile-sidebar-backdrop" id="mobile-sidebar-backdrop" aria-hidden="true"></div>
 
     <div class="layout">
       <aside class="sidebar" aria-label="Sidebar Navigation">
@@ -3549,6 +3694,8 @@
     const notifCount = document.getElementById('notif-count');
     const notifMarkReadBtn = document.getElementById('notif-mark-read-btn');
     const notifClearAllBtn = document.getElementById('notif-clear-all-btn');
+    const mobileSidebarHandle = document.getElementById('mobile-sidebar-handle');
+    const mobileSidebarBackdrop = document.getElementById('mobile-sidebar-backdrop');
     const logoutBtn = document.getElementById('logout-btn');
     const uploadCourseMenu = document.getElementById('upload-course-menu');
     const digitalClassMenu = document.getElementById('digital-class-menu');
@@ -3755,9 +3902,11 @@ let googleSignInInitialized = false;
 let digitalClassCloudSyncInFlight = false;
 let notificationsClearedAtByUser = loadNotificationsClearedAtByUser();
 let navbarFloatRebuildTimer = null;
+let mobileSidebarOpen = false;
 const LOGIN_SCORPION_SEGMENT_COUNT = 16;
 const LOGIN_SCORPION_SEGMENT_LENGTH = 6.5;
-const LOGIN_SCORPION_LINE_COLOR = 'rgba(248, 250, 252, 0.95)';
+const LOGIN_SCORPION_LINE_COLOR = 'rgba(248, 250, 252, 0.98)';
+const LOGIN_SCORPION_GLOW_COLOR = 'rgba(125, 211, 252, 0.62)';
 let loginScorpionCtx = null;
 let loginScorpionDpr = 1;
 let loginScorpionAnimFrame = 0;
@@ -3874,8 +4023,8 @@ function drawLoginScorpion() {
   ctx.lineWidth = 2.05;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.shadowColor = 'rgba(15, 23, 42, 0.55)';
-  ctx.shadowBlur = 6;
+  ctx.shadowColor = LOGIN_SCORPION_GLOW_COLOR;
+  ctx.shadowBlur = 10;
 
   ctx.beginPath();
   ctx.moveTo(loginScorpionHead.x, loginScorpionHead.y);
@@ -3893,6 +4042,15 @@ function drawLoginScorpion() {
   });
   ctx.strokeStyle = LOGIN_SCORPION_LINE_COLOR;
   ctx.lineWidth = 2.05;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(loginScorpionHead.x, loginScorpionHead.y);
+  loginScorpionSegments.forEach((segment) => {
+    ctx.lineTo(segment.x, segment.y);
+  });
+  ctx.strokeStyle = 'rgba(224, 242, 254, 0.55)';
+  ctx.lineWidth = 1.15;
   ctx.stroke();
 
   const bodyNodes = [loginScorpionHead, ...loginScorpionSegments.slice(0, 5)];
@@ -4002,6 +4160,29 @@ function refreshLoginScorpionVisibility() {
   } else {
     stopLoginScorpionAnimation();
   }
+}
+
+function isMobileSidebarMode() {
+  return window.matchMedia('(max-width: 760px)').matches;
+}
+
+function setMobileSidebarOpen(open) {
+  const shouldOpen = Boolean(open && isMobileSidebarMode() && dashboardScreen && !dashboardScreen.classList.contains('hidden'));
+  mobileSidebarOpen = shouldOpen;
+  if (dashboardScreen) {
+    dashboardScreen.classList.toggle('mobile-sidebar-open', shouldOpen);
+  }
+  if (mobileSidebarBackdrop) {
+    mobileSidebarBackdrop.classList.toggle('active', shouldOpen);
+  }
+  if (mobileSidebarHandle) {
+    mobileSidebarHandle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+  }
+  document.body.style.overflow = shouldOpen ? 'hidden' : '';
+}
+
+function toggleMobileSidebar() {
+  setMobileSidebarOpen(!mobileSidebarOpen);
 }
 
 function saveLocalJSON(key, value) {
@@ -7232,6 +7413,7 @@ function renderSearchUsers() {
       loginScreen.classList.add('hidden');
       signupScreen.classList.remove('hidden');
       setAuthVisualVisibility(true);
+      setMobileSidebarOpen(false);
       refreshLoginScorpionVisibility();
       setBackgroundForDashboard(false);
       initGoogleSignInButtons();
@@ -7242,6 +7424,7 @@ function renderSearchUsers() {
       signupScreen.classList.add('hidden');
       loginScreen.classList.remove('hidden');
       setAuthVisualVisibility(true);
+      setMobileSidebarOpen(false);
       refreshLoginScorpionVisibility();
       setBackgroundForDashboard(false);
       initGoogleSignInButtons();
@@ -7258,6 +7441,7 @@ function openDashboard(userName) {
       loginScreen.classList.add('hidden');
       dashboardScreen.classList.remove('hidden');
       setAuthVisualVisibility(false);
+      setMobileSidebarOpen(false);
       refreshLoginScorpionVisibility();
       currentUserName = userName;
       currentUserRoles = getAccountRoles(userName);
@@ -7326,6 +7510,7 @@ function openDashboard(userName) {
       loginScreen.classList.remove('hidden');
       signupScreen.classList.add('hidden');
       setAuthVisualVisibility(true);
+      setMobileSidebarOpen(false);
       refreshLoginScorpionVisibility();
       loginForm.reset();
       loginHelp.textContent = '';
@@ -7395,6 +7580,10 @@ function openDashboard(userName) {
             updateNavbarProfileAvatar();
           }
         });
+      }
+
+      if (isMobileSidebarMode()) {
+        setMobileSidebarOpen(false);
       }
     }
 
@@ -7585,6 +7774,19 @@ function openDashboard(userName) {
       });
     });
 
+    if (mobileSidebarHandle) {
+      mobileSidebarHandle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleMobileSidebar();
+      });
+    }
+
+    if (mobileSidebarBackdrop) {
+      mobileSidebarBackdrop.addEventListener('click', () => {
+        setMobileSidebarOpen(false);
+      });
+    }
+
     function positionNotificationsPanel() {
       if (!notificationsPanel || !notificationsToggleBtn) return;
       const rect = notificationsToggleBtn.getBoundingClientRect();
@@ -7622,13 +7824,22 @@ function openDashboard(userName) {
       renderNotifications();
     });
 
-    document.addEventListener('click', () => {
+    document.addEventListener('click', (event) => {
       notificationsPanel.classList.add('hidden');
+      if (!mobileSidebarOpen || !isMobileSidebarMode()) return;
+      const target = event && event.target;
+      if (target instanceof Element && (target.closest('.sidebar') || target.closest('#mobile-sidebar-handle') || target.closest('#mobile-sidebar-backdrop'))) {
+        return;
+      }
+      setMobileSidebarOpen(false);
     });
 
     window.addEventListener('resize', () => {
       if (!notificationsPanel.classList.contains('hidden')) {
         positionNotificationsPanel();
+      }
+      if (!isMobileSidebarMode()) {
+        setMobileSidebarOpen(false);
       }
       if (navbarFloatRebuildTimer) clearTimeout(navbarFloatRebuildTimer);
       navbarFloatRebuildTimer = setTimeout(renderNavbarFloatCloud, 140);
@@ -7642,6 +7853,9 @@ function openDashboard(userName) {
 
     document.addEventListener('keydown', (event) => {
       const key = String(event.key || '').toLowerCase();
+      if (key === 'escape' && mobileSidebarOpen) {
+        setMobileSidebarOpen(false);
+      }
       const blockedCombo = (event.ctrlKey || event.metaKey) && (key === 's' || key === 'p' || key === 'u' || key === 'i' || key === 'j');
       const blocked = blockedCombo || key === 'printscreen';
       if (!blocked) return;
