@@ -578,13 +578,14 @@
     .navbar-float-cloud {
       flex: 1 1 auto;
       min-width: 0;
-      height: 38px;
+      height: 42px;
       border: 0;
       border-radius: 0;
       background: transparent;
       overflow: hidden;
       position: relative;
       padding: 0;
+      isolation: isolate;
       mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
       -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
       pointer-events: none;
@@ -600,7 +601,14 @@
       font-size: 0.82rem;
       font-weight: 900;
       color: #0f172a;
-      background: rgba(255, 255, 255, 0.88);
+      background: linear-gradient(
+        145deg,
+        #69727d 0%,
+        #b3bbc3 24%,
+        #edf0f3 50%,
+        #a4adb6 74%,
+        #626b76 100%
+      );
       line-height: 1.1;
       letter-spacing: 0.02em;
       white-space: nowrap;
@@ -613,6 +621,10 @@
       backface-visibility: visible;
       -webkit-font-smoothing: subpixel-antialiased;
       text-rendering: optimizeLegibility;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.52),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+        0 1px 2px rgba(15, 23, 42, 0.22);
     }
 
     @keyframes navbarChipFloat {
@@ -2528,10 +2540,21 @@
     }
 
     .dashboard.theme-bw-premium .navbar-float-chip {
-      background: rgba(255, 255, 255, 0.12);
+      background: linear-gradient(
+        145deg,
+        #3f454e 0%,
+        #8f98a3 24%,
+        #d6dce2 50%,
+        #7f8892 74%,
+        #373d45 100%
+      );
       color: #fafafa;
       border: 1px solid rgba(220, 220, 220, 0.62);
       text-shadow: none;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.34),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.38),
+        0 1px 2px rgba(0, 0, 0, 0.42);
     }
 
     .dashboard.theme-bw-premium .title,
@@ -3658,21 +3681,33 @@ function renderNavbarFloatCloud() {
   const rect = navbarFloatCloud.getBoundingClientRect();
   if (!rect.width || !rect.height) return;
 
-  const chipCount = Math.max(8, Math.min(14, Math.round(rect.width / 110)));
-  const topMax = Math.max(4, rect.height - 24);
-  const travel = Math.round(rect.width + 460);
+  const travel = Math.round(rect.width + 520);
+  const laneTops = [5, 22];
+  const durationSec = randomInRange(30, 36);
+  const speedPxPerSec = travel / durationSec;
+  const laneCursorPx = laneTops.map(() => randomInRange(0, 140));
 
-  for (let i = 0; i < chipCount; i += 1) {
-    const text = NAVBAR_FLOAT_TEXT_POOL[Math.floor(Math.random() * NAVBAR_FLOAT_TEXT_POOL.length)];
-    const chip = document.createElement('span');
-    chip.className = 'navbar-float-chip';
-    chip.textContent = text;
-    chip.style.setProperty('--top', `${Math.round(randomInRange(3, topMax))}px`);
-    chip.style.setProperty('--dur', `${randomInRange(22, 34).toFixed(2)}s`);
-    chip.style.setProperty('--delay', `${(-randomInRange(0, 24)).toFixed(2)}s`);
-    chip.style.setProperty('--travel', `${travel}px`);
-    navbarFloatCloud.appendChild(chip);
-  }
+  laneTops.forEach((top, laneIndex) => {
+    let safety = 0;
+    while (laneCursorPx[laneIndex] < travel - 160 && safety < 50) {
+      safety += 1;
+      const text = NAVBAR_FLOAT_TEXT_POOL[Math.floor(Math.random() * NAVBAR_FLOAT_TEXT_POOL.length)];
+      const approxWidth = Math.round(30 + text.length * 8.3);
+      const gapPx = randomInRange(54, 94);
+      const delaySec = -(laneCursorPx[laneIndex] / speedPxPerSec);
+
+      const chip = document.createElement('span');
+      chip.className = 'navbar-float-chip';
+      chip.textContent = text;
+      chip.style.setProperty('--top', `${top}px`);
+      chip.style.setProperty('--dur', `${durationSec.toFixed(2)}s`);
+      chip.style.setProperty('--delay', `${delaySec.toFixed(2)}s`);
+      chip.style.setProperty('--travel', `${travel}px`);
+      navbarFloatCloud.appendChild(chip);
+
+      laneCursorPx[laneIndex] += approxWidth + gapPx;
+    }
+  });
 }
 
 function estimateDataUrlBytes(dataUrl) {
