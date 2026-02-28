@@ -4049,12 +4049,13 @@
     const SUPABASE_URL = String(window.RITP_SUPABASE_URL || '').trim();
     const SUPABASE_ANON_KEY = String(window.RITP_SUPABASE_ANON_KEY || '').trim();
     const SUPABASE_ACCOUNTS_TABLE = 'ritp_accounts';
-    const SUPABASE_PROFILES_TABLE = 'ritp_profiles';
-    const SUPABASE_SUGGESTIONS_TABLE = 'ritp_suggestions';
-    const SUPABASE_BUG_REPORTS_TABLE = 'ritp_bug_reports';
-    const SUPABASE_DIGITAL_CLASS_TABLE = 'ritp_digital_class';
-    window.RITP_GOOGLE_CLIENT_ID = '990509990942-ur498coaohab2uu0fk5ijfadaef8nla4.apps.googleusercontent.com';
-    const GOOGLE_CLIENT_ID = String(window.RITP_GOOGLE_CLIENT_ID || '').trim();
+const SUPABASE_PROFILES_TABLE = 'ritp_profiles';
+const SUPABASE_SUGGESTIONS_TABLE = 'ritp_suggestions';
+const SUPABASE_BUG_REPORTS_TABLE = 'ritp_bug_reports';
+const SUPABASE_DIGITAL_CLASS_TABLE = 'ritp_digital_class';
+const SUPABASE_COURSE_ACCESS_TABLE = 'ritp_course_access';
+window.RITP_GOOGLE_CLIENT_ID = '990509990942-ur498coaohab2uu0fk5ijfadaef8nla4.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = String(window.RITP_GOOGLE_CLIENT_ID || '').trim();
     const MAX_PROFILE_PHOTO_DIMENSION = 320;
     const PROFILE_PHOTO_QUALITY = 0.8;
     const NAVBAR_FLOAT_ITEMS = [
@@ -4072,11 +4073,14 @@
     let pendingCloudAccountsSync = null;
     let cloudAccountsSyncTimer = null;
     let cloudAccountsSyncInFlight = false;
-    let pendingCloudProfilesSync = null;
-    let cloudProfilesSyncTimer = null;
-    let cloudProfilesSyncInFlight = false;
-    let googleSignInInitialized = false;
-    let digitalClassCloudSyncInFlight = false;
+let pendingCloudProfilesSync = null;
+let cloudProfilesSyncTimer = null;
+let cloudProfilesSyncInFlight = false;
+let pendingCloudCourseAccessSync = null;
+let cloudCourseAccessSyncTimer = null;
+let cloudCourseAccessSyncInFlight = false;
+let googleSignInInitialized = false;
+let digitalClassCloudSyncInFlight = false;
     let notificationsClearedAtByUser = loadNotificationsClearedAtByUser();
     let navbarFloatRebuildTimer = null;
     let mobileSidebarOpen = false;
@@ -4693,7 +4697,116 @@
     }
 
     function saveCourseAccess() {
-      return saveLocalJSON(COURSE_ACCESS_STORAGE_KEY, courseAccessByCourse);
+      const savedLocal = saveLocalJSON(COURSE_ACCESS_STORAGE_KEY, courseAccessByCourse);
+      if (savedLocal) queueCloudCourseAccessSync(courseAccessByCourse);
+      return savedLocal;
+    }
+
+    function toCloudCourseAccessRow(courseName, record) {
+      const key = String(courseName || '').trim();
+      const safe = normalizeCourseAccessRecordShape(record);
+      return {
+        course_name: key,
+        requests: safe.requests,
+        approved: safe.approved,
+        rejected: safe.rejected,
+        requested_at: safe.requestedAt || {},
+        reviewed_at: safe.reviewedAt || {},
+        reviewed_by: safe.reviewedBy || {},
+        updated_at: new Date().toISOString()
+      };
+    }
+
+    function fromCloudCourseAccessRow(row) {
+      const courseName = String(row && row.course_name || '').trim();
+      if (!courseName) return null;
+      return {
+        courseName,
+        record: normalizeCourseAccessRecordShape({
+          requests: Array.isArray(row.requests) ? row.requests : [],
+          approved: Array.isArray(row.approved) ? row.approved : [],
+          rejected: Array.isArray(row.rejected) ? row.rejected : [],
+          requestedAt: row.requested_at && typeof row.requested_at === 'object' ? row.requested_at : {},
+          reviewedAt: row.reviewed_at && typeof row.reviewed_at === 'object' ? row.reviewed_at : {},
+          reviewedBy: row.reviewed_by && typeof row.reviewed_by === 'object' ? row.reviewed_by : {}
+        })
+      };
+    }
+
+    async function fetchCloudCourseAccess() {
+      if (!isCloudAccountsConfigured()) return null;
+      try {
+        const base = SUPABASE_URL.replace(/\/+$/, '');
+        const url = `${base}/rest/v1/${SUPABASE_COURSE_ACCESS_TABLE}?select=course_name,requests,approved,rejected,requested_at,reviewed_at,reviewed_by,updated_at`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: buildCloudHeaders()
+        });
+        if (!response.ok) throw new Error(`Cloud course-access load failed (${response.status})`);
+        const rows = await response.json();
+        const mapped = {};
+        (rows || []).forEach((row) => {
+          const normalized = fromCloudCourseAccessRow(row);
+          if (normalized) mapped[normalized.courseName] = normalized.record;
+        });
+        return mapped;
+      } catch (error) {
+        console.warn('Cloud course-access fetch failed. Using local fallback.', error);
+        return null;
+      }
+    }
+
+    async function upsertCloudCourseAccess(recordsMap) {
+      if (!isCloudAccountsConfigured()) return false;
+      const rows = Object.entries(recordsMap || {})
+        .map(([courseName, record]) => toCloudCourseAccessRow(courseName, record))
+        .filter((row) => row.course_name);
+      if (!rows.length) return true;
+      try {
+        const base = SUPABASE_URL.replace(/\/+$/, '');
+        const url = `${base}/rest/v1/${SUPABASE_COURSE_ACCESS_TABLE}?on_conflict=course_name`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: buildCloudHeaders({
+            'Content-Type': 'application/json',
+            Prefer: 'resolution=merge-duplicates,return=minimal'
+          }),
+          body: JSON.stringify(rows)
+        });
+        if (!response.ok) throw new Error(`Cloud course-access sync failed (${response.status})`);
+        return true;
+      } catch (error) {
+        console.warn('Cloud course-access sync failed.', error);
+        return false;
+      }
+    }
+
+    function queueCloudCourseAccessSync(recordsMap) {
+      if (!isCloudAccountsConfigured()) return;
+      pendingCloudCourseAccessSync = JSON.parse(JSON.stringify(recordsMap || {}));
+      if (cloudCourseAccessSyncTimer || cloudCourseAccessSyncInFlight) return;
+      cloudCourseAccessSyncTimer = setTimeout(flushCloudCourseAccessSync, 350);
+    }
+
+    async function flushCloudCourseAccessSync() {
+      cloudCourseAccessSyncTimer = null;
+      if (cloudCourseAccessSyncInFlight || !pendingCloudCourseAccessSync) return;
+      cloudCourseAccessSyncInFlight = true;
+      const snapshot = pendingCloudCourseAccessSync;
+      pendingCloudCourseAccessSync = null;
+      await upsertCloudCourseAccess(snapshot);
+      cloudCourseAccessSyncInFlight = false;
+      if (pendingCloudCourseAccessSync) {
+        cloudCourseAccessSyncTimer = setTimeout(flushCloudCourseAccessSync, 350);
+      }
+    }
+
+    async function refreshCourseAccessFromCloud() {
+      const cloudRecords = await fetchCloudCourseAccess();
+      if (!cloudRecords) return false;
+      courseAccessByCourse = { ...courseAccessByCourse, ...cloudRecords };
+      saveLocalJSON(COURSE_ACCESS_STORAGE_KEY, courseAccessByCourse);
+      return true;
     }
 
     function packDigitalClassTitle(rawTitle, rawCourseName) {
@@ -7960,13 +8073,19 @@
       updateThemeButton();
       setBackgroundForDashboard(true);
       setActiveSection('dashboard');
-      Promise.all([refreshAccountsFromCloud(), refreshProfilesFromCloud(), refreshSuggestionsFromCloud(), refreshBugReportsFromCloud(), refreshDigitalClassFromCloud()]).then(() => {
+      Promise.all([refreshAccountsFromCloud(), refreshProfilesFromCloud(), refreshSuggestionsFromCloud(), refreshBugReportsFromCloud(), refreshDigitalClassFromCloud(), refreshCourseAccessFromCloud()]).then(() => {
         renderUserProfile();
         updateNavbarProfileAvatar();
         renderSearchUsers();
         renderConnectionsList();
         renderSuggestionsPanel();
         renderBugReportsPanel();
+        renderNotifications();
+        renderDigitalClassPanel();
+        if (currentPlaylistCourse) {
+          renderCourseAccessPanel({ name: currentPlaylistCourse });
+          bindCourseAccessActions(currentPlaylistCourse);
+        }
       });
     }
 
@@ -9010,6 +9129,16 @@
         }
       });
       refreshDigitalClassFromCloud();
+      refreshCourseAccessFromCloud().then((updated) => {
+        if (!updated) return;
+        renderNotifications();
+        renderCoursesShowcase();
+        renderDigitalClassPanel();
+        if (currentPlaylistCourse) {
+          renderCourseAccessPanel({ name: currentPlaylistCourse });
+          bindCourseAccessActions(currentPlaylistCourse);
+        }
+      });
     }, 12000);
 
     let googleInitRetries = 0;
@@ -9042,6 +9171,7 @@
       await refreshSuggestionsFromCloud();
       await refreshBugReportsFromCloud();
       await refreshDigitalClassFromCloud();
+      await refreshCourseAccessFromCloud();
       const activeSession = loadSession();
       if (activeSession && activeSession.email) {
         const email = normalizeEmail(activeSession.email);
