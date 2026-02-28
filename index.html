@@ -8145,12 +8145,7 @@ let digitalClassCloudSyncInFlight = false;
       });
 
       if (target === 'dashboard') {
-        const sidebar = document.querySelector('.sidebar');
-        if (sidebar) {
-          sidebar.classList.remove('sidebar-play-slide');
-          void sidebar.offsetWidth;
-          sidebar.classList.add('sidebar-play-slide');
-        }
+        playSidebarHomeEntryAnimation();
       }
 
       if (target === 'courses') {
@@ -8251,6 +8246,18 @@ let digitalClassCloudSyncInFlight = false;
         profileSection.style.opacity = '';
         profileSection.style.transform = '';
       });
+    }
+
+    function playSidebarHomeEntryAnimation() {
+      const sidebar = document.querySelector('.sidebar');
+      if (!sidebar || isMobileSidebarMode() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      sidebar.classList.remove('sidebar-play-slide');
+      void sidebar.offsetWidth;
+      sidebar.classList.add('sidebar-play-slide');
+      const cleanup = () => {
+        sidebar.classList.remove('sidebar-play-slide');
+      };
+      sidebar.addEventListener('animationend', cleanup, { once: true });
     }
 
     loginForm.addEventListener('submit', async (event) => {
