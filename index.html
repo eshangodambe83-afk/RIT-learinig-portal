@@ -6446,7 +6446,7 @@ let digitalClassCloudSyncInFlight = false;
               return;
             }
             addNotification(`New course access request: ${email} -> ${courseName}`);
-            courseAccessHelp.textContent = 'Request sent. Waiting for approval.';
+            courseAccessHelp.textContent = 'Request sent. Admin or Teacher can approve it from Alerts.';
             courseAccessHelp.style.color = '#166534';
           }
           renderCourseAccessPanel({ name: courseName });
@@ -6878,7 +6878,7 @@ let digitalClassCloudSyncInFlight = false;
               type: 'course_request',
               courseName,
               email,
-              text: `${email} requested access for ${courseName}`,
+              text: `${email} requested access for ${courseName} (Admin/Teacher can approve)`,
               time: requestedAt ? new Date(requestedAt).toLocaleString() : 'Now',
               status: 'pending',
               createdAt: requestedAt
@@ -7123,7 +7123,7 @@ let digitalClassCloudSyncInFlight = false;
         courseAccessStatus.textContent = 'Access approved. You can view course videos.';
         courseJoinBtn.classList.add('hidden');
       } else if (requested) {
-        courseAccessStatus.textContent = 'Request sent. Waiting for teacher approval.';
+        courseAccessStatus.textContent = 'Request sent. Waiting for teacher/admin approval.';
         courseJoinBtn.classList.add('hidden');
       } else if (rejected) {
         courseAccessStatus.textContent = 'Your request was rejected. You can submit again.';
