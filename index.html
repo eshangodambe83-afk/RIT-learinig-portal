@@ -340,10 +340,29 @@
       animation: sidebarSlideIn 450ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
+    .sidebar.sidebar-play-slide .menu button {
+      opacity: 0;
+      transform: translateX(-14px);
+      animation: sidebarButtonStaggerIn 300ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      animation-delay: var(--sidebar-stagger-delay, 0ms);
+    }
+
     @keyframes sidebarSlideIn {
       from {
         opacity: 0;
         transform: translateX(-100%);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes sidebarButtonStaggerIn {
+      from {
+        opacity: 0;
+        transform: translateX(-14px);
       }
 
       to {
@@ -8251,11 +8270,18 @@ let digitalClassCloudSyncInFlight = false;
     function playSidebarHomeEntryAnimation() {
       const sidebar = document.querySelector('.sidebar');
       if (!sidebar || isMobileSidebarMode() || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const navButtons = Array.from(sidebar.querySelectorAll('.menu button'));
+      navButtons.forEach((button, index) => {
+        button.style.setProperty('--sidebar-stagger-delay', `${Math.min(index * 55, 420)}ms`);
+      });
       sidebar.classList.remove('sidebar-play-slide');
       void sidebar.offsetWidth;
       sidebar.classList.add('sidebar-play-slide');
       const cleanup = () => {
         sidebar.classList.remove('sidebar-play-slide');
+        navButtons.forEach((button) => {
+          button.style.removeProperty('--sidebar-stagger-delay');
+        });
       };
       sidebar.addEventListener('animationend', cleanup, { once: true });
     }
