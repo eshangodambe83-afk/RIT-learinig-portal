@@ -52,16 +52,21 @@
       transition: background 300ms ease;
     }
 
-    .auth-bg-video {
+    .auth-unicorn-bg {
       position: fixed;
       inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
       z-index: 0;
+      pointer-events: none;
     }
 
-    .auth-bg-overlay {
+    .auth-unicorn-bg [data-us-project] {
+      width: 100%;
+      height: 100%;
+    }
+
+    .auth-unicorn-overlay {
       position: fixed;
       inset: 0;
       z-index: 0;
@@ -3189,11 +3194,10 @@
 </head>
 
 <body>
-  <video id="auth-bg-video" class="auth-bg-video" autoplay muted loop playsinline webkit-playsinline>
-    <source src="./auth-bg.mp4" type="video/mp4" />
-    <source src="./auth-bg.mov" type="video/quicktime" />
-  </video>
-  <div id="auth-bg-overlay" class="auth-bg-overlay"></div>
+  <div id="auth-unicorn-bg" class="auth-unicorn-bg">
+    <div data-us-project="YXsLMZAORRFK9L98NNqQ"></div>
+  </div>
+  <div id="auth-unicorn-overlay" class="auth-unicorn-overlay"></div>
   <canvas id="login-scorpion-canvas" class="login-scorpion-canvas hidden" aria-hidden="true"></canvas>
 
   <main class="screen login-wrap" id="signup-screen" aria-label="Signup Screen">
@@ -3857,10 +3861,11 @@
     </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.0.5/dist/unicornStudio.umd.js" defer></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
-    const authBgVideo = document.getElementById('auth-bg-video');
-    const authBgOverlay = document.getElementById('auth-bg-overlay');
+    const authUnicornBg = document.getElementById('auth-unicorn-bg');
+    const authUnicornOverlay = document.getElementById('auth-unicorn-overlay');
     const loginScorpionCanvas = document.getElementById('login-scorpion-canvas');
     const signupScreen = document.getElementById('signup-screen');
     const loginScreen = document.getElementById('login-screen');
@@ -5782,14 +5787,25 @@ let digitalClassCloudSyncInFlight = false;
       const resolved = resolveCourseByName(task.course);
       task.courseKey = normalizeCourseName(resolved ? resolved.name : task.course);
     });
-    function setAuthVisualVisibility(show) {
-      authBgVideo.classList.toggle('hidden', !show);
-      authBgOverlay.classList.toggle('hidden', !show);
-      if (show) {
-        authBgVideo.play().catch(() => { });
-      } else {
-        authBgVideo.pause();
+
+    function initUnicornAuthBackground() {
+      if (!window.UnicornStudio || typeof window.UnicornStudio.init !== 'function') return;
+      try {
+        window.UnicornStudio.init({
+          scale: 1,
+          dpi: 1.5,
+          fps: 60,
+          lazyLoad: true,
+          production: true
+        });
+      } catch (error) {
+        console.warn('Unicorn background init failed.', error);
       }
+    }
+
+    function setAuthVisualVisibility(show) {
+      if (authUnicornBg) authUnicornBg.classList.toggle('hidden', !show);
+      if (authUnicornOverlay) authUnicornOverlay.classList.toggle('hidden', !show);
     }
 
     function getStatusClass(status) {
@@ -9182,6 +9198,11 @@ let digitalClassCloudSyncInFlight = false;
       }
       googleInitRetries += 1;
     }, 500);
+
+    initUnicornAuthBackground();
+    window.addEventListener('load', () => {
+      initUnicornAuthBackground();
+    }, { once: true });
 
     renderCourseViews();
     renderSubmittedAssignments();
