@@ -59,6 +59,7 @@
       height: 100%;
       z-index: 0;
       pointer-events: none;
+      filter: saturate(0.88) brightness(0.86) contrast(0.96);
     }
 
     .auth-unicorn-bg [data-us-project] {
@@ -70,8 +71,21 @@
       position: fixed;
       inset: 0;
       z-index: 0;
-      background: linear-gradient(120deg, rgba(2, 6, 23, 0.45), rgba(15, 118, 110, 0.35));
+      background:
+        radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.08), rgba(2, 6, 23, 0.08) 32%, rgba(2, 6, 23, 0.48) 76%),
+        linear-gradient(120deg, rgba(2, 6, 23, 0.58), rgba(15, 118, 110, 0.38));
       pointer-events: none;
+    }
+
+    .auth-focus-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 34%),
+        radial-gradient(circle at 100% 100%, rgba(2, 6, 23, 0.42), rgba(2, 6, 23, 0.06) 45%, rgba(2, 6, 23, 0) 70%);
+      mix-blend-mode: normal;
     }
 
     .login-scorpion-canvas {
@@ -3227,6 +3241,7 @@
     <div data-us-project="Tfh25DdltZyRJ79PKkKX"></div>
   </div>
   <div id="auth-unicorn-overlay" class="auth-unicorn-overlay"></div>
+  <div class="auth-focus-layer" aria-hidden="true"></div>
   <canvas id="login-scorpion-canvas" class="login-scorpion-canvas hidden" aria-hidden="true"></canvas>
   <button id="auth-options-toggle" class="auth-options-toggle hidden" type="button" aria-label="Show login options">Options</button>
 
@@ -3896,6 +3911,7 @@
   <script>
     const authUnicornBg = document.getElementById('auth-unicorn-bg');
     const authUnicornOverlay = document.getElementById('auth-unicorn-overlay');
+    const authFocusLayer = document.querySelector('.auth-focus-layer');
     const loginScorpionCanvas = document.getElementById('login-scorpion-canvas');
     const authOptionsToggle = document.getElementById('auth-options-toggle');
     const signupScreen = document.getElementById('signup-screen');
@@ -4142,8 +4158,9 @@ let cloudCourseAccessSyncInFlight = false;
     let navbarFloatRebuildTimer = null;
     let mobileSidebarOpen = false;
     let authOptionsVisible = false;
-    const LOGIN_SCORPION_SEGMENT_COUNT = 16;
-    const LOGIN_SCORPION_SEGMENT_LENGTH = 6.5;
+    const LOGIN_SCORPION_SEGMENT_COUNT = 22;
+    const LOGIN_SCORPION_SEGMENT_LENGTH = 10.5;
+    const LOGIN_SCORPION_SCALE = 1.85;
     const LOGIN_SCORPION_LINE_COLOR = 'rgba(248, 250, 252, 0.98)';
     const LOGIN_SCORPION_GLOW_COLOR = 'rgba(125, 211, 252, 0.62)';
     let loginScorpionCtx = null;
@@ -4223,11 +4240,12 @@ let cloudCourseAccessSyncInFlight = false;
       if (!loginScorpionCtx || !loginScorpionCanvas) return;
       const width = loginScorpionCanvas.width / loginScorpionDpr;
       const height = loginScorpionCanvas.height / loginScorpionDpr;
+      const s = LOGIN_SCORPION_SCALE;
       loginScorpionCtx.clearRect(0, 0, width, height);
 
       if (!loginScorpionHasPointer) {
-        const radiusX = Math.min(width * 0.16, 90);
-        const radiusY = Math.min(height * 0.1, 56);
+        const radiusX = Math.min(width * 0.28, 220);
+        const radiusY = Math.min(height * 0.18, 135);
         loginScorpionTarget.x = (width * 0.5) + (Math.cos(loginScorpionTime * 0.00065) * radiusX);
         loginScorpionTarget.y = (height * 0.48) + (Math.sin(loginScorpionTime * 0.00045) * radiusY);
       }
@@ -4259,11 +4277,11 @@ let cloudCourseAccessSyncInFlight = false;
       const ctx = loginScorpionCtx;
       ctx.strokeStyle = LOGIN_SCORPION_LINE_COLOR;
       ctx.fillStyle = 'rgba(248, 250, 252, 0.96)';
-      ctx.lineWidth = 2.05;
+      ctx.lineWidth = 2.05 * s;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.shadowColor = LOGIN_SCORPION_GLOW_COLOR;
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 10 * s;
 
       ctx.beginPath();
       ctx.moveTo(loginScorpionHead.x, loginScorpionHead.y);
@@ -4271,7 +4289,7 @@ let cloudCourseAccessSyncInFlight = false;
         ctx.lineTo(segment.x, segment.y);
       });
       ctx.strokeStyle = 'rgba(15, 23, 42, 0.48)';
-      ctx.lineWidth = 3.6;
+      ctx.lineWidth = 3.6 * s;
       ctx.stroke();
 
       ctx.beginPath();
@@ -4280,7 +4298,7 @@ let cloudCourseAccessSyncInFlight = false;
         ctx.lineTo(segment.x, segment.y);
       });
       ctx.strokeStyle = LOGIN_SCORPION_LINE_COLOR;
-      ctx.lineWidth = 2.05;
+      ctx.lineWidth = 2.05 * s;
       ctx.stroke();
 
       ctx.beginPath();
@@ -4289,12 +4307,12 @@ let cloudCourseAccessSyncInFlight = false;
         ctx.lineTo(segment.x, segment.y);
       });
       ctx.strokeStyle = 'rgba(224, 242, 254, 0.55)';
-      ctx.lineWidth = 1.15;
+      ctx.lineWidth = 1.15 * s;
       ctx.stroke();
 
       const bodyNodes = [loginScorpionHead, ...loginScorpionSegments.slice(0, 5)];
       bodyNodes.forEach((node, index) => {
-        const radius = Math.max(2.8, 5.3 - (index * 0.46));
+        const radius = Math.max(2.8 * s, (5.3 * s) - (index * 0.46 * s));
         ctx.beginPath();
         ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
         ctx.fill();
@@ -4306,10 +4324,10 @@ let cloudCourseAccessSyncInFlight = false;
         for (let side = -1; side <= 1; side += 2) {
           const spread = segment.angle + (side * 1.26);
           const wiggle = Math.sin((loginScorpionTime * 0.009) + i + (side * 0.8)) * 0.16;
-          const kneeX = segment.x + (Math.cos(spread + wiggle) * 6.2);
-          const kneeY = segment.y + (Math.sin(spread + wiggle) * 6.2);
-          const footX = kneeX + (Math.cos(spread + (side * 0.25)) * 4.4);
-          const footY = kneeY + (Math.sin(spread + (side * 0.25)) * 4.4);
+          const kneeX = segment.x + (Math.cos(spread + wiggle) * 6.2 * s);
+          const kneeY = segment.y + (Math.sin(spread + wiggle) * 6.2 * s);
+          const footX = kneeX + (Math.cos(spread + (side * 0.25)) * 4.4 * s);
+          const footY = kneeY + (Math.sin(spread + (side * 0.25)) * 4.4 * s);
           ctx.beginPath();
           ctx.moveTo(segment.x, segment.y);
           ctx.lineTo(kneeX, kneeY);
@@ -4321,10 +4339,10 @@ let cloudCourseAccessSyncInFlight = false;
       for (let side = -1; side <= 1; side += 2) {
         const baseAngle = loginScorpionHead.angle + (side * 0.78);
         const clawBend = Math.sin((loginScorpionTime * 0.01) + (side * 0.9)) * 0.2;
-        const elbowX = loginScorpionHead.x + (Math.cos(baseAngle + clawBend) * 7.8);
-        const elbowY = loginScorpionHead.y + (Math.sin(baseAngle + clawBend) * 7.8);
-        const clawX = elbowX + (Math.cos(baseAngle + (side * 0.35)) * 5.2);
-        const clawY = elbowY + (Math.sin(baseAngle + (side * 0.35)) * 5.2);
+        const elbowX = loginScorpionHead.x + (Math.cos(baseAngle + clawBend) * 7.8 * s);
+        const elbowY = loginScorpionHead.y + (Math.sin(baseAngle + clawBend) * 7.8 * s);
+        const clawX = elbowX + (Math.cos(baseAngle + (side * 0.35)) * 5.2 * s);
+        const clawY = elbowY + (Math.sin(baseAngle + (side * 0.35)) * 5.2 * s);
         ctx.beginPath();
         ctx.moveTo(loginScorpionHead.x, loginScorpionHead.y);
         ctx.lineTo(elbowX, elbowY);
@@ -4337,19 +4355,19 @@ let cloudCourseAccessSyncInFlight = false;
       if (tailBase && tailEnd) {
         const tailAngle = Math.atan2(tailEnd.y - tailBase.y, tailEnd.x - tailBase.x);
         const curlAngle = tailAngle - 0.95;
-        const stingerX = tailEnd.x + (Math.cos(curlAngle) * 9.5);
-        const stingerY = tailEnd.y + (Math.sin(curlAngle) * 9.5);
+        const stingerX = tailEnd.x + (Math.cos(curlAngle) * 9.5 * s);
+        const stingerY = tailEnd.y + (Math.sin(curlAngle) * 9.5 * s);
         ctx.beginPath();
         ctx.moveTo(tailEnd.x, tailEnd.y);
         ctx.quadraticCurveTo(
-          tailEnd.x + (Math.cos(curlAngle - 0.35) * 6),
-          tailEnd.y + (Math.sin(curlAngle - 0.35) * 6),
+          tailEnd.x + (Math.cos(curlAngle - 0.35) * 6 * s),
+          tailEnd.y + (Math.sin(curlAngle - 0.35) * 6 * s),
           stingerX,
           stingerY
         );
         ctx.stroke();
         ctx.beginPath();
-        ctx.arc(stingerX, stingerY, 1.9, 0, Math.PI * 2);
+        ctx.arc(stingerX, stingerY, 1.9 * s, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.shadowBlur = 0;
@@ -5840,6 +5858,7 @@ let cloudCourseAccessSyncInFlight = false;
     function setAuthVisualVisibility(show) {
       if (authUnicornBg) authUnicornBg.classList.toggle('hidden', !show);
       if (authUnicornOverlay) authUnicornOverlay.classList.toggle('hidden', !show);
+      if (authFocusLayer) authFocusLayer.classList.toggle('hidden', !show);
       if (authOptionsToggle) authOptionsToggle.classList.toggle('hidden', !show);
     }
 
