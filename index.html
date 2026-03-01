@@ -3906,6 +3906,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.0.5/dist/unicornStudio.umd.js" defer></script>
+  <script src="./scorpion-interactive-cursor.js" defer></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
     const authUnicornBg = document.getElementById('auth-unicorn-bg');
@@ -5858,6 +5859,8 @@ let cloudCourseAccessSyncInFlight = false;
       if (authUnicornBg) authUnicornBg.classList.toggle('hidden', !show);
       if (authUnicornOverlay) authUnicornOverlay.classList.toggle('hidden', !show);
       if (authFocusLayer) authFocusLayer.classList.toggle('hidden', !show);
+      const reptileCanvas = document.getElementById('reptile-cursor-canvas');
+      if (reptileCanvas) reptileCanvas.classList.toggle('hidden', !show);
       if (authOptionsToggle) authOptionsToggle.classList.toggle('hidden', !show);
     }
 
@@ -5872,6 +5875,13 @@ let cloudCourseAccessSyncInFlight = false;
         authOptionsToggle.setAttribute('aria-label', authOptionsVisible ? 'Hide login options' : 'Show login options');
       }
     }
+
+    window.addEventListener('ritp-reptile-ready', () => {
+      const isAuthVisible =
+        dashboardScreen.classList.contains('hidden') &&
+        (!loginScreen.classList.contains('hidden') || !signupScreen.classList.contains('hidden'));
+      setAuthVisualVisibility(isAuthVisible);
+    });
 
     function getStatusClass(status) {
       if (status === 'Completed') return 'completed';
