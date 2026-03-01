@@ -84,6 +84,35 @@
       pointer-events: none;
     }
 
+    .auth-options-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 6;
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      background: rgba(15, 23, 42, 0.42);
+      color: #f8fafc;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 8px 20px rgba(2, 6, 23, 0.28);
+    }
+
+    .auth-options-toggle:hover {
+      background: rgba(15, 23, 42, 0.55);
+    }
+
+    .login-card.auth-panel-collapsed {
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+      pointer-events: none;
+    }
+
     .screen {
       min-height: 100vh;
       min-height: 100dvh;
@@ -3199,9 +3228,10 @@
   </div>
   <div id="auth-unicorn-overlay" class="auth-unicorn-overlay"></div>
   <canvas id="login-scorpion-canvas" class="login-scorpion-canvas hidden" aria-hidden="true"></canvas>
+  <button id="auth-options-toggle" class="auth-options-toggle hidden" type="button" aria-label="Show login options">Options</button>
 
   <main class="screen login-wrap" id="signup-screen" aria-label="Signup Screen">
-    <section class="login-card">
+    <section class="login-card" id="signup-card">
       <div class="brand">
         <h1>Create Account</h1>
         <p>Signup to continue to RITP Portal</p>
@@ -3867,9 +3897,12 @@
     const authUnicornBg = document.getElementById('auth-unicorn-bg');
     const authUnicornOverlay = document.getElementById('auth-unicorn-overlay');
     const loginScorpionCanvas = document.getElementById('login-scorpion-canvas');
+    const authOptionsToggle = document.getElementById('auth-options-toggle');
     const signupScreen = document.getElementById('signup-screen');
     const loginScreen = document.getElementById('login-screen');
     const dashboardScreen = document.getElementById('dashboard-screen');
+    const signupCard = document.getElementById('signup-card');
+    const loginCard = document.getElementById('login-card');
     const signupForm = document.getElementById('signup-form');
     const signupHelp = document.getElementById('signup-help');
     const signupUsernameInput = document.getElementById('signup-username');
@@ -4103,11 +4136,12 @@ let cloudProfilesSyncInFlight = false;
 let pendingCloudCourseAccessSync = null;
 let cloudCourseAccessSyncTimer = null;
 let cloudCourseAccessSyncInFlight = false;
-let googleSignInInitialized = false;
-let digitalClassCloudSyncInFlight = false;
+    let googleSignInInitialized = false;
+    let digitalClassCloudSyncInFlight = false;
     let notificationsClearedAtByUser = loadNotificationsClearedAtByUser();
     let navbarFloatRebuildTimer = null;
     let mobileSidebarOpen = false;
+    let authOptionsVisible = false;
     const LOGIN_SCORPION_SEGMENT_COUNT = 16;
     const LOGIN_SCORPION_SEGMENT_LENGTH = 6.5;
     const LOGIN_SCORPION_LINE_COLOR = 'rgba(248, 250, 252, 0.98)';
@@ -5806,6 +5840,19 @@ let digitalClassCloudSyncInFlight = false;
     function setAuthVisualVisibility(show) {
       if (authUnicornBg) authUnicornBg.classList.toggle('hidden', !show);
       if (authUnicornOverlay) authUnicornOverlay.classList.toggle('hidden', !show);
+      if (authOptionsToggle) authOptionsToggle.classList.toggle('hidden', !show);
+    }
+
+    function setAuthOptionsVisible(show) {
+      authOptionsVisible = Boolean(show);
+      const activeAuthCard = !loginScreen.classList.contains('hidden') ? loginCard : (!signupScreen.classList.contains('hidden') ? signupCard : null);
+      if (activeAuthCard) {
+        activeAuthCard.classList.toggle('auth-panel-collapsed', !authOptionsVisible);
+      }
+      if (authOptionsToggle) {
+        authOptionsToggle.textContent = authOptionsVisible ? 'Hide' : 'Options';
+        authOptionsToggle.setAttribute('aria-label', authOptionsVisible ? 'Hide login options' : 'Show login options');
+      }
     }
 
     function getStatusClass(status) {
@@ -8034,6 +8081,7 @@ let digitalClassCloudSyncInFlight = false;
       refreshLoginScorpionVisibility();
       setBackgroundForDashboard(false);
       initGoogleSignInButtons();
+      setAuthOptionsVisible(true);
     }
 
     function showLoginScreen(message) {
@@ -8045,6 +8093,7 @@ let digitalClassCloudSyncInFlight = false;
       refreshLoginScorpionVisibility();
       setBackgroundForDashboard(false);
       initGoogleSignInButtons();
+      setAuthOptionsVisible(false);
       if (message) {
         loginHelp.style.color = '#166534';
         loginHelp.textContent = message;
@@ -8053,11 +8102,13 @@ let digitalClassCloudSyncInFlight = false;
       }
     }
 
-    function openDashboard(userName) {
+function openDashboard(userName) {
       signupScreen.classList.add('hidden');
       loginScreen.classList.add('hidden');
       dashboardScreen.classList.remove('hidden');
       setAuthVisualVisibility(false);
+      if (loginCard) loginCard.classList.remove('auth-panel-collapsed');
+      if (signupCard) signupCard.classList.remove('auth-panel-collapsed');
       setMobileSidebarOpen(false);
       refreshLoginScorpionVisibility();
       currentUserName = userName;
@@ -9155,6 +9206,12 @@ let digitalClassCloudSyncInFlight = false;
       loginHelp.textContent = '';
       showSignupScreen();
     });
+
+    if (authOptionsToggle) {
+      authOptionsToggle.addEventListener('click', () => {
+        setAuthOptionsVisible(!authOptionsVisible);
+      });
+    }
 
     playlistBackBtn.addEventListener('click', () => {
       setActiveSection('courses');
