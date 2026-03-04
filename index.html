@@ -52,31 +52,6 @@
       transition: background 300ms ease;
     }
 
-    .auth-unicorn-bg {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      pointer-events: none;
-      filter: saturate(0.88) brightness(0.86) contrast(0.96);
-    }
-
-    .auth-unicorn-bg [data-us-project] {
-      width: 100%;
-      height: 100%;
-    }
-
-    .auth-unicorn-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      background:
-        radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.08), rgba(2, 6, 23, 0.08) 32%, rgba(2, 6, 23, 0.48) 76%),
-        linear-gradient(120deg, rgba(2, 6, 23, 0.58), rgba(15, 118, 110, 0.38));
-      pointer-events: none;
-    }
-
     .auth-focus-layer {
       position: fixed;
       inset: 0;
@@ -3227,10 +3202,6 @@
 </head>
 
 <body>
-  <div id="auth-unicorn-bg" class="auth-unicorn-bg">
-    <div data-us-project="Tfh25DdltZyRJ79PKkKX"></div>
-  </div>
-  <div id="auth-unicorn-overlay" class="auth-unicorn-overlay"></div>
   <div class="auth-focus-layer" aria-hidden="true"></div>
   <button id="auth-options-toggle" class="auth-options-toggle hidden" type="button" aria-label="Show login options">Options</button>
 
@@ -3895,11 +3866,8 @@
     </div>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.0.5/dist/unicornStudio.umd.js" defer></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
-    const authUnicornBg = document.getElementById('auth-unicorn-bg');
-    const authUnicornOverlay = document.getElementById('auth-unicorn-overlay');
     const authFocusLayer = document.querySelector('.auth-focus-layer');
     const authOptionsToggle = document.getElementById('auth-options-toggle');
     const signupScreen = document.getElementById('signup-screen');
@@ -5567,24 +5535,7 @@ let cloudCourseAccessSyncInFlight = false;
       task.courseKey = normalizeCourseName(resolved ? resolved.name : task.course);
     });
 
-    function initUnicornAuthBackground() {
-      if (!window.UnicornStudio || typeof window.UnicornStudio.init !== 'function') return;
-      try {
-        window.UnicornStudio.init({
-          scale: 1,
-          dpi: 1.5,
-          fps: 60,
-          lazyLoad: true,
-          production: true
-        });
-      } catch (error) {
-        console.warn('Unicorn background init failed.', error);
-      }
-    }
-
     function setAuthVisualVisibility(show) {
-      if (authUnicornBg) authUnicornBg.classList.toggle('hidden', !show);
-      if (authUnicornOverlay) authUnicornOverlay.classList.toggle('hidden', !show);
       if (authFocusLayer) authFocusLayer.classList.toggle('hidden', !show);
       if (authOptionsToggle) authOptionsToggle.classList.toggle('hidden', !show);
     }
@@ -8997,11 +8948,6 @@ function openDashboard(userName) {
       }
       googleInitRetries += 1;
     }, 500);
-
-    initUnicornAuthBackground();
-    window.addEventListener('load', () => {
-      initUnicornAuthBackground();
-    }, { once: true });
 
     renderCourseViews();
     renderSubmittedAssignments();
