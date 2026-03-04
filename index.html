@@ -6447,7 +6447,8 @@ let cloudCourseAccessSyncInFlight = false;
       if (course.name === 'BEE (Basic Electrics and Electronics)') {
         return [
           { title: 'The Invisible Partnership', url: './bee-invisible-partnership-local.mp4', duration: 'Lecture 1' },
-          { title: 'Basic Electrics and Electronics', url: './bee-basic-electrics-electronics-local.mp4', duration: 'Lecture 2' }
+          { title: 'Basic Electrics and Electronics', url: './bee-basic-electrics-electronics-local.mp4', duration: 'Lecture 2' },
+          { title: 'Inside Your Power Adapter', url: './bee-inside-your-power-adapter-local.mp4', duration: 'Lecture 4' }
         ];
       }
       return course.videoUrl ? [{ title: `${course.name} - Lecture 1`, url: course.videoUrl, duration: 'Lecture 1' }] : [];
