@@ -3201,76 +3201,59 @@
   </style>
 </head>
 
-<body>
+  <body>
   <div class="auth-focus-layer" aria-hidden="true"></div>
   <button id="auth-options-toggle" class="auth-options-toggle hidden" type="button" aria-label="Show login options">Options</button>
 
-  <main class="screen login-wrap" id="signup-screen" aria-label="Signup Screen">
-    <section class="login-card" id="signup-card">
-      <div class="brand">
-        <h1>Create Account</h1>
-        <p>Signup to continue to RITP Portal</p>
-      </div>
+  <main class="screen login-wrap hidden" id="signup-screen" aria-label="Signup Screen"></main>
 
-      <form id="signup-form" novalidate>
-        <div class="field">
-          <label for="signup-username">Gmail</label>
-          <input id="signup-username" type="email" placeholder="Enter Gmail (example@gmail.com)" autocomplete="email"
-            required />
-        </div>
-
-        <div class="field">
-          <label for="signup-password">Password</label>
+  <main class="screen login-wrap" id="login-screen" aria-label="Login Screen">
+    <section class="auth-animated-container" id="auth-animated-container">
+      <div class="authx-form-container authx-sign-up" id="signup-card">
+        <form id="signup-form" novalidate>
+          <h1>Create Account</h1>
+          <span>Use your Gmail to register</span>
+          <input id="signup-username" type="email" placeholder="Enter Gmail (example@gmail.com)" autocomplete="email" required />
           <input id="signup-password" type="password" placeholder="Create password" required />
-        </div>
-
-        <div class="field">
-          <label for="signup-confirm-password">Confirm Password</label>
           <input id="signup-confirm-password" type="password" placeholder="Confirm password" required />
-        </div>
-
-        <p class="help" id="signup-help" aria-live="polite"></p>
-        <button class="btn" type="submit">Create Account</button>
-      </form>
-      <div class="auth-divider">or</div>
-      <div class="google-auth-wrap">
-        <div id="google-signup-btn"></div>
+          <p class="help" id="signup-help" aria-live="polite"></p>
+          <button class="btn" type="submit">Create Account</button>
+          <div class="auth-divider">or</div>
+          <div class="google-auth-wrap">
+            <div id="google-signup-btn"></div>
+          </div>
+        </form>
       </div>
 
-      <p class="switch-line">Already have an account?<button class="switch-btn" id="go-login-btn"
-          type="button">Login</button></p>
-    </section>
-  </main>
-
-  <main class="screen login-wrap hidden" id="login-screen" aria-label="Login Screen">
-    <section class="login-card" id="login-card">
-      <div class="brand">
-        <h1>RITP Portal</h1>
-        <p>Learning Management System</p>
+      <div class="authx-form-container authx-sign-in" id="login-card">
+        <form id="login-form" novalidate>
+          <h1>Sign In</h1>
+          <span>Use your Gmail password</span>
+          <input id="username" name="username" type="email" placeholder="Enter Gmail (example@gmail.com)" autocomplete="email" required />
+          <input id="password" name="password" type="password" placeholder="Enter password" autocomplete="current-password" required />
+          <p class="help" id="login-help" aria-live="polite"></p>
+          <button class="btn" type="submit">Login</button>
+          <div class="auth-divider">or</div>
+          <div class="google-auth-wrap">
+            <div id="google-login-btn"></div>
+          </div>
+        </form>
       </div>
 
-      <form id="login-form" novalidate>
-        <div class="field">
-          <label for="username">Gmail</label>
-          <input id="username" name="username" type="email" placeholder="Enter Gmail (example@gmail.com)"
-            autocomplete="email" required />
+      <div class="authx-toggle-container">
+        <div class="authx-toggle">
+          <div class="authx-toggle-panel authx-toggle-left">
+            <h1>Welcome Back!</h1>
+            <p>Enter your details and continue learning.</p>
+            <button class="btn authx-panel-btn" id="go-login-btn" type="button">Sign In</button>
+          </div>
+          <div class="authx-toggle-panel authx-toggle-right">
+            <h1>Hello, Friend!</h1>
+            <p>Create account to start your portal access.</p>
+            <button class="btn authx-panel-btn" id="go-signup-btn" type="button">Sign Up</button>
+          </div>
         </div>
-
-        <div class="field">
-          <label for="password">Password</label>
-          <input id="password" name="password" type="password" placeholder="Enter password"
-            autocomplete="current-password" required />
-        </div>
-
-        <p class="help" id="login-help" aria-live="polite"></p>
-        <button class="btn" type="submit">Login</button>
-      </form>
-      <div class="auth-divider">or</div>
-      <div class="google-auth-wrap">
-        <div id="google-login-btn"></div>
       </div>
-
-      <p class="switch-line">New here?<button class="switch-btn" id="go-signup-btn" type="button">Signup</button></p>
     </section>
   </main>
 
