@@ -62,6 +62,7 @@
       align-items: stretch;
       justify-content: flex-end;
       padding-left: 48vw;
+      padding-right: clamp(0px, 4vw, 64px);
     }
 
     .auth-spline-bg::before {
@@ -77,7 +78,7 @@
       width: 100%;
       height: 100vh;
       display: block;
-      transform: none;
+      transform: translateX(clamp(20px, 3vw, 56px));
       opacity: 0.92;
       margin-left: auto;
       position: relative;
@@ -2059,11 +2060,13 @@
       .auth-spline-bg {
         justify-content: center;
         padding-left: 0;
+        padding-right: 0;
       }
 
       .auth-spline-canvas {
         width: 100vw;
         height: 100vh;
+        transform: none;
       }
 
       .login-wrap {
@@ -2218,6 +2221,21 @@
       overflow: auto;
       overflow-x: hidden;
       contain: layout style paint;
+      opacity: 0;
+      transform: translateY(-10px) scale(0.98);
+      transform-origin: top right;
+      pointer-events: none;
+      transition:
+        opacity 180ms ease,
+        transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 220ms ease;
+      will-change: opacity, transform;
+    }
+
+    .notifications-panel.is-open {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
     }
 
     .notifications-head {
@@ -7850,7 +7868,7 @@ function openDashboard(userName) {
       uploadAssignmentMenu.classList.toggle('hidden', !(currentUserRole === 'Student' || isTeacherSide));
       if (settingsNavBtn) settingsNavBtn.classList.remove('hidden');
       if (searchMenu) searchMenu.classList.remove('hidden');
-      notificationsPanel.classList.add('hidden');
+      closeNotificationsPanel(true);
       if (profileSearchBtn) profileSearchBtn.classList.remove("hidden");
       if (profileNavBtn) profileNavBtn.classList.remove('hidden');
       const savedTheme = themePrefByUser[userName.toLowerCase()] || 'light';
@@ -7915,7 +7933,7 @@ function openDashboard(userName) {
       if (settingsNavBtn) settingsNavBtn.classList.add('hidden');
       if (searchMenu) searchMenu.classList.add('hidden');
       announcementHelp.textContent = '';
-      notificationsPanel.classList.add('hidden');
+      closeNotificationsPanel(true);
       if (profileSearchBtn) profileSearchBtn.classList.add("hidden");
       if (profileNavBtn) profileNavBtn.classList.add('hidden');
       clearSession();
@@ -8284,13 +8302,52 @@ function openDashboard(userName) {
       notificationsPanel.style.top = `${top}px`;
       notificationsPanel.style.left = 'auto';
       notificationsPanel.style.bottom = 'auto';
-      notificationsPanel.style.transform = 'translateZ(0)';
+    }
+
+    let notificationsCloseTimer = null;
+
+    function isNotificationsOpen() {
+      return !notificationsPanel.classList.contains('hidden') && notificationsPanel.classList.contains('is-open');
+    }
+
+    function openNotificationsPanel() {
+      if (notificationsCloseTimer) {
+        clearTimeout(notificationsCloseTimer);
+        notificationsCloseTimer = null;
+      }
+      positionNotificationsPanel();
+      notificationsPanel.classList.remove('hidden');
+      notificationsPanel.classList.remove('is-open');
+      requestAnimationFrame(() => {
+        notificationsPanel.classList.add('is-open');
+      });
+      if (notificationsToggleBtn) notificationsToggleBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeNotificationsPanel(instant = false) {
+      if (notificationsCloseTimer) {
+        clearTimeout(notificationsCloseTimer);
+        notificationsCloseTimer = null;
+      }
+      notificationsPanel.classList.remove('is-open');
+      if (notificationsToggleBtn) notificationsToggleBtn.setAttribute('aria-expanded', 'false');
+      if (instant) {
+        notificationsPanel.classList.add('hidden');
+        return;
+      }
+      notificationsCloseTimer = setTimeout(() => {
+        notificationsPanel.classList.add('hidden');
+        notificationsCloseTimer = null;
+      }, 180);
     }
 
     notificationsToggleBtn.addEventListener('click', (event) => {
       event.stopPropagation();
-      positionNotificationsPanel();
-      notificationsPanel.classList.toggle('hidden');
+      if (isNotificationsOpen()) {
+        closeNotificationsPanel(false);
+      } else {
+        openNotificationsPanel();
+      }
     });
 
     notificationsPanel.addEventListener('click', (event) => {
@@ -8310,7 +8367,7 @@ function openDashboard(userName) {
     });
 
     document.addEventListener('click', (event) => {
-      notificationsPanel.classList.add('hidden');
+      closeNotificationsPanel(false);
       if (!mobileSidebarOpen || !isMobileSidebarMode()) return;
       const target = event && event.target;
       if (target instanceof Element && (target.closest('.sidebar') || target.closest('#mobile-sidebar-handle') || target.closest('#mobile-sidebar-backdrop'))) {
@@ -8320,7 +8377,7 @@ function openDashboard(userName) {
     });
 
     window.addEventListener('resize', () => {
-      if (!notificationsPanel.classList.contains('hidden')) {
+      if (isNotificationsOpen()) {
         positionNotificationsPanel();
       }
       if (!isMobileSidebarMode()) {
