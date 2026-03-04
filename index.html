@@ -52,6 +52,22 @@
       transition: background 300ms ease;
     }
 
+    .auth-spline-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      background: #05080f;
+    }
+
+    .auth-spline-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      transform: scale(1.02);
+      opacity: 0.92;
+    }
+
     .auth-focus-layer {
       position: fixed;
       inset: 0;
@@ -3173,6 +3189,9 @@
 </head>
 
   <body>
+  <div id="auth-spline-bg" class="auth-spline-bg" aria-hidden="true">
+    <canvas id="auth-spline-canvas" class="auth-spline-canvas"></canvas>
+  </div>
   <div class="auth-focus-layer" aria-hidden="true"></div>
 
   <main class="screen login-wrap" id="signup-screen" aria-label="Signup Screen">
@@ -3832,8 +3851,20 @@
     </div>
   </main>
 
+  <script type="module">
+    import { Application } from "https://unpkg.com/@splinetool/runtime@1.9.57/build/runtime.js";
+
+    const authSplineCanvas = document.getElementById("auth-spline-canvas");
+    if (authSplineCanvas) {
+      const app = new Application(authSplineCanvas);
+      app.load("https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode").catch((error) => {
+        console.warn("Spline scene failed to load.", error);
+      });
+    }
+  </script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
+    const authSplineBg = document.getElementById('auth-spline-bg');
     const authFocusLayer = document.querySelector('.auth-focus-layer');
     const signupScreen = document.getElementById('signup-screen');
     const loginScreen = document.getElementById('login-screen');
@@ -5498,6 +5529,7 @@ let cloudCourseAccessSyncInFlight = false;
     });
 
     function setAuthVisualVisibility(show) {
+      if (authSplineBg) authSplineBg.classList.toggle('hidden', !show);
       if (authFocusLayer) authFocusLayer.classList.toggle('hidden', !show);
     }
 
