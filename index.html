@@ -2299,6 +2299,64 @@
       margin-top: 4px;
     }
 
+    .settings-switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.46);
+      margin-bottom: 12px;
+    }
+
+    .settings-switch-row strong {
+      font-size: 0.92rem;
+      color: #0f172a;
+    }
+
+    .settings-switch-row small {
+      display: block;
+      margin-top: 2px;
+      color: #475569;
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+
+    .settings-switch-row input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: #0ea5a3;
+      cursor: pointer;
+    }
+
+    .dashboard.low-data-mode .navbar-float-cloud {
+      display: none !important;
+    }
+
+    .dashboard.low-data-mode .panel,
+    .dashboard.low-data-mode .card,
+    .dashboard.low-data-mode .sidebar,
+    .dashboard.low-data-mode .navbar,
+    .dashboard.low-data-mode .notifications-panel {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16) !important;
+    }
+
+    .dashboard.low-data-mode .sidebar,
+    .dashboard.low-data-mode .menu button,
+    .dashboard.low-data-mode .notifications-panel,
+    .dashboard.low-data-mode .nav-icon-btn {
+      transition-duration: 120ms !important;
+      animation: none !important;
+    }
+
+    .dashboard.low-data-mode .notifications-panel {
+      filter: none !important;
+    }
+
     .dashboard.theme-dark {
       background: radial-gradient(circle at 15% 8%, rgba(30, 64, 175, 0.35), transparent 40%), linear-gradient(160deg, #0b1220, #111827 45%, #0f172a);
     }
@@ -3172,6 +3230,11 @@
         z-index: 85;
         transform: translateX(calc(-100% - 22px));
         transition: transform 230ms cubic-bezier(0.2, 0.7, 0, 1);
+        border-radius: 18px;
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.56));
+        backdrop-filter: blur(14px) saturate(150%);
+        -webkit-backdrop-filter: blur(14px) saturate(150%);
+        box-shadow: 0 18px 36px rgba(15, 23, 42, 0.26);
       }
 
       .dashboard.mobile-sidebar-open .sidebar {
@@ -3189,6 +3252,18 @@
         min-width: 0;
         white-space: normal;
         padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.26);
+        transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+      }
+
+      .menu button:active {
+        transform: scale(0.98);
+      }
+
+      .menu button:hover,
+      .menu button.active {
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14);
       }
 
       .mobile-sidebar-backdrop {
@@ -3814,6 +3889,22 @@
             </article>
             <article class="panel">
               <div class="panel-head">
+                <h2>Mobile Pro UX</h2>
+              </div>
+              <form class="upload-form" id="mobile-ux-form">
+                <label class="settings-switch-row" for="low-data-toggle">
+                  <span>
+                    <strong>Low-Data Mode</strong>
+                    <small>Faster loading on mobile: reduced effects, lighter preloading, smoother navigation.</small>
+                  </span>
+                  <input id="low-data-toggle" type="checkbox" />
+                </label>
+                <button class="btn" type="submit">Save Mobile UX</button>
+                <p class="success-msg" id="mobile-ux-help" aria-live="polite"></p>
+              </form>
+            </article>
+            <article class="panel">
+              <div class="panel-head">
                 <h2>Suggestions</h2>
               </div>
               <form class="upload-form" id="suggestion-form">
@@ -4089,6 +4180,9 @@
     const themeSettingsForm = document.getElementById('theme-settings-form');
     const themeStyleSelect = document.getElementById('theme-style-select');
     const themeSettingsHelp = document.getElementById('theme-settings-help');
+    const mobileUxForm = document.getElementById('mobile-ux-form');
+    const lowDataToggle = document.getElementById('low-data-toggle');
+    const mobileUxHelp = document.getElementById('mobile-ux-help');
     const suggestionForm = document.getElementById('suggestion-form');
     const suggestionInput = document.getElementById('suggestion-input');
     const suggestionSubmitBtn = document.getElementById('suggestion-submit-btn');
@@ -4205,6 +4299,9 @@ let cloudCourseAccessSyncInFlight = false;
     function setMobileSidebarOpen(open) {
       const shouldOpen = Boolean(open && isMobileSidebarMode() && dashboardScreen && !dashboardScreen.classList.contains('hidden'));
       mobileSidebarOpen = shouldOpen;
+      if (shouldOpen) {
+        closeNotificationsPanel(false);
+      }
       if (dashboardScreen) {
         dashboardScreen.classList.toggle('mobile-sidebar-open', shouldOpen);
       }
@@ -5129,6 +5226,7 @@ let cloudCourseAccessSyncInFlight = false;
     let attendanceRecords = loadAttendanceRecords();
     const PROFILE_STORAGE_KEY = 'ritp_profiles_v1';
     const THEME_PREF_STORAGE_KEY = 'ritp_theme_pref_v1';
+    const LOW_DATA_PREF_STORAGE_KEY = 'ritp_low_data_pref_v1';
 
     function loadProfiles() {
       try {
@@ -5314,6 +5412,19 @@ let cloudCourseAccessSyncInFlight = false;
       return saveLocalJSON(THEME_PREF_STORAGE_KEY, themePrefByUser);
     }
 
+    function loadLowDataPrefs() {
+      try {
+        const raw = localStorage.getItem(LOW_DATA_PREF_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function saveLowDataPrefs() {
+      return saveLocalJSON(LOW_DATA_PREF_STORAGE_KEY, lowDataPrefByUser);
+    }
+
     const SUGGESTIONS_STORAGE_KEY = 'ritp_suggestions_v1';
 
     function loadSuggestions() {
@@ -5449,6 +5560,8 @@ let cloudCourseAccessSyncInFlight = false;
 
     let profilesByUser = loadProfiles();
     let themePrefByUser = loadThemePrefs();
+    let lowDataPrefByUser = loadLowDataPrefs();
+    let lowDataMode = false;
     let suggestionsData = loadSuggestions().map(normalizeSuggestion);
     const BUG_REPORTS_STORAGE_KEY = 'ritp_bug_reports_v1';
     function loadBugReports() {
@@ -5620,8 +5733,42 @@ let cloudCourseAccessSyncInFlight = false;
     });
 
     function setAuthVisualVisibility(show) {
-      if (authSplineBg) authSplineBg.classList.toggle('hidden', !show);
+      if (authSplineBg) authSplineBg.classList.toggle('hidden', !show || lowDataMode);
       if (authFocusLayer) authFocusLayer.classList.toggle('hidden', !show);
+    }
+
+    function detectSlowNetwork() {
+      const nav = typeof navigator !== 'undefined' ? navigator : null;
+      const connection = nav && nav.connection ? nav.connection : null;
+      if (!connection) return false;
+      if (connection.saveData) return true;
+      const type = String(connection.effectiveType || '').toLowerCase();
+      return type === 'slow-2g' || type === '2g';
+    }
+
+    function resolveLowDataPreference(email) {
+      const key = normalizeEmail(email || '');
+      if (!key) return isMobileSidebarMode() && detectSlowNetwork();
+      if (Object.prototype.hasOwnProperty.call(lowDataPrefByUser, key)) {
+        return Boolean(lowDataPrefByUser[key]);
+      }
+      return isMobileSidebarMode() && detectSlowNetwork();
+    }
+
+    function applyLowDataMode(enabled, persist = true) {
+      lowDataMode = Boolean(enabled);
+      if (dashboardScreen) dashboardScreen.classList.toggle('low-data-mode', lowDataMode);
+      if (lowDataToggle) lowDataToggle.checked = lowDataMode;
+      if (authSplineBg && (!dashboardScreen || dashboardScreen.classList.contains('hidden'))) {
+        authSplineBg.classList.toggle('hidden', lowDataMode);
+      }
+      const preloadValue = lowDataMode ? 'none' : 'metadata';
+      if (coursesFocusVideo) coursesFocusVideo.setAttribute('preload', preloadValue);
+      if (playlistVideoPlayer) playlistVideoPlayer.setAttribute('preload', preloadValue);
+      if (persist && currentUserName) {
+        lowDataPrefByUser[currentUserName.toLowerCase()] = lowDataMode;
+        saveLowDataPrefs();
+      }
     }
 
     function getStatusClass(status) {
@@ -7341,6 +7488,7 @@ let cloudCourseAccessSyncInFlight = false;
         accountsByEmail: JSON.parse(JSON.stringify(accountsByEmail)),
         profilesByUser: JSON.parse(JSON.stringify(profilesByUser)),
         themePrefByUser: JSON.parse(JSON.stringify(themePrefByUser)),
+        lowDataPrefByUser: JSON.parse(JSON.stringify(lowDataPrefByUser)),
         connectionsByUser: JSON.parse(JSON.stringify(connectionsByUser)),
         attendanceRecords: JSON.parse(JSON.stringify(attendanceRecords)),
         quizScores: JSON.parse(JSON.stringify(quizScores)),
@@ -7350,6 +7498,7 @@ let cloudCourseAccessSyncInFlight = false;
       delete accountsByEmail[key];
       delete profilesByUser[key];
       delete themePrefByUser[key];
+      delete lowDataPrefByUser[key];
       removeUserActivityData(key);
       deleteCloudAccount(key);
       deleteCloudProfile(key);
@@ -7358,6 +7507,7 @@ let cloudCourseAccessSyncInFlight = false;
         saveAccounts(accountsByEmail) &&
         saveProfiles() &&
         saveThemePrefs() &&
+        saveLowDataPrefs() &&
         saveConnections() &&
         saveAttendanceRecords() &&
         saveQuizScores() &&
@@ -7368,6 +7518,7 @@ let cloudCourseAccessSyncInFlight = false;
         accountsByEmail = backup.accountsByEmail;
         profilesByUser = backup.profilesByUser;
         themePrefByUser = backup.themePrefByUser;
+        lowDataPrefByUser = backup.lowDataPrefByUser;
         connectionsByUser = backup.connectionsByUser;
         attendanceRecords = backup.attendanceRecords;
         quizScores = backup.quizScores;
@@ -7375,6 +7526,7 @@ let cloudCourseAccessSyncInFlight = false;
         saveAccounts(accountsByEmail);
         saveProfiles();
         saveThemePrefs();
+        saveLowDataPrefs();
         saveConnections();
         saveAttendanceRecords();
         saveQuizScores();
@@ -7900,6 +8052,7 @@ function openDashboard(userName) {
       if (profileNavBtn) profileNavBtn.classList.remove('hidden');
       const savedTheme = themePrefByUser[userName.toLowerCase()] || 'light';
       applyAppTheme(savedTheme, false);
+      applyLowDataMode(resolveLowDataPreference(userName), false);
       renderCourseViews();
       renderUserProfile();
       updateNavbarProfileAvatar();
@@ -7965,6 +8118,7 @@ function openDashboard(userName) {
       if (profileNavBtn) profileNavBtn.classList.add('hidden');
       clearSession();
       applyAppTheme('light', false);
+      applyLowDataMode(false, false);
       currentUserName = '';
       currentUserRole = '';
       currentUserRoles = [];
@@ -7978,6 +8132,7 @@ function openDashboard(userName) {
     }
 
     function setActiveSection(target) {
+      closeNotificationsPanel(false);
       if (target !== 'course-playlist' && playlistVideoPlayer && !playlistVideoPlayer.paused) {
         playlistVideoPlayer.pause();
       }
@@ -8315,6 +8470,38 @@ function openDashboard(userName) {
       });
     }
 
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchTracking = false;
+
+    document.addEventListener('touchstart', (event) => {
+      if (!isMobileSidebarMode() || !dashboardScreen || dashboardScreen.classList.contains('hidden')) return;
+      const touch = event.touches && event.touches[0];
+      if (!touch) return;
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      touchTracking = true;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (event) => {
+      if (!touchTracking || !isMobileSidebarMode() || !dashboardScreen || dashboardScreen.classList.contains('hidden')) return;
+      touchTracking = false;
+      const touch = event.changedTouches && event.changedTouches[0];
+      if (!touch) return;
+      const dx = touch.clientX - touchStartX;
+      const dy = Math.abs(touch.clientY - touchStartY);
+      if (dy > 54) return;
+
+      if (!mobileSidebarOpen && touchStartX <= 26 && dx > 68) {
+        setMobileSidebarOpen(true);
+        return;
+      }
+
+      if (mobileSidebarOpen && dx < -72) {
+        setMobileSidebarOpen(false);
+      }
+    }, { passive: true });
+
     function positionNotificationsPanel() {
       if (!notificationsPanel || !notificationsToggleBtn) return;
       const rect = notificationsToggleBtn.getBoundingClientRect();
@@ -8571,6 +8758,19 @@ function openDashboard(userName) {
       themeSettingsHelp.textContent = 'Theme applied successfully.';
       themeSettingsHelp.style.color = '#166534';
     });
+
+    if (mobileUxForm) {
+      mobileUxForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        applyLowDataMode(Boolean(lowDataToggle && lowDataToggle.checked), true);
+        if (mobileUxHelp) {
+          mobileUxHelp.textContent = lowDataMode
+            ? 'Low-Data Mode enabled. Mobile loading is now optimized.'
+            : 'Low-Data Mode disabled. Full visual quality restored.';
+          mobileUxHelp.style.color = '#166534';
+        }
+      });
+    }
 
     suggestionForm.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -9063,6 +9263,7 @@ function openDashboard(userName) {
     renderBugReportsPanel();
     renderDigitalClassPanel();
     applyAppTheme('light', false);
+    applyLowDataMode(false, false);
     updateVideoWatermarks();
 
     (async () => {
