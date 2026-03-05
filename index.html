@@ -1923,6 +1923,10 @@
         grid-template-columns: 1fr;
       }
 
+      .challenge-wrap {
+        grid-template-columns: 1fr;
+      }
+
       .playlist-side {
         max-height: none;
       }
@@ -2297,6 +2301,93 @@
       color: var(--muted);
       font-size: 0.8rem;
       margin-top: 4px;
+    }
+
+    .challenge-wrap {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 14px;
+      padding: 14px 16px 18px;
+    }
+
+    .challenge-card {
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 14px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.45));
+      padding: 12px;
+    }
+
+    .challenge-card h3 {
+      font-size: 0.92rem;
+      color: #0f172a;
+      margin-bottom: 10px;
+    }
+
+    .challenge-list {
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+
+    .challenge-list li {
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px dashed rgba(148, 163, 184, 0.34);
+      color: #334155;
+      font-size: 0.84rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .challenge-list li.done {
+      border-style: solid;
+      border-color: rgba(22, 163, 74, 0.45);
+      background: rgba(220, 252, 231, 0.7);
+      color: #166534;
+    }
+
+    .challenge-pill {
+      font-size: 0.72rem;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 3px 8px;
+      background: rgba(148, 163, 184, 0.2);
+      color: #334155;
+    }
+
+    .challenge-list li.done .challenge-pill {
+      background: rgba(22, 163, 74, 0.18);
+      color: #166534;
+    }
+
+    .streak-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .streak-box {
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.62);
+    }
+
+    .streak-box h4 {
+      font-size: 1.2rem;
+      color: #0f172a;
+      margin-bottom: 2px;
+    }
+
+    .streak-box span {
+      color: #475569;
+      font-size: 0.75rem;
+      font-weight: 700;
     }
 
     .settings-switch-row {
@@ -3548,6 +3639,44 @@
               <tbody id="leaderboard-body"></tbody>
             </table>
           </article>
+
+          <article class="panel" style="margin-top:16px;">
+            <div class="panel-head">
+              <h2>Weekly Challenges & Streaks</h2>
+            </div>
+            <div class="challenge-wrap">
+              <div class="challenge-card">
+                <h3 id="weekly-challenge-week-label">This Week's Learning Goals</h3>
+                <ul class="challenge-list" id="weekly-challenge-list"></ul>
+              </div>
+              <div class="challenge-card">
+                <h3>Streak Tracker</h3>
+                <div class="streak-grid">
+                  <div class="streak-box">
+                    <h4 id="weekly-streak-current">0</h4>
+                    <span>Current Streak (days)</span>
+                  </div>
+                  <div class="streak-box">
+                    <h4 id="weekly-streak-best">0</h4>
+                    <span>Best Streak (days)</span>
+                  </div>
+                </div>
+                <div class="panel-head" style="margin-top:12px;">
+                  <h2>Goal Leaderboard (Weekly)</h2>
+                </div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>Student</th>
+                      <th>Score</th>
+                    </tr>
+                  </thead>
+                  <tbody id="goal-leaderboard-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </article>
         </section>
         <section class="section" id="section-courses">
           <section class="courses-wireframe">
@@ -4150,6 +4279,11 @@
     const infoCompleted = document.getElementById('info-completed');
     const infoTotal = document.getElementById('info-total');
     const leaderboardBody = document.getElementById('leaderboard-body');
+    const weeklyChallengeWeekLabel = document.getElementById('weekly-challenge-week-label');
+    const weeklyChallengeList = document.getElementById('weekly-challenge-list');
+    const weeklyStreakCurrent = document.getElementById('weekly-streak-current');
+    const weeklyStreakBest = document.getElementById('weekly-streak-best');
+    const goalLeaderboardBody = document.getElementById('goal-leaderboard-body');
     const statTotalCourses = document.getElementById('stat-total-courses');
     const statCompletedCourses = document.getElementById('stat-completed-courses');
     const statPendingCourses = document.getElementById('stat-pending-courses');
@@ -5227,6 +5361,8 @@ let cloudCourseAccessSyncInFlight = false;
     const PROFILE_STORAGE_KEY = 'ritp_profiles_v1';
     const THEME_PREF_STORAGE_KEY = 'ritp_theme_pref_v1';
     const LOW_DATA_PREF_STORAGE_KEY = 'ritp_low_data_pref_v1';
+    const LEARNING_ACTIVITY_STORAGE_KEY = 'ritp_learning_activity_v1';
+    const STREAK_STORAGE_KEY = 'ritp_streak_v1';
 
     function loadProfiles() {
       try {
@@ -5425,6 +5561,32 @@ let cloudCourseAccessSyncInFlight = false;
       return saveLocalJSON(LOW_DATA_PREF_STORAGE_KEY, lowDataPrefByUser);
     }
 
+    function loadLearningActivityLog() {
+      try {
+        const raw = localStorage.getItem(LEARNING_ACTIVITY_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveLearningActivityLog() {
+      return saveLocalJSON(LEARNING_ACTIVITY_STORAGE_KEY, learningActivityLog);
+    }
+
+    function loadStreakByUser() {
+      try {
+        const raw = localStorage.getItem(STREAK_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function saveStreakByUser() {
+      return saveLocalJSON(STREAK_STORAGE_KEY, streakByUser);
+    }
+
     const SUGGESTIONS_STORAGE_KEY = 'ritp_suggestions_v1';
 
     function loadSuggestions() {
@@ -5562,6 +5724,8 @@ let cloudCourseAccessSyncInFlight = false;
     let themePrefByUser = loadThemePrefs();
     let lowDataPrefByUser = loadLowDataPrefs();
     let lowDataMode = false;
+    let learningActivityLog = loadLearningActivityLog();
+    let streakByUser = loadStreakByUser();
     let suggestionsData = loadSuggestions().map(normalizeSuggestion);
     const BUG_REPORTS_STORAGE_KEY = 'ritp_bug_reports_v1';
     function loadBugReports() {
@@ -6390,6 +6554,7 @@ let cloudCourseAccessSyncInFlight = false;
           }
           task.submissions[currentUserName] = driveLink;
           submittedAssignments.unshift(`${task.title} (${task.course}) - Drive Link`);
+          logLearningActivity('assignment', 1, { course: task.course });
           renderSubmittedAssignments();
           renderClassAssignmentsFeed();
           playlistAssignmentHelp.textContent = 'Marked complete with Google Drive link.';
@@ -6500,6 +6665,165 @@ let cloudCourseAccessSyncInFlight = false;
       return `${hh}:${mm}:${ss}`;
     }
 
+    function getDateKeyFromTimestamp(ts) {
+      const d = new Date(Number(ts) || Date.now());
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function parseDateKey(dateKey) {
+      const parts = String(dateKey || '').split('-').map((n) => Number(n));
+      if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    function isYesterdayDateKey(prevKey, currentKey) {
+      const prev = parseDateKey(prevKey);
+      const curr = parseDateKey(currentKey);
+      if (!prev || !curr) return false;
+      prev.setHours(0, 0, 0, 0);
+      curr.setHours(0, 0, 0, 0);
+      const diffDays = Math.round((curr - prev) / 86400000);
+      return diffDays === 1;
+    }
+
+    function getWeekStartDate(date = new Date()) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      const day = d.getDay();
+      const delta = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + delta);
+      return d;
+    }
+
+    function toReadableDate(date) {
+      return date.toLocaleDateString([], { day: '2-digit', month: 'short' });
+    }
+
+    function getWeekRangeLabel() {
+      const start = getWeekStartDate(new Date());
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      return `${toReadableDate(start)} - ${toReadableDate(end)}`;
+    }
+
+    function getWeekStartTimestamp(date = new Date()) {
+      return getWeekStartDate(date).getTime();
+    }
+
+    function pruneLearningActivityLog() {
+      const cutoff = Date.now() - (1000 * 60 * 60 * 24 * 45);
+      learningActivityLog = learningActivityLog.filter((item) => Number(item.ts || 0) >= cutoff);
+    }
+
+    function bumpLearningStreak(email) {
+      const key = normalizeEmail(email || '');
+      if (!key) return;
+      const today = getTodayDateKey();
+      const current = streakByUser[key] || { current: 0, best: 0, lastDate: '' };
+      if (current.lastDate === today) return;
+      if (current.lastDate && isYesterdayDateKey(current.lastDate, today)) {
+        current.current = Number(current.current || 0) + 1;
+      } else {
+        current.current = 1;
+      }
+      current.best = Math.max(Number(current.best || 0), current.current);
+      current.lastDate = today;
+      streakByUser[key] = current;
+      saveStreakByUser();
+    }
+
+    function logLearningActivity(type, value = 1, meta = {}) {
+      if (!currentUserName) return;
+      const email = normalizeEmail(currentUserName);
+      if (!email) return;
+      bumpLearningStreak(email);
+      learningActivityLog.push({
+        email,
+        type: String(type || '').trim(),
+        value: Number(value) || 0,
+        ts: Date.now(),
+        course: meta && meta.course ? String(meta.course) : ''
+      });
+      pruneLearningActivityLog();
+      saveLearningActivityLog();
+      renderWeeklyChallengesAndGoals();
+    }
+
+    function getWeeklyMetricsByUser() {
+      const weekStart = getWeekStartTimestamp(new Date());
+      const grouped = {};
+      learningActivityLog.forEach((item) => {
+        const ts = Number(item.ts || 0);
+        if (!ts || ts < weekStart) return;
+        const email = normalizeEmail(item.email || '');
+        if (!email) return;
+        if (!grouped[email]) {
+          grouped[email] = {
+            watchSeconds: 0,
+            quizCount: 0,
+            attendanceCount: 0,
+            assignmentCount: 0,
+            score: 0
+          };
+        }
+        const bucket = grouped[email];
+        if (item.type === 'watch_seconds') bucket.watchSeconds += Math.max(0, Number(item.value) || 0);
+        if (item.type === 'quiz') bucket.quizCount += 1;
+        if (item.type === 'attendance') bucket.attendanceCount += 1;
+        if (item.type === 'assignment') bucket.assignmentCount += 1;
+      });
+
+      Object.values(grouped).forEach((m) => {
+        const watchScore = Math.min(40, Math.floor(m.watchSeconds / 300) * 2);
+        const quizScore = Math.min(20, m.quizCount * 10);
+        const attendanceScore = Math.min(20, m.attendanceCount * 7);
+        const assignmentScore = Math.min(20, m.assignmentCount * 10);
+        m.score = watchScore + quizScore + attendanceScore + assignmentScore;
+      });
+      return grouped;
+    }
+
+    function renderWeeklyChallengesAndGoals() {
+      if (!weeklyChallengeList || !goalLeaderboardBody || !weeklyStreakCurrent || !weeklyStreakBest || !weeklyChallengeWeekLabel) return;
+      const weeklyByUser = getWeeklyMetricsByUser();
+      const me = normalizeEmail(currentUserName || '');
+      const mine = weeklyByUser[me] || { watchSeconds: 0, quizCount: 0, attendanceCount: 0, assignmentCount: 0, score: 0 };
+      const streak = streakByUser[me] || { current: 0, best: 0 };
+
+      weeklyChallengeWeekLabel.textContent = `This Week's Learning Goals (${getWeekRangeLabel()})`;
+      weeklyStreakCurrent.textContent = String(Number(streak.current || 0));
+      weeklyStreakBest.textContent = String(Number(streak.best || 0));
+
+      const goals = [
+        { label: 'Watch 45+ minutes of lectures', progress: mine.watchSeconds, target: 2700, formatter: (v, t) => `${Math.min(100, Math.round((v / t) * 100))}%` },
+        { label: 'Complete 1 quiz attempt', progress: mine.quizCount, target: 1, formatter: (v, t) => `${Math.min(v, t)}/${t}` },
+        { label: 'Mark attendance on 3 days', progress: mine.attendanceCount, target: 3, formatter: (v, t) => `${Math.min(v, t)}/${t}` },
+        { label: 'Submit 1 assignment', progress: mine.assignmentCount, target: 1, formatter: (v, t) => `${Math.min(v, t)}/${t}` }
+      ];
+
+      weeklyChallengeList.innerHTML = goals.map((goal) => {
+        const done = goal.progress >= goal.target;
+        return `<li class="${done ? 'done' : ''}">
+          <span>${goal.label}</span>
+          <span class="challenge-pill">${goal.formatter(goal.progress, goal.target)} ${done ? 'Done' : ''}</span>
+        </li>`;
+      }).join('');
+
+      const rows = Object.entries(weeklyByUser)
+        .filter(([email]) => {
+          const roles = getAccountRoles(email);
+          return roles.includes('Student');
+        })
+        .sort((a, b) => Number(b[1].score || 0) - Number(a[1].score || 0))
+        .slice(0, 8)
+        .map(([email, metrics], index) => `<tr><td>${index + 1}</td><td>${escapeHtml(email)}</td><td>${Math.round(metrics.score || 0)}</td></tr>`)
+        .join('');
+      goalLeaderboardBody.innerHTML = rows || '<tr><td>1</td><td>No weekly activity</td><td>0</td></tr>';
+    }
+
     function renderLeaderboard() {
       const rows = Object.entries(watchTimeByStudent)
         .sort((a, b) => b[1] - a[1])
@@ -6552,6 +6876,7 @@ let cloudCourseAccessSyncInFlight = false;
       attendanceRecords[key] = { markedAt: Date.now() };
       saveAttendanceRecords();
       renderAttendanceRecords();
+      logLearningActivity('attendance', 1, { course: currentPlaylistCourse });
     }
 
     function commitWatchTime() {
@@ -6564,6 +6889,7 @@ let cloudCourseAccessSyncInFlight = false;
       watchSessionStartedAt = null;
       if (elapsed <= 0) return;
       watchTimeByStudent[currentUserName] = (watchTimeByStudent[currentUserName] || 0) + elapsed;
+      logLearningActivity('watch_seconds', elapsed, { course: currentPlaylistCourse });
       renderLeaderboard();
       renderCoursesShowcase();
     }
@@ -6733,6 +7059,7 @@ let cloudCourseAccessSyncInFlight = false;
       const scoreKey = getQuizScoreKey(currentPlaylistCourse);
       quizScores[scoreKey] = { score, total: currentMiniQuiz.length, savedAt: Date.now() };
       saveQuizScores();
+      logLearningActivity('quiz', 1, { course: currentPlaylistCourse });
       renderQuizScores();
       miniQuizResult.style.color = '#166534';
       miniQuizResult.textContent = `Quiz submitted. Score: ${score}/${currentMiniQuiz.length}`;
@@ -7489,6 +7816,8 @@ let cloudCourseAccessSyncInFlight = false;
         profilesByUser: JSON.parse(JSON.stringify(profilesByUser)),
         themePrefByUser: JSON.parse(JSON.stringify(themePrefByUser)),
         lowDataPrefByUser: JSON.parse(JSON.stringify(lowDataPrefByUser)),
+        learningActivityLog: JSON.parse(JSON.stringify(learningActivityLog)),
+        streakByUser: JSON.parse(JSON.stringify(streakByUser)),
         connectionsByUser: JSON.parse(JSON.stringify(connectionsByUser)),
         attendanceRecords: JSON.parse(JSON.stringify(attendanceRecords)),
         quizScores: JSON.parse(JSON.stringify(quizScores)),
@@ -7499,6 +7828,8 @@ let cloudCourseAccessSyncInFlight = false;
       delete profilesByUser[key];
       delete themePrefByUser[key];
       delete lowDataPrefByUser[key];
+      learningActivityLog = learningActivityLog.filter((item) => normalizeEmail(item.email || '') !== key);
+      delete streakByUser[key];
       removeUserActivityData(key);
       deleteCloudAccount(key);
       deleteCloudProfile(key);
@@ -7508,6 +7839,8 @@ let cloudCourseAccessSyncInFlight = false;
         saveProfiles() &&
         saveThemePrefs() &&
         saveLowDataPrefs() &&
+        saveLearningActivityLog() &&
+        saveStreakByUser() &&
         saveConnections() &&
         saveAttendanceRecords() &&
         saveQuizScores() &&
@@ -7519,6 +7852,8 @@ let cloudCourseAccessSyncInFlight = false;
         profilesByUser = backup.profilesByUser;
         themePrefByUser = backup.themePrefByUser;
         lowDataPrefByUser = backup.lowDataPrefByUser;
+        learningActivityLog = backup.learningActivityLog;
+        streakByUser = backup.streakByUser;
         connectionsByUser = backup.connectionsByUser;
         attendanceRecords = backup.attendanceRecords;
         quizScores = backup.quizScores;
@@ -7527,6 +7862,8 @@ let cloudCourseAccessSyncInFlight = false;
         saveProfiles();
         saveThemePrefs();
         saveLowDataPrefs();
+        saveLearningActivityLog();
+        saveStreakByUser();
         saveConnections();
         saveAttendanceRecords();
         saveQuizScores();
@@ -8058,6 +8395,7 @@ function openDashboard(userName) {
       updateNavbarProfileAvatar();
       renderSearchUsers();
       renderLeaderboard();
+      renderWeeklyChallengesAndGoals();
       renderAttendanceRecords();
       renderQuizScores();
       renderClassAssignmentsFeed();
@@ -9108,6 +9446,7 @@ function openDashboard(userName) {
         addNotification(`New assignment posted in ${normalizedCourseName}: ${title}`);
       } else {
         submittedAssignments.unshift(`${title} (${normalizedCourseName}) - ${driveLink}`);
+        logLearningActivity('assignment', 1, { course: normalizedCourseName });
         renderSubmittedAssignments();
         renderCoursesShowcase();
         renderMyTeacherCourses();
@@ -9255,6 +9594,7 @@ function openDashboard(userName) {
     renderSubmittedAssignments();
     renderClassAssignmentsFeed();
     renderLeaderboard();
+    renderWeeklyChallengesAndGoals();
     renderAttendanceRecords();
     renderQuizScores();
     renderNotifications();
