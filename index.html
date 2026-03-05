@@ -2390,6 +2390,22 @@
       font-weight: 700;
     }
 
+    .challenge-panel-focus {
+      animation: challengeFocusPulse 900ms ease 1;
+    }
+
+    @keyframes challengeFocusPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(14, 165, 163, 0.0);
+      }
+      40% {
+        box-shadow: 0 0 0 8px rgba(14, 165, 163, 0.25);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(14, 165, 163, 0.0);
+      }
+    }
+
     .settings-switch-row {
       display: flex;
       align-items: center;
@@ -3561,6 +3577,7 @@
           <button data-target="courses" type="button">Courses</button>
           <button data-target="digital-class" id="digital-class-menu" type="button">Digital Class</button>
           <button data-target="progress" type="button">Progress</button>
+          <button data-target="challenges" type="button">Challenges</button>
           <button data-target="search" id="search-menu" class="hidden" type="button">Search</button>
           <button data-target="upload-course" id="upload-course-menu" class="hidden" type="button">Upload
             Course</button>
@@ -3585,6 +3602,9 @@
             </article>
             <article class="card">
               <h3 id="stat-progress">0%</h3><span>Overall Progress</span>
+            </article>
+            <article class="card">
+              <h3 id="stat-weekly-score">0</h3><span>Weekly Goal Score</span>
             </article>
           </div>
 
@@ -3640,7 +3660,7 @@
             </table>
           </article>
 
-          <article class="panel" style="margin-top:16px;">
+          <article class="panel" id="weekly-challenges-panel" style="margin-top:16px;">
             <div class="panel-head">
               <h2>Weekly Challenges & Streaks</h2>
             </div>
@@ -4288,6 +4308,7 @@
     const statCompletedCourses = document.getElementById('stat-completed-courses');
     const statPendingCourses = document.getElementById('stat-pending-courses');
     const statProgress = document.getElementById('stat-progress');
+    const statWeeklyScore = document.getElementById('stat-weekly-score');
     const progressCourseRate = document.getElementById('progress-course-rate');
     const progressTotalCourses = document.getElementById('progress-total-courses');
     const progressAttendanceCount = document.getElementById('progress-attendance-count');
@@ -6198,11 +6219,15 @@ let cloudCourseAccessSyncInFlight = false;
       const completed = coursesData.filter((course) => course.status === 'Completed').length;
       const pending = coursesData.filter((course) => course.status === 'Pending').length;
       const progress = total ? Math.round((completed / total) * 100) : 0;
+      const weeklyByUser = getWeeklyMetricsByUser();
+      const me = normalizeEmail(currentUserName || '');
+      const weeklyScore = weeklyByUser[me] ? Math.round(Number(weeklyByUser[me].score || 0)) : 0;
 
       statTotalCourses.textContent = String(total);
       statCompletedCourses.textContent = String(completed);
       statPendingCourses.textContent = String(pending);
       statProgress.textContent = `${progress}%`;
+      if (statWeeklyScore) statWeeklyScore.textContent = String(weeklyScore);
       progressCourseRate.textContent = `${progress}%`;
       progressTotalCourses.textContent = String(total);
 
@@ -8471,50 +8496,63 @@ function openDashboard(userName) {
 
     function setActiveSection(target) {
       closeNotificationsPanel(false);
-      if (target !== 'course-playlist' && playlistVideoPlayer && !playlistVideoPlayer.paused) {
+      const effectiveTarget = target === 'challenges' ? 'dashboard' : target;
+      if (effectiveTarget !== 'course-playlist' && playlistVideoPlayer && !playlistVideoPlayer.paused) {
         playlistVideoPlayer.pause();
       }
-      if (target !== 'courses' && coursesFocusVideo && !coursesFocusVideo.paused) {
+      if (effectiveTarget !== 'courses' && coursesFocusVideo && !coursesFocusVideo.paused) {
         coursesFocusVideo.pause();
       }
       sections.forEach((section) => {
-        section.classList.toggle('active', section.id === `section-${target}`);
+        section.classList.toggle('active', section.id === `section-${effectiveTarget}`);
       });
 
       menuButtons.forEach((button) => {
         button.classList.toggle('active', button.dataset.target === target);
       });
 
-      if (target === 'dashboard') {
+      if (effectiveTarget === 'dashboard') {
         playSidebarHomeEntryAnimation();
       }
 
-      if (target === 'courses') {
+      if (effectiveTarget === 'courses') {
         renderCoursesShowcase();
       }
-      if (target === 'my-courses-teacher') {
+      if (effectiveTarget === 'my-courses-teacher') {
         renderMyTeacherCourses();
       }
-      if (target === 'upload-assignment') {
+      if (effectiveTarget === 'upload-assignment') {
         renderAssignmentCourseOptions();
       }
-      if (target === 'digital-class') {
+      if (effectiveTarget === 'digital-class') {
         renderDigitalClassPanel();
       }
-      if (target === 'settings') {
+      if (effectiveTarget === 'settings') {
         Promise.all([refreshSuggestionsFromCloud(), refreshBugReportsFromCloud()]).then(() => {
           renderSuggestionsPanel();
           renderBugReportsPanel();
         });
       }
-      if (target === 'search' || target === 'profile') {
+      if (effectiveTarget === 'search' || effectiveTarget === 'profile') {
         refreshProfilesFromCloud().then(() => {
-          if (target === 'search') renderSearchUsers();
-          if (target === 'profile') {
+          if (effectiveTarget === 'search') renderSearchUsers();
+          if (effectiveTarget === 'profile') {
             renderUserProfile();
             updateNavbarProfileAvatar();
           }
         });
+      }
+
+      if (target === 'challenges') {
+        const challengePanel = document.getElementById('weekly-challenges-panel');
+        if (challengePanel) {
+          requestAnimationFrame(() => {
+            challengePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            challengePanel.classList.remove('challenge-panel-focus');
+            void challengePanel.offsetWidth;
+            challengePanel.classList.add('challenge-panel-focus');
+          });
+        }
       }
 
       if (isMobileSidebarMode()) {
