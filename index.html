@@ -3535,6 +3535,7 @@
   <main class="screen dashboard hidden" id="dashboard-screen" aria-label="Dashboard Screen">
     <header class="navbar">
       <div class="title">RITP Learning Portal</div>
+      <p class="welcome hidden" id="welcome-user" aria-live="polite"></p>
       <div class="navbar-float-cloud" id="navbar-float-cloud" aria-label="Quick Navigation"></div>
       <div class="navbar-actions">
         <button class="nav-icon-btn" id="notifications-toggle-btn" type="button" aria-label="Open notifications"
@@ -3577,7 +3578,6 @@
           <button data-target="courses" type="button">Courses</button>
           <button data-target="digital-class" id="digital-class-menu" type="button">Digital Class</button>
           <button data-target="progress" type="button">Progress</button>
-          <button data-target="challenges" type="button">Challenges</button>
           <button data-target="search" id="search-menu" class="hidden" type="button">Search</button>
           <button data-target="upload-course" id="upload-course-menu" class="hidden" type="button">Upload
             Course</button>
@@ -3660,9 +3660,9 @@
             </table>
           </article>
 
-          <article class="panel" id="weekly-challenges-panel" style="margin-top:16px;">
+          <article class="panel" id="weekly-goals-panel" style="margin-top:16px;">
             <div class="panel-head">
-              <h2>Weekly Challenges & Streaks</h2>
+              <h2>Weekly Goals & Streaks</h2>
             </div>
             <div class="challenge-wrap">
               <div class="challenge-card">
@@ -4176,6 +4176,14 @@
               <button class="btn" type="submit">Upload Assignment</button>
               <p class="success-msg" id="assignment-upload-message" aria-live="polite"></p>
             </form>
+            <div class="panel-head">
+              <h2>Posted Assignments</h2>
+            </div>
+            <ul class="list" id="class-assignments-feed"></ul>
+            <div class="panel-head">
+              <h2>My Submitted Assignments</h2>
+            </div>
+            <ul class="list" id="submitted-assignments-list"></ul>
           </article>
         </section>
       </section>
@@ -6773,7 +6781,7 @@ let cloudCourseAccessSyncInFlight = false;
       });
       pruneLearningActivityLog();
       saveLearningActivityLog();
-      renderWeeklyChallengesAndGoals();
+      renderWeeklyGoalsAndStreaks();
     }
 
     function getWeeklyMetricsByUser() {
@@ -6807,7 +6815,7 @@ let cloudCourseAccessSyncInFlight = false;
       return grouped;
     }
 
-    function renderWeeklyChallengesAndGoals() {
+    function renderWeeklyGoalsAndStreaks() {
       if (!weeklyChallengeList || !goalLeaderboardBody || !weeklyStreakCurrent || !weeklyStreakBest || !weeklyChallengeWeekLabel) return;
       const weeklyByUser = getWeeklyMetricsByUser();
       const me = normalizeEmail(currentUserName || '');
@@ -8415,7 +8423,7 @@ function openDashboard(userName) {
       updateNavbarProfileAvatar();
       renderSearchUsers();
       renderLeaderboard();
-      renderWeeklyChallengesAndGoals();
+      renderWeeklyGoalsAndStreaks();
       renderAttendanceRecords();
       renderQuizScores();
       renderClassAssignmentsFeed();
@@ -8491,7 +8499,7 @@ function openDashboard(userName) {
 
     function setActiveSection(target) {
       closeNotificationsPanel(false);
-      const effectiveTarget = target === 'challenges' ? 'dashboard' : target;
+      const effectiveTarget = target;
       if (effectiveTarget !== 'course-playlist' && playlistVideoPlayer && !playlistVideoPlayer.paused) {
         playlistVideoPlayer.pause();
       }
@@ -8536,18 +8544,6 @@ function openDashboard(userName) {
             updateNavbarProfileAvatar();
           }
         });
-      }
-
-      if (target === 'challenges') {
-        const challengePanel = document.getElementById('weekly-challenges-panel');
-        if (challengePanel) {
-          requestAnimationFrame(() => {
-            challengePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            challengePanel.classList.remove('challenge-panel-focus');
-            void challengePanel.offsetWidth;
-            challengePanel.classList.add('challenge-panel-focus');
-          });
-        }
       }
 
       if (isMobileSidebarMode()) {
@@ -9626,7 +9622,7 @@ function openDashboard(userName) {
     renderSubmittedAssignments();
     renderClassAssignmentsFeed();
     renderLeaderboard();
-    renderWeeklyChallengesAndGoals();
+    renderWeeklyGoalsAndStreaks();
     renderAttendanceRecords();
     renderQuizScores();
     renderNotifications();
