@@ -1218,6 +1218,29 @@
       margin-bottom: 4px;
     }
 
+    .live-quiz-question-chip {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #0f172a;
+      background: rgba(148, 163, 184, 0.18);
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 999px;
+      padding: 3px 8px;
+      margin-bottom: 6px;
+    }
+
+    #live-quiz-questions-list li {
+      display: grid;
+      gap: 4px;
+    }
+
+    #live-quiz-participants-list li,
+    #live-quiz-leaderboard li {
+      font-size: 0.84rem;
+      line-height: 1.35;
+    }
+
     .profile-preview {
       padding: 18px;
     }
@@ -3887,6 +3910,9 @@
                     <label for="live-quiz-title">Quiz Title</label>
                     <input id="live-quiz-title" type="text" placeholder="Example: BEE Quick Quiz 1" maxlength="100" />
                   </div>
+                  <div class="panel-head" style="margin-top:8px;">
+                    <h2>Add Questions</h2>
+                  </div>
                   <div class="field">
                     <label for="live-quiz-question">Question</label>
                     <input id="live-quiz-question" type="text" placeholder="Enter question" maxlength="220" />
@@ -3916,7 +3942,10 @@
                       <option value="3">D</option>
                     </select>
                   </div>
+                  <button class="btn" id="live-quiz-add-question-btn" type="button">Add Question</button>
+                  <ul class="list" id="live-quiz-questions-list"></ul>
                   <button class="btn" id="live-quiz-start-btn" type="button">Start Live Quiz</button>
+                  <button class="btn hidden" id="live-quiz-next-btn" type="button">Next Question</button>
                   <button class="btn hidden" id="live-quiz-end-btn" type="button">End Live Quiz</button>
                   <p class="success-msg" id="live-quiz-help" aria-live="polite"></p>
                 </form>
@@ -3925,13 +3954,19 @@
                 <ul class="list">
                   <li>Current Quiz: <strong id="live-quiz-current-title">No live quiz</strong></li>
                   <li>Details: <strong id="live-quiz-current-meta">-</strong></li>
+                  <li>Question: <strong id="live-quiz-current-progress">-</strong></li>
                   <li>Join Status: <strong id="live-quiz-join-status">-</strong></li>
                 </ul>
                 <div class="mini-quiz-body" id="live-quiz-player-wrap">
+                  <button type="button" class="video-open-btn" id="live-quiz-join-btn">Join Live Quiz</button>
                   <form id="live-quiz-options-form" class="mini-quiz-form"></form>
-                  <button type="button" class="video-open-btn" id="live-quiz-submit-btn">Submit Live Quiz</button>
+                  <button type="button" class="video-open-btn" id="live-quiz-submit-btn">Submit Answer</button>
                   <p class="success-msg" id="live-quiz-result" aria-live="polite"></p>
                 </div>
+                <div class="panel-head" style="margin-top:12px;">
+                  <h2>Participants</h2>
+                </div>
+                <ul class="list" id="live-quiz-participants-list"></ul>
                 <div class="panel-head" style="margin-top:12px;">
                   <h2>Live Quiz Leaderboard</h2>
                 </div>
@@ -4439,16 +4474,22 @@
     const liveQuizOptionCInput = document.getElementById('live-quiz-option-c');
     const liveQuizOptionDInput = document.getElementById('live-quiz-option-d');
     const liveQuizCorrectSelect = document.getElementById('live-quiz-correct');
+    const liveQuizAddQuestionBtn = document.getElementById('live-quiz-add-question-btn');
+    const liveQuizQuestionsList = document.getElementById('live-quiz-questions-list');
     const liveQuizStartBtn = document.getElementById('live-quiz-start-btn');
+    const liveQuizNextBtn = document.getElementById('live-quiz-next-btn');
     const liveQuizEndBtn = document.getElementById('live-quiz-end-btn');
     const liveQuizHelp = document.getElementById('live-quiz-help');
     const liveQuizCurrentTitle = document.getElementById('live-quiz-current-title');
     const liveQuizCurrentMeta = document.getElementById('live-quiz-current-meta');
+    const liveQuizCurrentProgress = document.getElementById('live-quiz-current-progress');
     const liveQuizJoinStatus = document.getElementById('live-quiz-join-status');
     const liveQuizPlayerWrap = document.getElementById('live-quiz-player-wrap');
+    const liveQuizJoinBtn = document.getElementById('live-quiz-join-btn');
     const liveQuizOptionsForm = document.getElementById('live-quiz-options-form');
     const liveQuizSubmitBtn = document.getElementById('live-quiz-submit-btn');
     const liveQuizResult = document.getElementById('live-quiz-result');
+    const liveQuizParticipantsList = document.getElementById('live-quiz-participants-list');
     const liveQuizLeaderboard = document.getElementById('live-quiz-leaderboard');
     const menuButtons = Array.from(document.querySelectorAll('#menu-buttons button[data-target]'));
     const sections = Array.from(document.querySelectorAll('.section'));
@@ -5061,24 +5102,119 @@ let cloudCourseAccessSyncInFlight = false;
       return saveLocalJSON(DIGITAL_CLASS_STORAGE_KEY, normalized);
     }
 
-    function normalizeLiveQuizState(raw) {
-      if (!raw || typeof raw !== 'object') return null;
-      const options = Array.isArray(raw.options) ? raw.options.map((item) => String(item || '').trim()) : [];
+    function normalizeLiveQuizQuestion(raw) {
+      const safe = raw && typeof raw === 'object' ? raw : {};
+      const options = Array.isArray(safe.options) ? safe.options.map((item) => String(item || '').trim()) : [];
       const cleanedOptions = options.slice(0, 4);
       while (cleanedOptions.length < 4) cleanedOptions.push('');
-      const submissions = raw.submissions && typeof raw.submissions === 'object' ? raw.submissions : {};
+      const text = String(safe.question || safe.text || '').trim();
       return {
+        question: text,
+        options: cleanedOptions,
+        correctIndex: Math.max(0, Math.min(3, Number(safe.correctIndex || 0)))
+      };
+    }
+
+    function calculateLiveQuizScoreFromResponses(questions, answersByQuestion) {
+      const quizQuestions = Array.isArray(questions) ? questions : [];
+      const answers = answersByQuestion && typeof answersByQuestion === 'object' ? answersByQuestion : {};
+      let score = 0;
+      quizQuestions.forEach((question, index) => {
+        const picked = Number(answers[index]);
+        if (Number.isInteger(picked) && picked === Number(question.correctIndex)) {
+          score += 1;
+        }
+      });
+      return score;
+    }
+
+    function normalizeLiveQuizState(raw) {
+      if (!raw || typeof raw !== 'object') return null;
+      const legacyQuestion = String(raw.question || '').trim();
+      const legacyOptions = Array.isArray(raw.options) ? raw.options : [];
+      const hasLegacySingle = legacyQuestion && legacyOptions.length;
+      const baseQuestions = Array.isArray(raw.questions) && raw.questions.length
+        ? raw.questions
+        : (hasLegacySingle ? [{ question: legacyQuestion, options: legacyOptions, correctIndex: raw.correctIndex }] : []);
+      const questions = baseQuestions
+        .map((q) => normalizeLiveQuizQuestion(q))
+        .filter((q) => q.question && q.options.filter(Boolean).length >= 2);
+      const participants = raw.participants && typeof raw.participants === 'object' ? raw.participants : {};
+      const responses = raw.responses && typeof raw.responses === 'object' ? raw.responses : {};
+      const submissions = raw.submissions && typeof raw.submissions === 'object' ? raw.submissions : {};
+      const scores = raw.scores && typeof raw.scores === 'object' ? raw.scores : {};
+      const completed = raw.completed && typeof raw.completed === 'object' ? raw.completed : {};
+      const currentQuestionIndex = Math.max(0, Math.min(Math.max(questions.length - 1, 0), Number(raw.currentQuestionIndex || 0)));
+
+      const normalized = {
         id: String(raw.id || '').trim() || `quiz-${Date.now()}`,
         title: String(raw.title || '').trim() || 'Live Quiz',
         courseName: String(raw.courseName || '').trim(),
-        question: String(raw.question || '').trim(),
-        options: cleanedOptions,
-        correctIndex: Math.max(0, Math.min(3, Number(raw.correctIndex || 0))),
         host: String(raw.host || '').trim(),
         hostRole: String(raw.hostRole || '').trim(),
         startedAt: Number(raw.startedAt || Date.now()),
-        submissions
+        questions,
+        currentQuestionIndex,
+        participants: {},
+        responses: {},
+        scores: {},
+        completed: {}
       };
+
+      Object.entries(participants).forEach(([email, value]) => {
+        const key = normalizeEmail(email || '');
+        if (!key) return;
+        const safe = value && typeof value === 'object' ? value : {};
+        normalized.participants[key] = {
+          joinedAt: Number(safe.joinedAt || Date.now()),
+          lastSeenAt: Number(safe.lastSeenAt || Date.now())
+        };
+      });
+
+      Object.entries(responses).forEach(([email, answerMap]) => {
+        const key = normalizeEmail(email || '');
+        if (!key) return;
+        const safeAnswers = answerMap && typeof answerMap === 'object' ? answerMap : {};
+        const next = {};
+        Object.keys(safeAnswers).forEach((qIndex) => {
+          const numIndex = Number(qIndex);
+          const picked = Number(safeAnswers[qIndex]);
+          if (Number.isInteger(numIndex) && numIndex >= 0 && numIndex < questions.length && Number.isInteger(picked) && picked >= 0 && picked <= 3) {
+            next[numIndex] = picked;
+          }
+        });
+        normalized.responses[key] = next;
+      });
+
+      Object.keys(scores).forEach((email) => {
+        const key = normalizeEmail(email || '');
+        if (!key) return;
+        normalized.scores[key] = Number(scores[email] || 0);
+      });
+
+      Object.keys(completed).forEach((email) => {
+        const key = normalizeEmail(email || '');
+        if (!key) return;
+        normalized.completed[key] = Boolean(completed[email]);
+      });
+
+      Object.entries(submissions).forEach(([email, value]) => {
+        const key = normalizeEmail(email || '');
+        if (!key) return;
+        const safe = value && typeof value === 'object' ? value : {};
+        if (Number.isInteger(Number(safe.selectedIndex))) {
+          if (!normalized.responses[key]) normalized.responses[key] = {};
+          normalized.responses[key][0] = Number(safe.selectedIndex);
+        }
+      });
+
+      Object.keys(normalized.responses).forEach((email) => {
+        const autoScore = calculateLiveQuizScoreFromResponses(questions, normalized.responses[email]);
+        normalized.scores[email] = autoScore;
+        normalized.completed[email] = Object.keys(normalized.responses[email] || {}).length >= questions.length;
+      });
+
+      return normalized;
     }
 
     function loadLiveQuizState() {
@@ -5116,19 +5252,25 @@ let cloudCourseAccessSyncInFlight = false;
 
     function toCloudLiveQuizRow(state) {
       const safe = normalizeLiveQuizState(state);
-      if (!safe || !safe.question) return null;
+      if (!safe || !safe.questions.length) return null;
       return {
         id: 'global',
         quiz_id: safe.id,
         title: safe.title,
         course_name: safe.courseName,
-        question: safe.question,
-        options: safe.options,
-        correct_index: safe.correctIndex,
+        question: safe.questions[0] ? safe.questions[0].question : '',
+        options: safe.questions[0] ? safe.questions[0].options : [],
+        correct_index: safe.questions[0] ? safe.questions[0].correctIndex : 0,
         host: safe.host,
         host_role: safe.hostRole,
         started_at: safe.startedAt,
-        submissions: safe.submissions || {},
+        submissions: {},
+        questions: safe.questions,
+        current_question_index: safe.currentQuestionIndex,
+        participants: safe.participants,
+        responses: safe.responses,
+        scores: safe.scores,
+        completed: safe.completed,
         status: 'live'
       };
     }
@@ -5156,6 +5298,12 @@ let cloudCourseAccessSyncInFlight = false;
         question: row.question,
         options: Array.isArray(row.options) ? row.options : [],
         correctIndex: Number(row.correct_index || 0),
+        questions: Array.isArray(row.questions) ? row.questions : [],
+        currentQuestionIndex: Number(row.current_question_index || 0),
+        participants: row.participants && typeof row.participants === 'object' ? row.participants : {},
+        responses: row.responses && typeof row.responses === 'object' ? row.responses : {},
+        scores: row.scores && typeof row.scores === 'object' ? row.scores : {},
+        completed: row.completed && typeof row.completed === 'object' ? row.completed : {},
         host: row.host,
         hostRole: row.host_role,
         startedAt: Number(row.started_at || Date.now()),
@@ -5186,7 +5334,7 @@ let cloudCourseAccessSyncInFlight = false;
       if (!isCloudAccountsConfigured()) return undefined;
       try {
         const base = SUPABASE_URL.replace(/\/+$/, '');
-        const url = `${base}/rest/v1/${SUPABASE_LIVE_QUIZ_TABLE}?select=id,quiz_id,title,course_name,question,options,correct_index,host,host_role,started_at,submissions,status&id=eq.global&limit=1`;
+        const url = `${base}/rest/v1/${SUPABASE_LIVE_QUIZ_TABLE}?select=id,quiz_id,title,course_name,question,options,correct_index,questions,current_question_index,participants,responses,scores,completed,host,host_role,started_at,submissions,status&id=eq.global&limit=1`;
         const response = await fetch(url, {
           method: 'GET',
           headers: buildCloudHeaders()
@@ -6139,6 +6287,7 @@ let cloudCourseAccessSyncInFlight = false;
     let adminPromoteMenuEmail = '';
     let digitalClassState = loadDigitalClassState();
     let liveQuizState = loadLiveQuizState();
+    let liveQuizDraftQuestions = [];
     let currentMiniQuiz = [];
     let currentCourseVideos = [];
     const PROFILE_FALLBACK_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODIiIGhlaWdodD0iODIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgyIiBoZWlnaHQ9IjgyIiBmaWxsPSIjZTJlOGYwIi8+PGNpcmNsZSBjeD0iNDEiIGN5PSIzMiIgcj0iMTYiIGZpbGw9IiM5NGEzYjgiLz48cmVjdCB4PSIxOCIgeT0iNTIiIHdpZHRoPSI0NiIgaGVpZ2h0PSIxOCIgcng9IjkiIGZpbGw9IiM5NGEzYjgiLz48L3N2Zz4=';
@@ -6406,6 +6555,40 @@ let cloudCourseAccessSyncInFlight = false;
       return currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
     }
 
+    function getLiveQuizQuestionDraftFromInputs() {
+      const question = String(liveQuizQuestionInput ? liveQuizQuestionInput.value : '').trim();
+      const options = [
+        String(liveQuizOptionAInput ? liveQuizOptionAInput.value : '').trim(),
+        String(liveQuizOptionBInput ? liveQuizOptionBInput.value : '').trim(),
+        String(liveQuizOptionCInput ? liveQuizOptionCInput.value : '').trim(),
+        String(liveQuizOptionDInput ? liveQuizOptionDInput.value : '').trim()
+      ];
+      const correctIndex = Number(liveQuizCorrectSelect ? liveQuizCorrectSelect.value : 0);
+      if (!question || options.some((item) => !item)) return null;
+      return normalizeLiveQuizQuestion({ question, options, correctIndex });
+    }
+
+    function clearLiveQuizDraftInputs() {
+      if (liveQuizQuestionInput) liveQuizQuestionInput.value = '';
+      if (liveQuizOptionAInput) liveQuizOptionAInput.value = '';
+      if (liveQuizOptionBInput) liveQuizOptionBInput.value = '';
+      if (liveQuizOptionCInput) liveQuizOptionCInput.value = '';
+      if (liveQuizOptionDInput) liveQuizOptionDInput.value = '';
+      if (liveQuizCorrectSelect) liveQuizCorrectSelect.value = '0';
+    }
+
+    function renderLiveQuizDraftQuestions() {
+      if (!liveQuizQuestionsList) return;
+      liveQuizQuestionsList.innerHTML = liveQuizDraftQuestions.map((item, index) => {
+        const correctLabel = ['A', 'B', 'C', 'D'][Number(item.correctIndex) || 0];
+        return `<li>
+          <span class="live-quiz-question-chip">Q${index + 1}</span>
+          <strong>${escapeHtml(item.question)}</strong>
+          <div class="assignment-meta">Correct: ${correctLabel} | ${escapeHtml(item.options.join(' | '))}</div>
+        </li>`;
+      }).join('') || '<li>No questions added yet.</li>';
+    }
+
     function getLiveQuizJoinDecision() {
       if (!currentUserName) {
         return { allowed: false, message: 'Please login first.' };
@@ -6433,57 +6616,100 @@ let cloudCourseAccessSyncInFlight = false;
       return { allowed: true, message: '' };
     }
 
-    function getLiveQuizSubmissionsSorted() {
-      if (!liveQuizState || !liveQuizState.submissions || typeof liveQuizState.submissions !== 'object') return [];
-      return Object.entries(liveQuizState.submissions)
+    function getLiveQuizParticipantsSorted() {
+      if (!liveQuizState || !liveQuizState.participants || typeof liveQuizState.participants !== 'object') return [];
+      return Object.entries(liveQuizState.participants)
         .map(([email, value]) => {
           const safe = value && typeof value === 'object' ? value : {};
           return {
             email: normalizeEmail(email || ''),
-            score: Number(safe.score || 0),
-            selectedIndex: Number(safe.selectedIndex || -1),
-            submittedAt: Number(safe.submittedAt || 0)
+            joinedAt: Number(safe.joinedAt || 0),
+            lastSeenAt: Number(safe.lastSeenAt || 0)
+          };
+        })
+        .filter((row) => row.email && row.joinedAt)
+        .sort((a, b) => {
+          return a.joinedAt - b.joinedAt;
+        });
+    }
+
+    function getLiveQuizLeaderboardRows() {
+      if (!liveQuizState) return [];
+      const scores = liveQuizState.scores && typeof liveQuizState.scores === 'object' ? liveQuizState.scores : {};
+      const completed = liveQuizState.completed && typeof liveQuizState.completed === 'object' ? liveQuizState.completed : {};
+      const responses = liveQuizState.responses && typeof liveQuizState.responses === 'object' ? liveQuizState.responses : {};
+      return Object.keys(scores)
+        .map((email) => {
+          const key = normalizeEmail(email || '');
+          const answers = responses[key] && typeof responses[key] === 'object' ? responses[key] : {};
+          return {
+            email: key,
+            score: Number(scores[key] || 0),
+            answered: Object.keys(answers).length,
+            completed: Boolean(completed[key])
           };
         })
         .filter((row) => row.email)
         .sort((a, b) => {
           if (b.score !== a.score) return b.score - a.score;
-          return a.submittedAt - b.submittedAt;
+          return b.answered - a.answered;
         });
     }
 
     function renderLiveQuizPanel() {
-      if (!liveQuizHelp || !liveQuizCurrentTitle || !liveQuizCurrentMeta || !liveQuizJoinStatus || !liveQuizStartBtn || !liveQuizEndBtn || !liveQuizPlayerWrap || !liveQuizOptionsForm || !liveQuizSubmitBtn || !liveQuizResult || !liveQuizLeaderboard) return;
+      if (!liveQuizHelp || !liveQuizCurrentTitle || !liveQuizCurrentMeta || !liveQuizCurrentProgress || !liveQuizJoinStatus || !liveQuizStartBtn || !liveQuizNextBtn || !liveQuizEndBtn || !liveQuizPlayerWrap || !liveQuizJoinBtn || !liveQuizOptionsForm || !liveQuizSubmitBtn || !liveQuizResult || !liveQuizParticipantsList || !liveQuizLeaderboard) return;
       const canHost = canCurrentUserHostLiveQuiz();
       liveQuizStartBtn.classList.toggle('hidden', !canHost);
+      liveQuizNextBtn.classList.toggle('hidden', !canHost || !liveQuizState || !liveQuizState.id);
       liveQuizEndBtn.classList.toggle('hidden', !canHost || !liveQuizState || !liveQuizState.id);
       renderLiveQuizCourseOptions(liveQuizState && liveQuizState.courseName ? liveQuizState.courseName : '');
+      renderLiveQuizDraftQuestions();
 
       if (!liveQuizState || !liveQuizState.id) {
         liveQuizCurrentTitle.textContent = 'No live quiz';
         liveQuizCurrentMeta.textContent = '-';
+        liveQuizCurrentProgress.textContent = '-';
         liveQuizJoinStatus.textContent = canHost ? 'You can host a quiz.' : 'Waiting for host to start a live quiz.';
         liveQuizOptionsForm.innerHTML = '<p class="assignment-meta">No active live quiz.</p>';
+        liveQuizJoinBtn.classList.add('hidden');
+        liveQuizJoinBtn.disabled = true;
         liveQuizSubmitBtn.disabled = true;
         liveQuizPlayerWrap.classList.add('hidden');
         liveQuizResult.textContent = '';
+        liveQuizParticipantsList.innerHTML = '<li>No participants yet.</li>';
         liveQuizLeaderboard.innerHTML = '<li>No submissions yet.</li>';
         return;
       }
 
       const decision = getLiveQuizJoinDecision();
       const hostRoleLabel = String(liveQuizState.hostRole || 'Host');
+      const totalQuestions = Array.isArray(liveQuizState.questions) ? liveQuizState.questions.length : 0;
+      const currentIndex = Math.max(0, Math.min(Math.max(totalQuestions - 1, 0), Number(liveQuizState.currentQuestionIndex || 0)));
+      const currentQuestion = totalQuestions ? liveQuizState.questions[currentIndex] : null;
       liveQuizCurrentTitle.textContent = liveQuizState.title || 'Live Quiz';
       liveQuizCurrentMeta.textContent = `${hostRoleLabel}: ${liveQuizState.host || '-'} | Course: ${liveQuizState.courseName || '-'} | Started: ${new Date(Number(liveQuizState.startedAt || Date.now())).toLocaleTimeString()}`;
+      liveQuizCurrentProgress.textContent = totalQuestions ? `${currentIndex + 1} / ${totalQuestions}` : '-';
       liveQuizJoinStatus.textContent = decision.allowed ? 'You can join this live quiz.' : decision.message;
-      liveQuizPlayerWrap.classList.toggle('hidden', !decision.allowed);
-      liveQuizSubmitBtn.disabled = !decision.allowed;
+      liveQuizJoinBtn.classList.toggle('hidden', !decision.allowed);
+      liveQuizJoinBtn.disabled = !decision.allowed;
 
-      if (decision.allowed) {
-        const q = escapeHtml(liveQuizState.question || '');
-        const options = Array.isArray(liveQuizState.options) ? liveQuizState.options : [];
+      const userKey = normalizeEmail(currentUserName || '');
+      const isParticipant = !!(liveQuizState.participants && liveQuizState.participants[userKey]);
+      liveQuizJoinBtn.textContent = isParticipant ? 'Joined' : 'Join Live Quiz';
+      if (isParticipant) {
+        liveQuizJoinBtn.disabled = true;
+      }
+
+      liveQuizPlayerWrap.classList.toggle('hidden', !decision.allowed || !isParticipant);
+      liveQuizSubmitBtn.disabled = !decision.allowed || !isParticipant;
+      liveQuizNextBtn.disabled = !canHost || !totalQuestions || currentIndex >= totalQuestions - 1;
+
+      if (decision.allowed && isParticipant && currentQuestion) {
+        const q = escapeHtml(currentQuestion.question || '');
+        const options = Array.isArray(currentQuestion.options) ? currentQuestion.options : [];
         liveQuizOptionsForm.innerHTML = `
           <div class="quiz-item">
+            <span class="live-quiz-question-chip">Question ${currentIndex + 1}</span>
             <p><strong>${q}</strong></p>
             ${options.map((opt, idx) => (
               `<label class="quiz-option"><input type="radio" name="live-quiz-answer" value="${idx}" /> ${escapeHtml(opt || `Option ${idx + 1}`)}</label>`
@@ -6491,24 +6717,40 @@ let cloudCourseAccessSyncInFlight = false;
           </div>
         `;
 
-        const userKey = normalizeEmail(currentUserName || '');
-        const mine = liveQuizState.submissions && liveQuizState.submissions[userKey] ? liveQuizState.submissions[userKey] : null;
-        if (mine && Number(mine.selectedIndex) >= 0) {
-          const selectedRadio = liveQuizOptionsForm.querySelector(`input[name="live-quiz-answer"][value="${Number(mine.selectedIndex)}"]`);
+        const mineAnswers = liveQuizState.responses && liveQuizState.responses[userKey] && typeof liveQuizState.responses[userKey] === 'object'
+          ? liveQuizState.responses[userKey]
+          : {};
+        if (Object.prototype.hasOwnProperty.call(mineAnswers, currentIndex)) {
+          const selectedRadio = liveQuizOptionsForm.querySelector(`input[name="live-quiz-answer"][value="${Number(mineAnswers[currentIndex])}"]`);
           if (selectedRadio) selectedRadio.checked = true;
           liveQuizSubmitBtn.disabled = true;
-          liveQuizResult.textContent = Number(mine.score) === 1 ? 'Already submitted: Correct answer.' : 'Already submitted: Incorrect answer.';
-          liveQuizResult.style.color = Number(mine.score) === 1 ? '#166534' : '#b45309';
+          liveQuizResult.textContent = 'Answer already submitted for current question.';
+          liveQuizResult.style.color = '#334155';
         } else {
           liveQuizResult.textContent = '';
           liveQuizSubmitBtn.disabled = false;
         }
+      } else if (decision.allowed && isParticipant && !currentQuestion) {
+        liveQuizOptionsForm.innerHTML = '<p class="assignment-meta">Quiz questions are not available.</p>';
+        liveQuizSubmitBtn.disabled = true;
+      } else if (decision.allowed && !isParticipant) {
+        liveQuizOptionsForm.innerHTML = '<p class="assignment-meta">Click "Join Live Quiz" to participate.</p>';
+        liveQuizSubmitBtn.disabled = true;
+      } else {
+        liveQuizOptionsForm.innerHTML = '<p class="assignment-meta">You are not eligible for this quiz.</p>';
+        liveQuizSubmitBtn.disabled = true;
       }
 
-      const rows = getLiveQuizSubmissionsSorted().map((entry, index) => {
-        return `<li>#${index + 1} ${escapeHtml(entry.email)} - Score: ${entry.score}/1</li>`;
+      const participantsRows = getLiveQuizParticipantsSorted().map((entry) => {
+        const when = entry.joinedAt ? new Date(entry.joinedAt).toLocaleTimeString() : '-';
+        return `<li><strong>${escapeHtml(entry.email)}</strong><div class="assignment-meta">Joined: ${when}</div></li>`;
       }).join('');
-      liveQuizLeaderboard.innerHTML = rows || '<li>No submissions yet.</li>';
+      liveQuizParticipantsList.innerHTML = participantsRows || '<li>No participants yet.</li>';
+
+      const leaderboardRows = getLiveQuizLeaderboardRows().map((entry, index) => {
+        return `<li>#${index + 1} <strong>${escapeHtml(entry.email)}</strong> - ${entry.score} pts <span class="assignment-meta">(${entry.answered}/${totalQuestions} answered${entry.completed ? ', completed' : ''})</span></li>`;
+      }).join('');
+      liveQuizLeaderboard.innerHTML = leaderboardRows || '<li>No submissions yet.</li>';
     }
 
     function renderMyTeacherCourses() {
@@ -9740,6 +9982,21 @@ function openDashboard(userName) {
         event.preventDefault();
       });
     }
+    if (liveQuizAddQuestionBtn) {
+      liveQuizAddQuestionBtn.addEventListener('click', () => {
+        const draft = getLiveQuizQuestionDraftFromInputs();
+        if (!draft) {
+          liveQuizHelp.textContent = 'Fill question and all four options before adding.';
+          liveQuizHelp.style.color = '#b91c1c';
+          return;
+        }
+        liveQuizDraftQuestions.push(draft);
+        renderLiveQuizDraftQuestions();
+        clearLiveQuizDraftInputs();
+        liveQuizHelp.textContent = `Question added. Total: ${liveQuizDraftQuestions.length}`;
+        liveQuizHelp.style.color = '#166534';
+      });
+    }
     if (liveQuizStartBtn) {
       liveQuizStartBtn.addEventListener('click', async () => {
         if (!currentUserName) {
@@ -9759,16 +10016,13 @@ function openDashboard(userName) {
           return;
         }
         const title = String(liveQuizTitleInput ? liveQuizTitleInput.value : '').trim();
-        const question = String(liveQuizQuestionInput ? liveQuizQuestionInput.value : '').trim();
-        const options = [
-          String(liveQuizOptionAInput ? liveQuizOptionAInput.value : '').trim(),
-          String(liveQuizOptionBInput ? liveQuizOptionBInput.value : '').trim(),
-          String(liveQuizOptionCInput ? liveQuizOptionCInput.value : '').trim(),
-          String(liveQuizOptionDInput ? liveQuizOptionDInput.value : '').trim()
-        ];
-        const correctIndex = Number(liveQuizCorrectSelect ? liveQuizCorrectSelect.value : 0);
-        if (!title || !question || options.some((item) => !item)) {
-          liveQuizHelp.textContent = 'Fill title, question and all four options.';
+        if (!title) {
+          liveQuizHelp.textContent = 'Enter quiz title.';
+          liveQuizHelp.style.color = '#b91c1c';
+          return;
+        }
+        if (!liveQuizDraftQuestions.length) {
+          liveQuizHelp.textContent = 'Add at least one question first.';
           liveQuizHelp.style.color = '#b91c1c';
           return;
         }
@@ -9777,14 +10031,17 @@ function openDashboard(userName) {
           id: `quiz-${Date.now()}`,
           title,
           courseName: selectedCourse.name,
-          question,
-          options,
-          correctIndex,
           host: normalizeEmail(currentUserName),
           hostRole: currentUserRole,
           startedAt: Date.now(),
-          submissions: {}
+          questions: liveQuizDraftQuestions.slice(),
+          currentQuestionIndex: 0,
+          participants: {},
+          responses: {},
+          scores: {},
+          completed: {}
         });
+        liveQuizDraftQuestions = [];
         saveLiveQuizState(liveQuizState);
         const cloudSaved = await upsertCloudLiveQuizState(liveQuizState);
         renderLiveQuizPanel();
@@ -9798,6 +10055,47 @@ function openDashboard(userName) {
         addNotification(`Live quiz started by ${currentUserName}: ${title}`);
       });
     }
+    if (liveQuizJoinBtn) {
+      liveQuizJoinBtn.addEventListener('click', async () => {
+        await refreshLiveQuizFromCloud();
+        const decision = getLiveQuizJoinDecision();
+        if (!decision.allowed) {
+          liveQuizResult.textContent = decision.message || 'Live quiz access denied.';
+          liveQuizResult.style.color = '#b91c1c';
+          return;
+        }
+        if (!liveQuizState) return;
+        const userKey = normalizeEmail(currentUserName || '');
+        if (!liveQuizState.participants || typeof liveQuizState.participants !== 'object') {
+          liveQuizState.participants = {};
+        }
+        const now = Date.now();
+        const prev = liveQuizState.participants[userKey] || {};
+        liveQuizState.participants[userKey] = {
+          joinedAt: Number(prev.joinedAt || now),
+          lastSeenAt: now
+        };
+        saveLiveQuizState(liveQuizState);
+        await upsertCloudLiveQuizState(liveQuizState);
+        renderLiveQuizPanel();
+      });
+    }
+    if (liveQuizNextBtn) {
+      liveQuizNextBtn.addEventListener('click', async () => {
+        if (!canCurrentUserHostLiveQuiz() || !liveQuizState) return;
+        const total = Array.isArray(liveQuizState.questions) ? liveQuizState.questions.length : 0;
+        const current = Number(liveQuizState.currentQuestionIndex || 0);
+        if (!total || current >= total - 1) return;
+        liveQuizState.currentQuestionIndex = current + 1;
+        saveLiveQuizState(liveQuizState);
+        const cloudSaved = await upsertCloudLiveQuizState(liveQuizState);
+        renderLiveQuizPanel();
+        liveQuizHelp.textContent = cloudSaved || !isCloudAccountsConfigured()
+          ? `Moved to question ${liveQuizState.currentQuestionIndex + 1}.`
+          : 'Moved to next question locally, but cloud sync failed.';
+        liveQuizHelp.style.color = cloudSaved || !isCloudAccountsConfigured() ? '#166534' : '#b45309';
+      });
+    }
     if (liveQuizSubmitBtn) {
       liveQuizSubmitBtn.addEventListener('click', async () => {
         await refreshLiveQuizFromCloud();
@@ -9809,6 +10107,12 @@ function openDashboard(userName) {
           return;
         }
         if (!liveQuizState) return;
+        const userKey = normalizeEmail(currentUserName || '');
+        if (!liveQuizState.participants || !liveQuizState.participants[userKey]) {
+          liveQuizResult.textContent = 'Join the quiz first.';
+          liveQuizResult.style.color = '#b91c1c';
+          return;
+        }
         const picked = liveQuizOptionsForm ? liveQuizOptionsForm.querySelector('input[name="live-quiz-answer"]:checked') : null;
         if (!picked) {
           liveQuizResult.textContent = 'Select an option first.';
@@ -9816,26 +10120,30 @@ function openDashboard(userName) {
           return;
         }
         const selectedIndex = Number(picked.value);
-        const score = selectedIndex === Number(liveQuizState.correctIndex) ? 1 : 0;
-        const userKey = normalizeEmail(currentUserName || '');
-        if (!liveQuizState.submissions || typeof liveQuizState.submissions !== 'object') {
-          liveQuizState.submissions = {};
+        const currentIndex = Number(liveQuizState.currentQuestionIndex || 0);
+        const total = Array.isArray(liveQuizState.questions) ? liveQuizState.questions.length : 0;
+        if (!total || currentIndex < 0 || currentIndex >= total) {
+          liveQuizResult.textContent = 'Current question is not available.';
+          liveQuizResult.style.color = '#b91c1c';
+          return;
         }
-        liveQuizState.submissions[userKey] = {
-          selectedIndex,
-          score,
-          submittedAt: Date.now()
-        };
+        if (!liveQuizState.responses || typeof liveQuizState.responses !== 'object') {
+          liveQuizState.responses = {};
+        }
+        if (!liveQuizState.responses[userKey] || typeof liveQuizState.responses[userKey] !== 'object') {
+          liveQuizState.responses[userKey] = {};
+        }
+        liveQuizState.responses[userKey][currentIndex] = selectedIndex;
+        liveQuizState.scores = liveQuizState.scores || {};
+        liveQuizState.completed = liveQuizState.completed || {};
+        liveQuizState.scores[userKey] = calculateLiveQuizScoreFromResponses(liveQuizState.questions, liveQuizState.responses[userKey]);
+        liveQuizState.completed[userKey] = Object.keys(liveQuizState.responses[userKey]).length >= total;
+        liveQuizState.participants[userKey].lastSeenAt = Date.now();
         saveLiveQuizState(liveQuizState);
         const cloudSaved = await upsertCloudLiveQuizState(liveQuizState);
         renderLiveQuizPanel();
-        liveQuizSubmitBtn.disabled = true;
-        liveQuizResult.textContent = score === 1 ? 'Submitted: Correct answer.' : 'Submitted: Incorrect answer.';
-        liveQuizResult.style.color = score === 1 ? '#166534' : '#b45309';
-        if (!cloudSaved && isCloudAccountsConfigured()) {
-          liveQuizResult.textContent += ' (Cloud sync failed)';
-          liveQuizResult.style.color = '#b45309';
-        }
+        liveQuizResult.textContent = `Answer submitted. Score: ${liveQuizState.scores[userKey]} / ${total}`;
+        liveQuizResult.style.color = cloudSaved || !isCloudAccountsConfigured() ? '#166534' : '#b45309';
       });
     }
     if (liveQuizEndBtn) {
@@ -9852,6 +10160,7 @@ function openDashboard(userName) {
         }
         const quizName = liveQuizState && liveQuizState.title ? liveQuizState.title : 'Live Quiz';
         liveQuizState = null;
+        liveQuizDraftQuestions = [];
         saveLiveQuizState(null);
         const cloudCleared = await clearCloudLiveQuizState();
         renderLiveQuizPanel();
