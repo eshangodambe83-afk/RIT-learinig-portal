@@ -8473,6 +8473,10 @@ function openDashboard(userName) {
         section.classList.toggle('active', section.id === `section-${effectiveTarget}`);
       });
 
+      if (navbarFloatCloud) {
+        navbarFloatCloud.classList.toggle('hidden', effectiveTarget !== 'dashboard');
+      }
+
       menuButtons.forEach((button) => {
         button.classList.toggle('active', button.dataset.target === target);
       });
