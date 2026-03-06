@@ -1241,6 +1241,135 @@
       line-height: 1.35;
     }
 
+    .live-quiz-shell {
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 14px;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(14, 116, 144, 0.08), transparent 42%),
+        linear-gradient(165deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.72));
+    }
+
+    .live-quiz-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      background: rgba(226, 232, 240, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.26);
+      border-radius: 12px;
+      padding: 6px;
+    }
+
+    .live-quiz-tabs button {
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      padding: 10px 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #334155;
+    }
+
+    .live-quiz-tabs button.active {
+      background: linear-gradient(135deg, #0f766e, #0ea5a3);
+      color: #f8fafc;
+      border-color: rgba(15, 118, 110, 0.46);
+      box-shadow: 0 8px 18px rgba(15, 118, 110, 0.24);
+    }
+
+    .live-quiz-tab-panel {
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.58);
+      padding: 12px;
+    }
+
+    .live-quiz-stats-grid {
+      gap: 10px;
+    }
+
+    .live-quiz-stat-card {
+      border: 1px solid rgba(14, 116, 144, 0.24);
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(240, 249, 255, 0.74));
+    }
+
+    .live-quiz-stat-card h3 {
+      font-size: 1.35rem;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+
+    .live-quiz-stat-card span {
+      color: #0f766e;
+      font-weight: 700;
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .live-quiz-meta-list li {
+      border-color: rgba(14, 116, 144, 0.2);
+      background: rgba(240, 249, 255, 0.72);
+    }
+
+    .live-quiz-action-row .video-open-btn,
+    .live-quiz-player-wrap .video-open-btn {
+      border: 1px solid rgba(14, 116, 144, 0.34);
+      background: linear-gradient(135deg, #0f766e, #0ea5a3);
+      color: #f8fafc;
+      font-weight: 700;
+    }
+
+    .live-quiz-action-row .video-open-btn:hover,
+    .live-quiz-player-wrap .video-open-btn:hover {
+      filter: brightness(1.05);
+    }
+
+    .live-quiz-form .field label {
+      font-size: 0.78rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: #0f766e;
+      font-weight: 800;
+    }
+
+    .live-quiz-form textarea {
+      min-height: 130px;
+      resize: vertical;
+      font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    .live-quiz-questions-list li,
+    .live-quiz-participants-list li,
+    .live-quiz-leaderboard li {
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 9px 10px;
+    }
+
+    @media (max-width: 760px) {
+      .live-quiz-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .live-quiz-tabs button {
+        font-size: 0.76rem;
+        padding: 9px 6px;
+      }
+
+      .live-quiz-tab-panel {
+        padding: 10px;
+      }
+
+      .live-quiz-action-row .video-open-btn,
+      .live-quiz-player-wrap .video-open-btn {
+        width: 100%;
+      }
+    }
+
     .profile-preview {
       padding: 18px;
     }
@@ -3897,8 +4026,8 @@
             <div class="panel-head">
               <h2>Live Quiz</h2>
             </div>
-            <div style="padding:14px;">
-              <div class="menu" style="margin-bottom:10px;" id="live-quiz-tabs">
+            <div class="live-quiz-shell" style="padding:14px;">
+              <div class="menu live-quiz-tabs" style="margin-bottom:10px;" id="live-quiz-tabs">
                 <button type="button" class="active" data-live-quiz-tab="overview">Overview</button>
                 <button type="button" data-live-quiz-tab="questions">Questions</button>
                 <button type="button" data-live-quiz-tab="participants">Participants</button>
@@ -3906,38 +4035,38 @@
               </div>
 
               <section class="live-quiz-tab-panel active" id="live-quiz-panel-overview">
-                <div class="grid-2">
-                  <article class="card">
+                <div class="grid-2 live-quiz-stats-grid">
+                  <article class="card live-quiz-stat-card">
                     <h3 id="live-quiz-stat-participants">0</h3>
                     <span>Participants</span>
                   </article>
-                  <article class="card">
+                  <article class="card live-quiz-stat-card">
                     <h3 id="live-quiz-stat-answered">0</h3>
                     <span>Answered (Current Q)</span>
                   </article>
-                  <article class="card">
+                  <article class="card live-quiz-stat-card">
                     <h3 id="live-quiz-stat-questions">0</h3>
                     <span>Questions</span>
                   </article>
-                  <article class="card">
+                  <article class="card live-quiz-stat-card">
                     <h3 id="live-quiz-stat-status">Lobby</h3>
                     <span>Status</span>
                   </article>
                 </div>
-                <ul class="list" style="margin-top:12px;">
+                <ul class="list live-quiz-meta-list" style="margin-top:12px;">
                   <li>Session Code: <strong id="live-quiz-session-code">------</strong></li>
                   <li>Current Quiz: <strong id="live-quiz-current-title">No live quiz</strong></li>
                   <li>Details: <strong id="live-quiz-current-meta">-</strong></li>
                   <li>Question: <strong id="live-quiz-current-progress">-</strong></li>
                   <li>Join Status: <strong id="live-quiz-join-status">-</strong></li>
                 </ul>
-                <div class="role-request-controls" style="margin-top:10px;">
+                <div class="role-request-controls live-quiz-action-row" style="margin-top:10px;">
                   <button class="video-open-btn" id="live-quiz-start-btn" type="button">Start Quiz</button>
                   <button class="video-open-btn hidden" id="live-quiz-next-btn" type="button">Next Question</button>
                   <button class="video-open-btn hidden" id="live-quiz-end-btn" type="button">End Quiz</button>
                   <button class="video-open-btn" id="live-quiz-reset-btn" type="button">Reset</button>
                 </div>
-                <div class="mini-quiz-body" id="live-quiz-player-wrap">
+                <div class="mini-quiz-body live-quiz-player-wrap" id="live-quiz-player-wrap">
                   <button type="button" class="video-open-btn" id="live-quiz-join-btn">Join Live Quiz</button>
                   <form id="live-quiz-options-form" class="mini-quiz-form"></form>
                   <button type="button" class="video-open-btn" id="live-quiz-submit-btn">Submit Answer</button>
@@ -3946,7 +4075,7 @@
               </section>
 
               <section class="live-quiz-tab-panel hidden" id="live-quiz-panel-questions">
-                <form class="upload-form" id="live-quiz-form">
+                <form class="upload-form live-quiz-form" id="live-quiz-form">
                   <div class="field">
                     <label for="live-quiz-course">Course</label>
                     <select id="live-quiz-course">
@@ -3993,17 +4122,17 @@
                       placeholder="One question per line: Question | Option A | Option B | Option C | Option D | Correct (A/B/C/D or 1/2/3/4)"></textarea>
                   </div>
                   <button class="btn" id="live-quiz-add-bulk-btn" type="button">Add All Pasted Questions</button>
-                  <ul class="list" id="live-quiz-questions-list"></ul>
+                  <ul class="list live-quiz-questions-list" id="live-quiz-questions-list"></ul>
                   <p class="success-msg" id="live-quiz-help" aria-live="polite"></p>
                 </form>
               </section>
 
               <section class="live-quiz-tab-panel hidden" id="live-quiz-panel-participants">
-                <ul class="list" id="live-quiz-participants-list"></ul>
+                <ul class="list live-quiz-participants-list" id="live-quiz-participants-list"></ul>
               </section>
 
               <section class="live-quiz-tab-panel hidden" id="live-quiz-panel-leaderboard">
-                <ul class="list" id="live-quiz-leaderboard"></ul>
+                <ul class="list live-quiz-leaderboard" id="live-quiz-leaderboard"></ul>
               </section>
             </div>
           </article>
