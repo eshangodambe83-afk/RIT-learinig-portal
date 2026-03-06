@@ -4630,6 +4630,8 @@ let cloudCourseAccessSyncTimer = null;
 let cloudCourseAccessSyncInFlight = false;
     let googleSignInInitialized = false;
     let digitalClassCloudSyncInFlight = false;
+    let digitalClassLastCloudSeenAt = 0;
+    const DIGITAL_CLASS_CLOUD_MISS_GRACE_MS = 10 * 60 * 1000;
     let liveQuizCloudSyncInFlight = false;
     let notificationsClearedAtByUser = loadNotificationsClearedAtByUser();
     let navbarFloatRebuildTimer = null;
@@ -5494,6 +5496,20 @@ let cloudCourseAccessSyncInFlight = false;
       const cloudState = await fetchCloudDigitalClassState();
       digitalClassCloudSyncInFlight = false;
       if (typeof cloudState === 'undefined') return false;
+
+      if (cloudState && cloudState.room) {
+        digitalClassLastCloudSeenAt = Date.now();
+      }
+
+      // Grace period: avoid killing an active class instantly on temporary cloud misses.
+      if (!cloudState && digitalClassState && digitalClassState.room) {
+        const lastSeenAt = Number(digitalClassLastCloudSeenAt || 0);
+        const withinGrace = lastSeenAt > 0 && (Date.now() - lastSeenAt) < DIGITAL_CLASS_CLOUD_MISS_GRACE_MS;
+        if (withinGrace) {
+          return false;
+        }
+      }
+
       const localSerialized = JSON.stringify(digitalClassState || null);
       const cloudSerialized = JSON.stringify(cloudState || null);
       if (localSerialized === cloudSerialized) return false;
@@ -10030,6 +10046,7 @@ function openDashboard(userName) {
           host: currentUserName,
           startedAt: Date.now()
         };
+        digitalClassLastCloudSeenAt = Date.now();
         saveDigitalClassState(digitalClassState);
         const cloudSaved = await upsertCloudDigitalClassState(digitalClassState);
         digitalClassRoomInput.value = room;
@@ -10080,6 +10097,7 @@ function openDashboard(userName) {
         }
         const activeRoom = digitalClassState && digitalClassState.room ? digitalClassState.room : '';
         digitalClassState = null;
+        digitalClassLastCloudSeenAt = 0;
         saveDigitalClassState(null);
         const cloudCleared = await clearCloudDigitalClassState();
         renderDigitalClassPanel();
@@ -10578,6 +10596,19 @@ function openDashboard(userName) {
         }
       });
     }, 12000);
+
+    setInterval(async () => {
+      if (!currentUserName || !isCloudAccountsConfigured()) return;
+      if (!digitalClassState || !digitalClassState.room) return;
+      if (!isTeacherSideRole()) return;
+      const hostKey = normalizeEmail(digitalClassState.host || '');
+      const meKey = normalizeEmail(currentUserName || '');
+      if (!hostKey || hostKey !== meKey) return;
+      const synced = await upsertCloudDigitalClassState(digitalClassState);
+      if (synced) {
+        digitalClassLastCloudSeenAt = Date.now();
+      }
+    }, 45000);
 
     let googleInitRetries = 0;
     const googleInitTimer = setInterval(() => {
