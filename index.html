@@ -3987,6 +3987,12 @@
                     </select>
                   </div>
                   <button class="btn" id="live-quiz-add-question-btn" type="button">Add Question</button>
+                  <div class="field">
+                    <label for="live-quiz-bulk-input">Bulk Add Questions</label>
+                    <textarea id="live-quiz-bulk-input" rows="6"
+                      placeholder="One question per line: Question | Option A | Option B | Option C | Option D | Correct (A/B/C/D or 1/2/3/4)"></textarea>
+                  </div>
+                  <button class="btn" id="live-quiz-add-bulk-btn" type="button">Add All Pasted Questions</button>
                   <ul class="list" id="live-quiz-questions-list"></ul>
                   <p class="success-msg" id="live-quiz-help" aria-live="polite"></p>
                 </form>
@@ -4502,6 +4508,8 @@
     const liveQuizOptionDInput = document.getElementById('live-quiz-option-d');
     const liveQuizCorrectSelect = document.getElementById('live-quiz-correct');
     const liveQuizAddQuestionBtn = document.getElementById('live-quiz-add-question-btn');
+    const liveQuizBulkInput = document.getElementById('live-quiz-bulk-input');
+    const liveQuizAddBulkBtn = document.getElementById('live-quiz-add-bulk-btn');
     const liveQuizQuestionsList = document.getElementById('live-quiz-questions-list');
     const liveQuizStartBtn = document.getElementById('live-quiz-start-btn');
     const liveQuizNextBtn = document.getElementById('live-quiz-next-btn');
@@ -6640,6 +6648,39 @@ let cloudCourseAccessSyncInFlight = false;
           <div class="assignment-meta">Correct: ${correctLabel} | ${escapeHtml(item.options.join(' | '))}</div>
         </li>`;
       }).join('') || '<li>No questions added yet.</li>';
+    }
+
+    function parseLiveQuizBulkQuestions(rawText) {
+      const rows = String(rawText || '')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+      const questions = [];
+      const errors = [];
+      rows.forEach((line, lineIndex) => {
+        const parts = line.split('|').map((part) => part.trim());
+        if (parts.length < 6) {
+          errors.push(`Line ${lineIndex + 1}: expected 6 fields separated by |`);
+          return;
+        }
+        const [question, a, b, c, d, correctRaw] = parts;
+        if (!question || !a || !b || !c || !d) {
+          errors.push(`Line ${lineIndex + 1}: question/options cannot be empty`);
+          return;
+        }
+        const key = String(correctRaw || '').trim().toUpperCase();
+        const map = { A: 0, B: 1, C: 2, D: 3, '1': 0, '2': 1, '3': 2, '4': 3 };
+        if (!Object.prototype.hasOwnProperty.call(map, key)) {
+          errors.push(`Line ${lineIndex + 1}: correct value must be A/B/C/D or 1/2/3/4`);
+          return;
+        }
+        questions.push(normalizeLiveQuizQuestion({
+          question,
+          options: [a, b, c, d],
+          correctIndex: map[key]
+        }));
+      });
+      return { questions, errors };
     }
 
     function getLiveQuizJoinDecision() {
@@ -10083,6 +10124,26 @@ function openDashboard(userName) {
         clearLiveQuizDraftInputs();
         liveQuizHelp.textContent = `Question added. Total: ${liveQuizDraftQuestions.length}`;
         liveQuizHelp.style.color = '#166534';
+      });
+    }
+    if (liveQuizAddBulkBtn) {
+      liveQuizAddBulkBtn.addEventListener('click', () => {
+        const parsed = parseLiveQuizBulkQuestions(liveQuizBulkInput ? liveQuizBulkInput.value : '');
+        if (!parsed.questions.length) {
+          liveQuizHelp.textContent = parsed.errors[0] || 'No valid bulk questions found.';
+          liveQuizHelp.style.color = '#b91c1c';
+          return;
+        }
+        liveQuizDraftQuestions.push(...parsed.questions);
+        renderLiveQuizDraftQuestions();
+        if (liveQuizBulkInput) liveQuizBulkInput.value = '';
+        if (parsed.errors.length) {
+          liveQuizHelp.textContent = `Added ${parsed.questions.length} question(s) with ${parsed.errors.length} skipped line(s).`;
+          liveQuizHelp.style.color = '#b45309';
+        } else {
+          liveQuizHelp.textContent = `Added ${parsed.questions.length} question(s). Total: ${liveQuizDraftQuestions.length}`;
+          liveQuizHelp.style.color = '#166534';
+        }
       });
     }
     if (liveQuizStartBtn) {
