@@ -1875,11 +1875,28 @@
       color: #0f172a;
       font-size: 0.9rem;
       line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
     }
 
     .search-profile-handle {
       color: #475569;
       font-size: 0.77rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .search-profile-head>div {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .search-profile-head .role-badge-wrap {
+      flex-shrink: 0;
     }
 
     .search-profile-actions {
