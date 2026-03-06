@@ -1193,6 +1193,75 @@
       margin-bottom: 10px;
     }
 
+    .course-chat-messages {
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.58);
+      padding: 10px;
+      min-height: 160px;
+      max-height: 260px;
+      overflow-y: auto;
+      display: grid;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .course-chat-empty {
+      color: #64748b;
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+
+    .course-chat-item {
+      border-radius: 10px;
+      padding: 8px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      font-size: 0.85rem;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .course-chat-item.user {
+      background: #dbeafe;
+      color: #1e3a8a;
+      justify-self: end;
+      max-width: 92%;
+    }
+
+    .course-chat-item.assistant {
+      background: #ecfeff;
+      color: #0f172a;
+      justify-self: start;
+      max-width: 96%;
+    }
+
+    .course-chat-meta {
+      font-size: 0.72rem;
+      opacity: 0.8;
+      margin-bottom: 2px;
+      font-weight: 700;
+    }
+
+    .course-chat-form textarea {
+      width: 100%;
+      min-height: 72px;
+      max-height: 140px;
+      resize: vertical;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.74);
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    .course-chat-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .quiz-item {
       border: 1px solid rgba(148, 163, 184, 0.25);
       border-radius: 10px;
@@ -3967,6 +4036,24 @@
                   <span class="playlist-orange-value" id="playlist-orange-value">0%</span>
                 </div>
                 <p class="video-hint" id="playlist-video-hint">Select a lecture from playlist to play.</p>
+                <section class="mini-quiz" id="course-chat-panel">
+                  <div class="panel-head">
+                    <h2>Doubt Assistant</h2>
+                  </div>
+                  <div class="mini-quiz-body">
+                    <p class="assignment-meta" id="course-chat-status">Ask course-related doubts and get instant help.</p>
+                    <div class="course-chat-messages" id="course-chat-messages"></div>
+                    <form id="course-chat-form" class="course-chat-form">
+                      <textarea id="course-chat-input" maxlength="700"
+                        placeholder="Type your doubt related to this course..."></textarea>
+                      <div class="course-chat-actions">
+                        <button type="submit" class="video-open-btn" id="course-chat-ask-btn">Ask Assistant</button>
+                        <button type="button" class="video-open-btn" id="course-chat-clear-btn">Clear Chat</button>
+                      </div>
+                    </form>
+                    <p class="success-msg" id="course-chat-help" aria-live="polite"></p>
+                  </div>
+                </section>
                 <section class="mini-quiz hidden" id="mini-quiz-panel">
                   <div class="panel-head">
                     <h2>Mini Quiz (3 MCQs)</h2>
@@ -4479,6 +4566,14 @@
     const miniQuizForm = document.getElementById('mini-quiz-form');
     const miniQuizSubmit = document.getElementById('mini-quiz-submit');
     const miniQuizResult = document.getElementById('mini-quiz-result');
+    const courseChatPanel = document.getElementById('course-chat-panel');
+    const courseChatStatus = document.getElementById('course-chat-status');
+    const courseChatMessages = document.getElementById('course-chat-messages');
+    const courseChatForm = document.getElementById('course-chat-form');
+    const courseChatInput = document.getElementById('course-chat-input');
+    const courseChatAskBtn = document.getElementById('course-chat-ask-btn');
+    const courseChatClearBtn = document.getElementById('course-chat-clear-btn');
+    const courseChatHelp = document.getElementById('course-chat-help');
     const infoProfessor = document.getElementById('info-professor');
     const infoPublisher = document.getElementById('info-publisher');
     const infoCompleted = document.getElementById('info-completed');
@@ -4629,6 +4724,7 @@
     const COURSE_ACCESS_STORAGE_KEY = 'ritp_course_access_v1';
     const DIGITAL_CLASS_STORAGE_KEY = 'ritp_digital_class_v1';
     const LIVE_QUIZ_STORAGE_KEY = 'ritp_live_quiz_v1';
+    const COURSE_CHAT_STORAGE_KEY = 'ritp_course_chat_v1';
     const NOTIFICATIONS_CLEARED_AT_STORAGE_KEY = 'ritp_notifications_cleared_at_v1';
     // Optional cloud sync: set these once to share accounts across all devices/admins.
     // Example:
@@ -4675,6 +4771,8 @@ let cloudCourseAccessSyncInFlight = false;
     let digitalClassLastCloudSeenAt = 0;
     const DIGITAL_CLASS_CLOUD_MISS_GRACE_MS = 10 * 60 * 1000;
     let liveQuizCloudSyncInFlight = false;
+    let currentCourseChatHistory = [];
+    let courseChatRequestInFlight = false;
     let notificationsClearedAtByUser = loadNotificationsClearedAtByUser();
     let navbarFloatRebuildTimer = null;
     let mobileSidebarOpen = false;
@@ -4720,6 +4818,21 @@ let cloudCourseAccessSyncInFlight = false;
       } catch (error) {
         console.warn(`Local remove failed for ${key}`, error);
       }
+    }
+
+    function loadCourseChatStore() {
+      try {
+        const raw = localStorage.getItem(COURSE_CHAT_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (error) {
+        console.warn('Course chat local load failed.', error);
+        return {};
+      }
+    }
+
+    function saveCourseChatStore(store) {
+      return saveLocalJSON(COURSE_CHAT_STORAGE_KEY, store || {});
     }
 
     function randomInRange(min, max) {
@@ -7809,6 +7922,189 @@ let cloudCourseAccessSyncInFlight = false;
       });
     }
 
+    function getCourseChatKey(email, courseName) {
+      const userKey = normalizeEmail(email || '');
+      const courseKey = normalizeCourseName(courseName || '');
+      if (!userKey || !courseKey) return '';
+      return `${userKey}::${courseKey}`;
+    }
+
+    function normalizeCourseChatRole(role) {
+      const clean = String(role || '').toLowerCase();
+      return clean === 'assistant' ? 'assistant' : 'user';
+    }
+
+    function normalizeCourseChatMessage(entry) {
+      if (!entry || typeof entry !== 'object') return null;
+      const text = String(entry.text || entry.message || '').trim();
+      if (!text) return null;
+      return {
+        role: normalizeCourseChatRole(entry.role),
+        text: text.slice(0, 6000),
+        createdAt: Number(entry.createdAt || entry.created_at || Date.now())
+      };
+    }
+
+    function getLocalCourseChatHistory(email, courseName) {
+      const key = getCourseChatKey(email, courseName);
+      if (!key) return [];
+      const store = loadCourseChatStore();
+      const list = Array.isArray(store[key]) ? store[key] : [];
+      return list
+        .map((entry) => normalizeCourseChatMessage(entry))
+        .filter(Boolean)
+        .slice(-30);
+    }
+
+    function setLocalCourseChatHistory(email, courseName, history) {
+      const key = getCourseChatKey(email, courseName);
+      if (!key) return false;
+      const store = loadCourseChatStore();
+      store[key] = (Array.isArray(history) ? history : [])
+        .map((entry) => normalizeCourseChatMessage(entry))
+        .filter(Boolean)
+        .slice(-30);
+      return saveCourseChatStore(store);
+    }
+
+    function renderCourseChatMessages() {
+      if (!courseChatMessages) return;
+      if (!currentCourseChatHistory.length) {
+        courseChatMessages.innerHTML = '<div class="course-chat-empty">No chat yet. Ask your first doubt.</div>';
+        return;
+      }
+      courseChatMessages.innerHTML = currentCourseChatHistory.map((item) => {
+        const when = item.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const roleLabel = item.role === 'assistant' ? 'Assistant' : 'You';
+        return `<article class="course-chat-item ${item.role}">
+          <div class="course-chat-meta">${roleLabel}${when ? ` • ${when}` : ''}</div>
+          <div>${escapeHtml(item.text)}</div>
+        </article>`;
+      }).join('');
+      courseChatMessages.scrollTop = courseChatMessages.scrollHeight;
+    }
+
+    function setCourseChatBusy(isBusy) {
+      courseChatRequestInFlight = Boolean(isBusy);
+      if (courseChatAskBtn) courseChatAskBtn.disabled = courseChatRequestInFlight;
+      if (courseChatClearBtn) courseChatClearBtn.disabled = courseChatRequestInFlight;
+      if (courseChatInput) courseChatInput.disabled = courseChatRequestInFlight;
+    }
+
+    async function refreshCourseChatHistory(courseName) {
+      if (!courseChatPanel || !courseChatStatus || !courseChatMessages) return;
+      const resolvedCourse = resolveCourseByName(courseName);
+      const finalCourse = resolvedCourse ? resolvedCourse.name : String(courseName || '').trim();
+      if (!currentUserName || !finalCourse) {
+        currentCourseChatHistory = [];
+        renderCourseChatMessages();
+        if (courseChatStatus) {
+          courseChatStatus.textContent = 'Open a course and login to use Doubt Assistant.';
+        }
+        return;
+      }
+
+      currentCourseChatHistory = getLocalCourseChatHistory(currentUserName, finalCourse);
+      renderCourseChatMessages();
+      courseChatStatus.textContent = `Course: ${finalCourse}`;
+
+      try {
+        const response = await fetch('/api/course-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'history',
+            userEmail: normalizeEmail(currentUserName),
+            courseName: finalCourse
+          })
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!data || !data.ok || !Array.isArray(data.history)) return;
+        currentCourseChatHistory = data.history
+          .map((entry) => normalizeCourseChatMessage(entry))
+          .filter(Boolean)
+          .slice(-30);
+        setLocalCourseChatHistory(currentUserName, finalCourse, currentCourseChatHistory);
+        renderCourseChatMessages();
+      } catch (error) {
+        console.warn('Course chat history fetch failed.', error);
+      }
+    }
+
+    async function askCourseAssistant(questionText) {
+      const resolvedCourse = resolveCourseByName(currentPlaylistCourse);
+      const courseName = resolvedCourse ? resolvedCourse.name : String(currentPlaylistCourse || '').trim();
+      if (!courseName || !currentUserName) {
+        if (courseChatHelp) {
+          courseChatHelp.textContent = 'Open a course first to ask doubts.';
+          courseChatHelp.style.color = '#b91c1c';
+        }
+        return;
+      }
+      const question = String(questionText || '').trim();
+      if (!question) {
+        if (courseChatHelp) {
+          courseChatHelp.textContent = 'Type a question first.';
+          courseChatHelp.style.color = '#b91c1c';
+        }
+        return;
+      }
+      if (question.length > 700) {
+        if (courseChatHelp) {
+          courseChatHelp.textContent = 'Question is too long. Keep it under 700 characters.';
+          courseChatHelp.style.color = '#b91c1c';
+        }
+        return;
+      }
+      if (courseChatRequestInFlight) return;
+
+      const userEntry = { role: 'user', text: question, createdAt: Date.now() };
+      currentCourseChatHistory = [...currentCourseChatHistory, userEntry].slice(-30);
+      setLocalCourseChatHistory(currentUserName, courseName, currentCourseChatHistory);
+      renderCourseChatMessages();
+      if (courseChatInput) courseChatInput.value = '';
+      if (courseChatHelp) {
+        courseChatHelp.textContent = 'Assistant is thinking...';
+        courseChatHelp.style.color = '#475569';
+      }
+
+      setCourseChatBusy(true);
+      try {
+        const response = await fetch('/api/course-chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'ask',
+            question,
+            userEmail: normalizeEmail(currentUserName),
+            userRole: currentUserRole,
+            courseName
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data || !data.ok || !data.answer) {
+          throw new Error(data && data.error ? data.error : `Request failed (${response.status})`);
+        }
+        const assistantEntry = { role: 'assistant', text: String(data.answer).trim(), createdAt: Date.now() };
+        currentCourseChatHistory = [...currentCourseChatHistory, assistantEntry].slice(-30);
+        setLocalCourseChatHistory(currentUserName, courseName, currentCourseChatHistory);
+        renderCourseChatMessages();
+        if (courseChatHelp) {
+          courseChatHelp.textContent = 'Assistant replied.';
+          courseChatHelp.style.color = '#166534';
+        }
+      } catch (error) {
+        console.warn('Course chat ask failed.', error);
+        if (courseChatHelp) {
+          courseChatHelp.textContent = `Assistant unavailable: ${String(error.message || error)}`;
+          courseChatHelp.style.color = '#b45309';
+        }
+      } finally {
+        setCourseChatBusy(false);
+      }
+    }
+
     function getQuizScoreKey(courseName) {
       const userKey = currentUserName ? currentUserName.toLowerCase() : 'guest';
       return `${userKey}::${courseName}`;
@@ -7896,6 +8192,7 @@ let cloudCourseAccessSyncInFlight = false;
         playlistAssignmentList.innerHTML = '<li>No assignments for this course yet.</li>';
         playlistAssignmentHelp.textContent = '';
         renderPlaylistSuggestions(courseName);
+        refreshCourseChatHistory('');
         setActiveSection('course-playlist');
         renderCoursesShowcase();
         return;
@@ -7906,6 +8203,7 @@ let cloudCourseAccessSyncInFlight = false;
         renderSelectedCourseDetails(course);
         renderCourseAccessPanel(course);
         bindCourseAccessActions(course.name);
+        refreshCourseChatHistory(course.name);
 
         const canView = canCurrentUserViewCourse(course.name);
         playlistVideoPlayer.classList.toggle('hidden', !canView);
@@ -10591,6 +10889,41 @@ function openDashboard(userName) {
     enforceUnskippableVideo(playlistVideoPlayer, 'Full playlist lecture');
     enforceUnskippableVideo(coursesFocusVideo, 'Course preview lecture');
 
+    if (courseChatForm) {
+      courseChatForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await askCourseAssistant(courseChatInput ? courseChatInput.value : '');
+      });
+    }
+
+    if (courseChatClearBtn) {
+      courseChatClearBtn.addEventListener('click', async () => {
+        const resolvedCourse = resolveCourseByName(currentPlaylistCourse);
+        const courseName = resolvedCourse ? resolvedCourse.name : String(currentPlaylistCourse || '').trim();
+        if (!courseName || !currentUserName) return;
+        currentCourseChatHistory = [];
+        setLocalCourseChatHistory(currentUserName, courseName, []);
+        renderCourseChatMessages();
+        try {
+          await fetch('/api/course-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'clear',
+              userEmail: normalizeEmail(currentUserName),
+              courseName
+            })
+          });
+        } catch (error) {
+          console.warn('Course chat clear sync failed.', error);
+        }
+        if (courseChatHelp) {
+          courseChatHelp.textContent = 'Chat cleared for this course.';
+          courseChatHelp.style.color = '#166534';
+        }
+      });
+    }
+
     miniQuizSubmit.addEventListener('click', submitMiniQuiz);
 
     goLoginBtn.addEventListener('click', () => {
@@ -10606,6 +10939,8 @@ function openDashboard(userName) {
     playlistBackBtn.addEventListener('click', () => {
       setActiveSection('courses');
     });
+
+    refreshCourseChatHistory('');
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
