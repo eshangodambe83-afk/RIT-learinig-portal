@@ -3870,6 +3870,75 @@
               </div>
             </article>
           </div>
+          <article class="panel" style="margin-top:16px;">
+            <div class="panel-head">
+              <h2>Live Quiz</h2>
+            </div>
+            <div class="grid-2" style="padding:14px;">
+              <div>
+                <form class="upload-form" id="live-quiz-form">
+                  <div class="field">
+                    <label for="live-quiz-course">Course</label>
+                    <select id="live-quiz-course">
+                      <option value="">Select course</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="live-quiz-title">Quiz Title</label>
+                    <input id="live-quiz-title" type="text" placeholder="Example: BEE Quick Quiz 1" maxlength="100" />
+                  </div>
+                  <div class="field">
+                    <label for="live-quiz-question">Question</label>
+                    <input id="live-quiz-question" type="text" placeholder="Enter question" maxlength="220" />
+                  </div>
+                  <div class="field">
+                    <label for="live-quiz-option-a">Option A</label>
+                    <input id="live-quiz-option-a" type="text" placeholder="Option A" maxlength="100" />
+                  </div>
+                  <div class="field">
+                    <label for="live-quiz-option-b">Option B</label>
+                    <input id="live-quiz-option-b" type="text" placeholder="Option B" maxlength="100" />
+                  </div>
+                  <div class="field">
+                    <label for="live-quiz-option-c">Option C</label>
+                    <input id="live-quiz-option-c" type="text" placeholder="Option C" maxlength="100" />
+                  </div>
+                  <div class="field">
+                    <label for="live-quiz-option-d">Option D</label>
+                    <input id="live-quiz-option-d" type="text" placeholder="Option D" maxlength="100" />
+                  </div>
+                  <div class="field">
+                    <label for="live-quiz-correct">Correct Option</label>
+                    <select id="live-quiz-correct">
+                      <option value="0">A</option>
+                      <option value="1">B</option>
+                      <option value="2">C</option>
+                      <option value="3">D</option>
+                    </select>
+                  </div>
+                  <button class="btn" id="live-quiz-start-btn" type="button">Start Live Quiz</button>
+                  <button class="btn hidden" id="live-quiz-end-btn" type="button">End Live Quiz</button>
+                  <p class="success-msg" id="live-quiz-help" aria-live="polite"></p>
+                </form>
+              </div>
+              <div>
+                <ul class="list">
+                  <li>Current Quiz: <strong id="live-quiz-current-title">No live quiz</strong></li>
+                  <li>Details: <strong id="live-quiz-current-meta">-</strong></li>
+                  <li>Join Status: <strong id="live-quiz-join-status">-</strong></li>
+                </ul>
+                <div class="mini-quiz-body" id="live-quiz-player-wrap">
+                  <form id="live-quiz-options-form" class="mini-quiz-form"></form>
+                  <button type="button" class="video-open-btn" id="live-quiz-submit-btn">Submit Live Quiz</button>
+                  <p class="success-msg" id="live-quiz-result" aria-live="polite"></p>
+                </div>
+                <div class="panel-head" style="margin-top:12px;">
+                  <h2>Live Quiz Leaderboard</h2>
+                </div>
+                <ul class="list" id="live-quiz-leaderboard"></ul>
+              </div>
+            </div>
+          </article>
         </section>
 
         <section class="section" id="section-progress">
@@ -4361,6 +4430,26 @@
     const digitalClassCurrentRoom = document.getElementById('digital-class-current-room');
     const digitalClassStatus = document.getElementById('digital-class-status');
     const digitalClassFrame = document.getElementById('digital-class-frame');
+    const liveQuizForm = document.getElementById('live-quiz-form');
+    const liveQuizCourseSelect = document.getElementById('live-quiz-course');
+    const liveQuizTitleInput = document.getElementById('live-quiz-title');
+    const liveQuizQuestionInput = document.getElementById('live-quiz-question');
+    const liveQuizOptionAInput = document.getElementById('live-quiz-option-a');
+    const liveQuizOptionBInput = document.getElementById('live-quiz-option-b');
+    const liveQuizOptionCInput = document.getElementById('live-quiz-option-c');
+    const liveQuizOptionDInput = document.getElementById('live-quiz-option-d');
+    const liveQuizCorrectSelect = document.getElementById('live-quiz-correct');
+    const liveQuizStartBtn = document.getElementById('live-quiz-start-btn');
+    const liveQuizEndBtn = document.getElementById('live-quiz-end-btn');
+    const liveQuizHelp = document.getElementById('live-quiz-help');
+    const liveQuizCurrentTitle = document.getElementById('live-quiz-current-title');
+    const liveQuizCurrentMeta = document.getElementById('live-quiz-current-meta');
+    const liveQuizJoinStatus = document.getElementById('live-quiz-join-status');
+    const liveQuizPlayerWrap = document.getElementById('live-quiz-player-wrap');
+    const liveQuizOptionsForm = document.getElementById('live-quiz-options-form');
+    const liveQuizSubmitBtn = document.getElementById('live-quiz-submit-btn');
+    const liveQuizResult = document.getElementById('live-quiz-result');
+    const liveQuizLeaderboard = document.getElementById('live-quiz-leaderboard');
     const menuButtons = Array.from(document.querySelectorAll('#menu-buttons button[data-target]'));
     const sections = Array.from(document.querySelectorAll('.section'));
     let currentUserName = '';
@@ -4393,6 +4482,7 @@
     const ROLE_REQUESTS_STORAGE_KEY = 'ritp_role_requests_v1';
     const COURSE_ACCESS_STORAGE_KEY = 'ritp_course_access_v1';
     const DIGITAL_CLASS_STORAGE_KEY = 'ritp_digital_class_v1';
+    const LIVE_QUIZ_STORAGE_KEY = 'ritp_live_quiz_v1';
     const NOTIFICATIONS_CLEARED_AT_STORAGE_KEY = 'ritp_notifications_cleared_at_v1';
     // Optional cloud sync: set these once to share accounts across all devices/admins.
     // Example:
@@ -4408,6 +4498,7 @@ const SUPABASE_SUGGESTIONS_TABLE = 'ritp_suggestions';
 const SUPABASE_BUG_REPORTS_TABLE = 'ritp_bug_reports';
 const SUPABASE_DIGITAL_CLASS_TABLE = 'ritp_digital_class';
 const SUPABASE_COURSE_ACCESS_TABLE = 'ritp_course_access';
+const SUPABASE_LIVE_QUIZ_TABLE = 'ritp_live_quiz';
 window.RITP_GOOGLE_CLIENT_ID = '990509990942-ur498coaohab2uu0fk5ijfadaef8nla4.apps.googleusercontent.com';
 const GOOGLE_CLIENT_ID = String(window.RITP_GOOGLE_CLIENT_ID || '').trim();
     const MAX_PROFILE_PHOTO_DIMENSION = 320;
@@ -4435,6 +4526,7 @@ let cloudCourseAccessSyncTimer = null;
 let cloudCourseAccessSyncInFlight = false;
     let googleSignInInitialized = false;
     let digitalClassCloudSyncInFlight = false;
+    let liveQuizCloudSyncInFlight = false;
     let notificationsClearedAtByUser = loadNotificationsClearedAtByUser();
     let navbarFloatRebuildTimer = null;
     let mobileSidebarOpen = false;
@@ -4969,6 +5061,46 @@ let cloudCourseAccessSyncInFlight = false;
       return saveLocalJSON(DIGITAL_CLASS_STORAGE_KEY, normalized);
     }
 
+    function normalizeLiveQuizState(raw) {
+      if (!raw || typeof raw !== 'object') return null;
+      const options = Array.isArray(raw.options) ? raw.options.map((item) => String(item || '').trim()) : [];
+      const cleanedOptions = options.slice(0, 4);
+      while (cleanedOptions.length < 4) cleanedOptions.push('');
+      const submissions = raw.submissions && typeof raw.submissions === 'object' ? raw.submissions : {};
+      return {
+        id: String(raw.id || '').trim() || `quiz-${Date.now()}`,
+        title: String(raw.title || '').trim() || 'Live Quiz',
+        courseName: String(raw.courseName || '').trim(),
+        question: String(raw.question || '').trim(),
+        options: cleanedOptions,
+        correctIndex: Math.max(0, Math.min(3, Number(raw.correctIndex || 0))),
+        host: String(raw.host || '').trim(),
+        hostRole: String(raw.hostRole || '').trim(),
+        startedAt: Number(raw.startedAt || Date.now()),
+        submissions
+      };
+    }
+
+    function loadLiveQuizState() {
+      try {
+        const raw = localStorage.getItem(LIVE_QUIZ_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        return normalizeLiveQuizState(parsed);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function saveLiveQuizState(state) {
+      if (!state) {
+        removeLocalValue(LIVE_QUIZ_STORAGE_KEY);
+        return true;
+      }
+      const normalized = normalizeLiveQuizState(state);
+      if (!normalized) return false;
+      return saveLocalJSON(LIVE_QUIZ_STORAGE_KEY, normalized);
+    }
+
     function toCloudDigitalClassRow(state) {
       if (!state || !state.room) return null;
       const courseName = String(state.courseName || '').trim();
@@ -4978,6 +5110,25 @@ let cloudCourseAccessSyncInFlight = false;
         room: String(state.room || ''),
         host: String(state.host || ''),
         started_at: Number(state.startedAt || Date.now()),
+        status: 'live'
+      };
+    }
+
+    function toCloudLiveQuizRow(state) {
+      const safe = normalizeLiveQuizState(state);
+      if (!safe || !safe.question) return null;
+      return {
+        id: 'global',
+        quiz_id: safe.id,
+        title: safe.title,
+        course_name: safe.courseName,
+        question: safe.question,
+        options: safe.options,
+        correct_index: safe.correctIndex,
+        host: safe.host,
+        host_role: safe.hostRole,
+        started_at: safe.startedAt,
+        submissions: safe.submissions || {},
         status: 'live'
       };
     }
@@ -4996,6 +5147,22 @@ let cloudCourseAccessSyncInFlight = false;
       };
     }
 
+    function fromCloudLiveQuizRow(row) {
+      if (!row || String(row.status || '').toLowerCase() !== 'live') return null;
+      return normalizeLiveQuizState({
+        id: row.quiz_id || row.id || `quiz-${Date.now()}`,
+        title: row.title,
+        courseName: row.course_name,
+        question: row.question,
+        options: Array.isArray(row.options) ? row.options : [],
+        correctIndex: Number(row.correct_index || 0),
+        host: row.host,
+        hostRole: row.host_role,
+        startedAt: Number(row.started_at || Date.now()),
+        submissions: row.submissions && typeof row.submissions === 'object' ? row.submissions : {}
+      });
+    }
+
     async function fetchCloudDigitalClassState() {
       if (!isCloudAccountsConfigured()) return undefined;
       try {
@@ -5011,6 +5178,25 @@ let cloudCourseAccessSyncInFlight = false;
         return fromCloudDigitalClassRow(rows[0]);
       } catch (error) {
         console.warn('Cloud digital class fetch failed.', error);
+        return undefined;
+      }
+    }
+
+    async function fetchCloudLiveQuizState() {
+      if (!isCloudAccountsConfigured()) return undefined;
+      try {
+        const base = SUPABASE_URL.replace(/\/+$/, '');
+        const url = `${base}/rest/v1/${SUPABASE_LIVE_QUIZ_TABLE}?select=id,quiz_id,title,course_name,question,options,correct_index,host,host_role,started_at,submissions,status&id=eq.global&limit=1`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: buildCloudHeaders()
+        });
+        if (!response.ok) return undefined;
+        const rows = await response.json();
+        if (!Array.isArray(rows) || !rows.length) return null;
+        return fromCloudLiveQuizRow(rows[0]);
+      } catch (error) {
+        console.warn('Cloud live quiz fetch failed.', error);
         return undefined;
       }
     }
@@ -5037,6 +5223,28 @@ let cloudCourseAccessSyncInFlight = false;
       }
     }
 
+    async function upsertCloudLiveQuizState(state) {
+      if (!isCloudAccountsConfigured()) return false;
+      const row = toCloudLiveQuizRow(state);
+      if (!row) return false;
+      try {
+        const base = SUPABASE_URL.replace(/\/+$/, '');
+        const url = `${base}/rest/v1/${SUPABASE_LIVE_QUIZ_TABLE}?on_conflict=id`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: buildCloudHeaders({
+            'Content-Type': 'application/json',
+            Prefer: 'resolution=merge-duplicates,return=minimal'
+          }),
+          body: JSON.stringify([row])
+        });
+        return response.ok;
+      } catch (error) {
+        console.warn('Cloud live quiz save failed.', error);
+        return false;
+      }
+    }
+
     async function clearCloudDigitalClassState() {
       if (!isCloudAccountsConfigured()) return false;
       try {
@@ -5053,6 +5261,22 @@ let cloudCourseAccessSyncInFlight = false;
       }
     }
 
+    async function clearCloudLiveQuizState() {
+      if (!isCloudAccountsConfigured()) return false;
+      try {
+        const base = SUPABASE_URL.replace(/\/+$/, '');
+        const url = `${base}/rest/v1/${SUPABASE_LIVE_QUIZ_TABLE}?id=eq.global`;
+        const response = await fetch(url, {
+          method: 'DELETE',
+          headers: buildCloudHeaders({ Prefer: 'return=minimal' })
+        });
+        return response.ok;
+      } catch (error) {
+        console.warn('Cloud live quiz clear failed.', error);
+        return false;
+      }
+    }
+
     async function refreshDigitalClassFromCloud() {
       if (!isCloudAccountsConfigured() || digitalClassCloudSyncInFlight) return false;
       digitalClassCloudSyncInFlight = true;
@@ -5065,9 +5289,29 @@ let cloudCourseAccessSyncInFlight = false;
       digitalClassState = cloudState || null;
       saveDigitalClassState(digitalClassState);
       renderDigitalClassPanel();
+      renderLiveQuizPanel();
       if (!digitalClassState && digitalClassHelp) {
         digitalClassHelp.textContent = 'Live class ended by host.';
         digitalClassHelp.style.color = '#334155';
+      }
+      return true;
+    }
+
+    async function refreshLiveQuizFromCloud() {
+      if (!isCloudAccountsConfigured() || liveQuizCloudSyncInFlight) return false;
+      liveQuizCloudSyncInFlight = true;
+      const cloudState = await fetchCloudLiveQuizState();
+      liveQuizCloudSyncInFlight = false;
+      if (typeof cloudState === 'undefined') return false;
+      const localSerialized = JSON.stringify(liveQuizState || null);
+      const cloudSerialized = JSON.stringify(cloudState || null);
+      if (localSerialized === cloudSerialized) return false;
+      liveQuizState = cloudState || null;
+      saveLiveQuizState(liveQuizState);
+      renderLiveQuizPanel();
+      if (!liveQuizState && liveQuizHelp) {
+        liveQuizHelp.textContent = 'Live quiz ended by host.';
+        liveQuizHelp.style.color = '#334155';
       }
       return true;
     }
@@ -5894,6 +6138,7 @@ let cloudCourseAccessSyncInFlight = false;
     let selectedSearchProfileEmail = '';
     let adminPromoteMenuEmail = '';
     let digitalClassState = loadDigitalClassState();
+    let liveQuizState = loadLiveQuizState();
     let currentMiniQuiz = [];
     let currentCourseVideos = [];
     const PROFILE_FALLBACK_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODIiIGhlaWdodD0iODIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjgyIiBoZWlnaHQ9IjgyIiBmaWxsPSIjZTJlOGYwIi8+PGNpcmNsZSBjeD0iNDEiIGN5PSIzMiIgcj0iMTYiIGZpbGw9IiM5NGEzYjgiLz48cmVjdCB4PSIxOCIgeT0iNTIiIHdpZHRoPSI0NiIgaGVpZ2h0PSIxOCIgcng9IjkiIGZpbGw9IiM5NGEzYjgiLz48L3N2Zz4=';
@@ -6141,6 +6386,131 @@ let cloudCourseAccessSyncInFlight = false;
       }
     }
 
+    function renderLiveQuizCourseOptions(preferredCourseName = '') {
+      if (!liveQuizCourseSelect) return;
+      const previous = String(liveQuizCourseSelect.value || '').trim();
+      const preferred = String(preferredCourseName || '').trim() || previous || currentPlaylistCourse || '';
+      const resolvedPreferred = resolveCourseByName(preferred);
+      const selectedName = resolvedPreferred ? resolvedPreferred.name : '';
+      liveQuizCourseSelect.innerHTML = `<option value="">Select course</option>${coursesData.map((course) => (
+        `<option value="${escapeHtml(course.name)}">${escapeHtml(course.name)}</option>`
+      )).join('')}`;
+      if (selectedName) {
+        liveQuizCourseSelect.value = selectedName;
+      } else {
+        liveQuizCourseSelect.value = '';
+      }
+    }
+
+    function canCurrentUserHostLiveQuiz() {
+      return currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
+    }
+
+    function getLiveQuizJoinDecision() {
+      if (!currentUserName) {
+        return { allowed: false, message: 'Please login first.' };
+      }
+      if (!liveQuizState || !liveQuizState.id) {
+        return { allowed: false, message: 'No live quiz is running right now.' };
+      }
+      if (canCurrentUserHostLiveQuiz()) {
+        return { allowed: true, message: '' };
+      }
+      const hostRole = String(liveQuizState.hostRole || '').trim();
+      if (hostRole === 'Admin') {
+        return { allowed: true, message: '' };
+      }
+      if (!currentUserRoles.includes('Student')) {
+        return { allowed: false, message: 'Only students can join this live quiz.' };
+      }
+      const courseName = String(liveQuizState.courseName || '').trim();
+      if (!courseName) {
+        return { allowed: false, message: 'Quiz course is missing. Ask host to restart quiz.' };
+      }
+      if (!isStudentApprovedForCourse(courseName, currentUserName)) {
+        return { allowed: false, message: `Access denied. Get approved for ${courseName} first.` };
+      }
+      return { allowed: true, message: '' };
+    }
+
+    function getLiveQuizSubmissionsSorted() {
+      if (!liveQuizState || !liveQuizState.submissions || typeof liveQuizState.submissions !== 'object') return [];
+      return Object.entries(liveQuizState.submissions)
+        .map(([email, value]) => {
+          const safe = value && typeof value === 'object' ? value : {};
+          return {
+            email: normalizeEmail(email || ''),
+            score: Number(safe.score || 0),
+            selectedIndex: Number(safe.selectedIndex || -1),
+            submittedAt: Number(safe.submittedAt || 0)
+          };
+        })
+        .filter((row) => row.email)
+        .sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return a.submittedAt - b.submittedAt;
+        });
+    }
+
+    function renderLiveQuizPanel() {
+      if (!liveQuizHelp || !liveQuizCurrentTitle || !liveQuizCurrentMeta || !liveQuizJoinStatus || !liveQuizStartBtn || !liveQuizEndBtn || !liveQuizPlayerWrap || !liveQuizOptionsForm || !liveQuizSubmitBtn || !liveQuizResult || !liveQuizLeaderboard) return;
+      const canHost = canCurrentUserHostLiveQuiz();
+      liveQuizStartBtn.classList.toggle('hidden', !canHost);
+      liveQuizEndBtn.classList.toggle('hidden', !canHost || !liveQuizState || !liveQuizState.id);
+      renderLiveQuizCourseOptions(liveQuizState && liveQuizState.courseName ? liveQuizState.courseName : '');
+
+      if (!liveQuizState || !liveQuizState.id) {
+        liveQuizCurrentTitle.textContent = 'No live quiz';
+        liveQuizCurrentMeta.textContent = '-';
+        liveQuizJoinStatus.textContent = canHost ? 'You can host a quiz.' : 'Waiting for host to start a live quiz.';
+        liveQuizOptionsForm.innerHTML = '<p class="assignment-meta">No active live quiz.</p>';
+        liveQuizSubmitBtn.disabled = true;
+        liveQuizPlayerWrap.classList.add('hidden');
+        liveQuizResult.textContent = '';
+        liveQuizLeaderboard.innerHTML = '<li>No submissions yet.</li>';
+        return;
+      }
+
+      const decision = getLiveQuizJoinDecision();
+      const hostRoleLabel = String(liveQuizState.hostRole || 'Host');
+      liveQuizCurrentTitle.textContent = liveQuizState.title || 'Live Quiz';
+      liveQuizCurrentMeta.textContent = `${hostRoleLabel}: ${liveQuizState.host || '-'} | Course: ${liveQuizState.courseName || '-'} | Started: ${new Date(Number(liveQuizState.startedAt || Date.now())).toLocaleTimeString()}`;
+      liveQuizJoinStatus.textContent = decision.allowed ? 'You can join this live quiz.' : decision.message;
+      liveQuizPlayerWrap.classList.toggle('hidden', !decision.allowed);
+      liveQuizSubmitBtn.disabled = !decision.allowed;
+
+      if (decision.allowed) {
+        const q = escapeHtml(liveQuizState.question || '');
+        const options = Array.isArray(liveQuizState.options) ? liveQuizState.options : [];
+        liveQuizOptionsForm.innerHTML = `
+          <div class="quiz-item">
+            <p><strong>${q}</strong></p>
+            ${options.map((opt, idx) => (
+              `<label class="quiz-option"><input type="radio" name="live-quiz-answer" value="${idx}" /> ${escapeHtml(opt || `Option ${idx + 1}`)}</label>`
+            )).join('')}
+          </div>
+        `;
+
+        const userKey = normalizeEmail(currentUserName || '');
+        const mine = liveQuizState.submissions && liveQuizState.submissions[userKey] ? liveQuizState.submissions[userKey] : null;
+        if (mine && Number(mine.selectedIndex) >= 0) {
+          const selectedRadio = liveQuizOptionsForm.querySelector(`input[name="live-quiz-answer"][value="${Number(mine.selectedIndex)}"]`);
+          if (selectedRadio) selectedRadio.checked = true;
+          liveQuizSubmitBtn.disabled = true;
+          liveQuizResult.textContent = Number(mine.score) === 1 ? 'Already submitted: Correct answer.' : 'Already submitted: Incorrect answer.';
+          liveQuizResult.style.color = Number(mine.score) === 1 ? '#166534' : '#b45309';
+        } else {
+          liveQuizResult.textContent = '';
+          liveQuizSubmitBtn.disabled = false;
+        }
+      }
+
+      const rows = getLiveQuizSubmissionsSorted().map((entry, index) => {
+        return `<li>#${index + 1} ${escapeHtml(entry.email)} - Score: ${entry.score}/1</li>`;
+      }).join('');
+      liveQuizLeaderboard.innerHTML = rows || '<li>No submissions yet.</li>';
+    }
+
     function renderMyTeacherCourses() {
       if (!myCoursesTeacherList || !myCoursesTeacherHelp) return;
       const isTeacherSide = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
@@ -6250,6 +6620,7 @@ let cloudCourseAccessSyncInFlight = false;
       });
       renderCoursesShowcase();
       renderMyTeacherCourses();
+      renderLiveQuizPanel();
     }
 
     function renderCoursesShowcase() {
@@ -8424,7 +8795,7 @@ function openDashboard(userName) {
       updateThemeButton();
       setBackgroundForDashboard(true);
       setActiveSection('dashboard');
-      Promise.all([refreshAccountsFromCloud(), refreshProfilesFromCloud(), refreshSuggestionsFromCloud(), refreshBugReportsFromCloud(), refreshDigitalClassFromCloud(), refreshCourseAccessFromCloud()]).then(() => {
+      Promise.all([refreshAccountsFromCloud(), refreshProfilesFromCloud(), refreshSuggestionsFromCloud(), refreshBugReportsFromCloud(), refreshDigitalClassFromCloud(), refreshLiveQuizFromCloud(), refreshCourseAccessFromCloud()]).then(() => {
         renderUserProfile();
         updateNavbarProfileAvatar();
         renderSearchUsers();
@@ -8433,6 +8804,7 @@ function openDashboard(userName) {
         renderBugReportsPanel();
         renderNotifications();
         renderDigitalClassPanel();
+        renderLiveQuizPanel();
         if (currentPlaylistCourse) {
           renderCourseAccessPanel({ name: currentPlaylistCourse });
           bindCourseAccessActions(currentPlaylistCourse);
@@ -8519,6 +8891,7 @@ function openDashboard(userName) {
       }
       if (effectiveTarget === 'digital-class') {
         renderDigitalClassPanel();
+        renderLiveQuizPanel();
       }
       if (effectiveTarget === 'settings') {
         Promise.all([refreshSuggestionsFromCloud(), refreshBugReportsFromCloud()]).then(() => {
@@ -9362,6 +9735,136 @@ function openDashboard(userName) {
         event.preventDefault();
       });
     }
+    if (liveQuizForm) {
+      liveQuizForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+      });
+    }
+    if (liveQuizStartBtn) {
+      liveQuizStartBtn.addEventListener('click', async () => {
+        if (!currentUserName) {
+          liveQuizHelp.textContent = 'Please login first.';
+          liveQuizHelp.style.color = '#b91c1c';
+          return;
+        }
+        if (!canCurrentUserHostLiveQuiz()) {
+          liveQuizHelp.textContent = 'Only Teacher, HOD, or Admin can host live quiz.';
+          liveQuizHelp.style.color = '#b91c1c';
+          return;
+        }
+        const selectedCourse = resolveCourseByName(liveQuizCourseSelect ? liveQuizCourseSelect.value : '');
+        if (!selectedCourse) {
+          liveQuizHelp.textContent = 'Select course before starting live quiz.';
+          liveQuizHelp.style.color = '#b91c1c';
+          return;
+        }
+        const title = String(liveQuizTitleInput ? liveQuizTitleInput.value : '').trim();
+        const question = String(liveQuizQuestionInput ? liveQuizQuestionInput.value : '').trim();
+        const options = [
+          String(liveQuizOptionAInput ? liveQuizOptionAInput.value : '').trim(),
+          String(liveQuizOptionBInput ? liveQuizOptionBInput.value : '').trim(),
+          String(liveQuizOptionCInput ? liveQuizOptionCInput.value : '').trim(),
+          String(liveQuizOptionDInput ? liveQuizOptionDInput.value : '').trim()
+        ];
+        const correctIndex = Number(liveQuizCorrectSelect ? liveQuizCorrectSelect.value : 0);
+        if (!title || !question || options.some((item) => !item)) {
+          liveQuizHelp.textContent = 'Fill title, question and all four options.';
+          liveQuizHelp.style.color = '#b91c1c';
+          return;
+        }
+
+        liveQuizState = normalizeLiveQuizState({
+          id: `quiz-${Date.now()}`,
+          title,
+          courseName: selectedCourse.name,
+          question,
+          options,
+          correctIndex,
+          host: normalizeEmail(currentUserName),
+          hostRole: currentUserRole,
+          startedAt: Date.now(),
+          submissions: {}
+        });
+        saveLiveQuizState(liveQuizState);
+        const cloudSaved = await upsertCloudLiveQuizState(liveQuizState);
+        renderLiveQuizPanel();
+        if (cloudSaved || !isCloudAccountsConfigured()) {
+          liveQuizHelp.textContent = `Live quiz started: ${title}`;
+          liveQuizHelp.style.color = '#166534';
+        } else {
+          liveQuizHelp.textContent = 'Live quiz started locally, but cloud sync failed.';
+          liveQuizHelp.style.color = '#b45309';
+        }
+        addNotification(`Live quiz started by ${currentUserName}: ${title}`);
+      });
+    }
+    if (liveQuizSubmitBtn) {
+      liveQuizSubmitBtn.addEventListener('click', async () => {
+        await refreshLiveQuizFromCloud();
+        const decision = getLiveQuizJoinDecision();
+        if (!decision.allowed) {
+          liveQuizResult.textContent = decision.message || 'Live quiz access denied.';
+          liveQuizResult.style.color = '#b91c1c';
+          liveQuizSubmitBtn.disabled = true;
+          return;
+        }
+        if (!liveQuizState) return;
+        const picked = liveQuizOptionsForm ? liveQuizOptionsForm.querySelector('input[name="live-quiz-answer"]:checked') : null;
+        if (!picked) {
+          liveQuizResult.textContent = 'Select an option first.';
+          liveQuizResult.style.color = '#b91c1c';
+          return;
+        }
+        const selectedIndex = Number(picked.value);
+        const score = selectedIndex === Number(liveQuizState.correctIndex) ? 1 : 0;
+        const userKey = normalizeEmail(currentUserName || '');
+        if (!liveQuizState.submissions || typeof liveQuizState.submissions !== 'object') {
+          liveQuizState.submissions = {};
+        }
+        liveQuizState.submissions[userKey] = {
+          selectedIndex,
+          score,
+          submittedAt: Date.now()
+        };
+        saveLiveQuizState(liveQuizState);
+        const cloudSaved = await upsertCloudLiveQuizState(liveQuizState);
+        renderLiveQuizPanel();
+        liveQuizSubmitBtn.disabled = true;
+        liveQuizResult.textContent = score === 1 ? 'Submitted: Correct answer.' : 'Submitted: Incorrect answer.';
+        liveQuizResult.style.color = score === 1 ? '#166534' : '#b45309';
+        if (!cloudSaved && isCloudAccountsConfigured()) {
+          liveQuizResult.textContent += ' (Cloud sync failed)';
+          liveQuizResult.style.color = '#b45309';
+        }
+      });
+    }
+    if (liveQuizEndBtn) {
+      liveQuizEndBtn.addEventListener('click', async () => {
+        if (!currentUserName) {
+          liveQuizHelp.textContent = 'Please login first.';
+          liveQuizHelp.style.color = '#b91c1c';
+          return;
+        }
+        if (!canCurrentUserHostLiveQuiz()) {
+          liveQuizHelp.textContent = 'Only Teacher, HOD, or Admin can end live quiz.';
+          liveQuizHelp.style.color = '#b91c1c';
+          return;
+        }
+        const quizName = liveQuizState && liveQuizState.title ? liveQuizState.title : 'Live Quiz';
+        liveQuizState = null;
+        saveLiveQuizState(null);
+        const cloudCleared = await clearCloudLiveQuizState();
+        renderLiveQuizPanel();
+        if (cloudCleared || !isCloudAccountsConfigured()) {
+          liveQuizHelp.textContent = `Live quiz ended: ${quizName}`;
+          liveQuizHelp.style.color = '#166534';
+        } else {
+          liveQuizHelp.textContent = 'Live quiz ended locally, but cloud sync failed.';
+          liveQuizHelp.style.color = '#b45309';
+        }
+        addNotification(`Live quiz ended by ${currentUserName}.`);
+      });
+    }
     uploadCourseForm.addEventListener('submit', (event) => {
       event.preventDefault();
       const name = document.getElementById('course-name').value.trim();
@@ -9587,11 +10090,13 @@ function openDashboard(userName) {
         }
       });
       refreshDigitalClassFromCloud();
+      refreshLiveQuizFromCloud();
       refreshCourseAccessFromCloud().then((updated) => {
         if (!updated) return;
         renderNotifications();
         renderCoursesShowcase();
         renderDigitalClassPanel();
+        renderLiveQuizPanel();
         if (currentPlaylistCourse) {
           renderCourseAccessPanel({ name: currentPlaylistCourse });
           bindCourseAccessActions(currentPlaylistCourse);
@@ -9620,6 +10125,7 @@ function openDashboard(userName) {
     renderSuggestionsPanel();
     renderBugReportsPanel();
     renderDigitalClassPanel();
+    renderLiveQuizPanel();
     applyAppTheme('light', false);
     applyLowDataMode(false, false);
     updateVideoWatermarks();
@@ -9630,6 +10136,7 @@ function openDashboard(userName) {
       await refreshSuggestionsFromCloud();
       await refreshBugReportsFromCloud();
       await refreshDigitalClassFromCloud();
+      await refreshLiveQuizFromCloud();
       await refreshCourseAccessFromCloud();
       const activeSession = loadSession();
       if (activeSession && activeSession.email) {
