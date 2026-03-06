@@ -3897,8 +3897,55 @@
             <div class="panel-head">
               <h2>Live Quiz</h2>
             </div>
-            <div class="grid-2" style="padding:14px;">
-              <div>
+            <div style="padding:14px;">
+              <div class="menu" style="margin-bottom:10px;" id="live-quiz-tabs">
+                <button type="button" class="active" data-live-quiz-tab="overview">Overview</button>
+                <button type="button" data-live-quiz-tab="questions">Questions</button>
+                <button type="button" data-live-quiz-tab="participants">Participants</button>
+                <button type="button" data-live-quiz-tab="leaderboard">Leaderboard</button>
+              </div>
+
+              <section class="live-quiz-tab-panel active" id="live-quiz-panel-overview">
+                <div class="grid-2">
+                  <article class="card">
+                    <h3 id="live-quiz-stat-participants">0</h3>
+                    <span>Participants</span>
+                  </article>
+                  <article class="card">
+                    <h3 id="live-quiz-stat-answered">0</h3>
+                    <span>Answered (Current Q)</span>
+                  </article>
+                  <article class="card">
+                    <h3 id="live-quiz-stat-questions">0</h3>
+                    <span>Questions</span>
+                  </article>
+                  <article class="card">
+                    <h3 id="live-quiz-stat-status">Lobby</h3>
+                    <span>Status</span>
+                  </article>
+                </div>
+                <ul class="list" style="margin-top:12px;">
+                  <li>Session Code: <strong id="live-quiz-session-code">------</strong></li>
+                  <li>Current Quiz: <strong id="live-quiz-current-title">No live quiz</strong></li>
+                  <li>Details: <strong id="live-quiz-current-meta">-</strong></li>
+                  <li>Question: <strong id="live-quiz-current-progress">-</strong></li>
+                  <li>Join Status: <strong id="live-quiz-join-status">-</strong></li>
+                </ul>
+                <div class="role-request-controls" style="margin-top:10px;">
+                  <button class="video-open-btn" id="live-quiz-start-btn" type="button">Start Quiz</button>
+                  <button class="video-open-btn hidden" id="live-quiz-next-btn" type="button">Next Question</button>
+                  <button class="video-open-btn hidden" id="live-quiz-end-btn" type="button">End Quiz</button>
+                  <button class="video-open-btn" id="live-quiz-reset-btn" type="button">Reset</button>
+                </div>
+                <div class="mini-quiz-body" id="live-quiz-player-wrap">
+                  <button type="button" class="video-open-btn" id="live-quiz-join-btn">Join Live Quiz</button>
+                  <form id="live-quiz-options-form" class="mini-quiz-form"></form>
+                  <button type="button" class="video-open-btn" id="live-quiz-submit-btn">Submit Answer</button>
+                  <p class="success-msg" id="live-quiz-result" aria-live="polite"></p>
+                </div>
+              </section>
+
+              <section class="live-quiz-tab-panel hidden" id="live-quiz-panel-questions">
                 <form class="upload-form" id="live-quiz-form">
                   <div class="field">
                     <label for="live-quiz-course">Course</label>
@@ -3909,9 +3956,6 @@
                   <div class="field">
                     <label for="live-quiz-title">Quiz Title</label>
                     <input id="live-quiz-title" type="text" placeholder="Example: BEE Quick Quiz 1" maxlength="100" />
-                  </div>
-                  <div class="panel-head" style="margin-top:8px;">
-                    <h2>Add Questions</h2>
                   </div>
                   <div class="field">
                     <label for="live-quiz-question">Question</label>
@@ -3944,34 +3988,17 @@
                   </div>
                   <button class="btn" id="live-quiz-add-question-btn" type="button">Add Question</button>
                   <ul class="list" id="live-quiz-questions-list"></ul>
-                  <button class="btn" id="live-quiz-start-btn" type="button">Start Live Quiz</button>
-                  <button class="btn hidden" id="live-quiz-next-btn" type="button">Next Question</button>
-                  <button class="btn hidden" id="live-quiz-end-btn" type="button">End Live Quiz</button>
                   <p class="success-msg" id="live-quiz-help" aria-live="polite"></p>
                 </form>
-              </div>
-              <div>
-                <ul class="list">
-                  <li>Current Quiz: <strong id="live-quiz-current-title">No live quiz</strong></li>
-                  <li>Details: <strong id="live-quiz-current-meta">-</strong></li>
-                  <li>Question: <strong id="live-quiz-current-progress">-</strong></li>
-                  <li>Join Status: <strong id="live-quiz-join-status">-</strong></li>
-                </ul>
-                <div class="mini-quiz-body" id="live-quiz-player-wrap">
-                  <button type="button" class="video-open-btn" id="live-quiz-join-btn">Join Live Quiz</button>
-                  <form id="live-quiz-options-form" class="mini-quiz-form"></form>
-                  <button type="button" class="video-open-btn" id="live-quiz-submit-btn">Submit Answer</button>
-                  <p class="success-msg" id="live-quiz-result" aria-live="polite"></p>
-                </div>
-                <div class="panel-head" style="margin-top:12px;">
-                  <h2>Participants</h2>
-                </div>
+              </section>
+
+              <section class="live-quiz-tab-panel hidden" id="live-quiz-panel-participants">
                 <ul class="list" id="live-quiz-participants-list"></ul>
-                <div class="panel-head" style="margin-top:12px;">
-                  <h2>Live Quiz Leaderboard</h2>
-                </div>
+              </section>
+
+              <section class="live-quiz-tab-panel hidden" id="live-quiz-panel-leaderboard">
                 <ul class="list" id="live-quiz-leaderboard"></ul>
-              </div>
+              </section>
             </div>
           </article>
         </section>
@@ -4484,6 +4511,12 @@
     const liveQuizCurrentMeta = document.getElementById('live-quiz-current-meta');
     const liveQuizCurrentProgress = document.getElementById('live-quiz-current-progress');
     const liveQuizJoinStatus = document.getElementById('live-quiz-join-status');
+    const liveQuizSessionCode = document.getElementById('live-quiz-session-code');
+    const liveQuizStatParticipants = document.getElementById('live-quiz-stat-participants');
+    const liveQuizStatAnswered = document.getElementById('live-quiz-stat-answered');
+    const liveQuizStatQuestions = document.getElementById('live-quiz-stat-questions');
+    const liveQuizStatStatus = document.getElementById('live-quiz-stat-status');
+    const liveQuizResetBtn = document.getElementById('live-quiz-reset-btn');
     const liveQuizPlayerWrap = document.getElementById('live-quiz-player-wrap');
     const liveQuizJoinBtn = document.getElementById('live-quiz-join-btn');
     const liveQuizOptionsForm = document.getElementById('live-quiz-options-form');
@@ -4491,6 +4524,13 @@
     const liveQuizResult = document.getElementById('live-quiz-result');
     const liveQuizParticipantsList = document.getElementById('live-quiz-participants-list');
     const liveQuizLeaderboard = document.getElementById('live-quiz-leaderboard');
+    const liveQuizTabButtons = Array.from(document.querySelectorAll('#live-quiz-tabs button[data-live-quiz-tab]'));
+    const liveQuizTabPanels = {
+      overview: document.getElementById('live-quiz-panel-overview'),
+      questions: document.getElementById('live-quiz-panel-questions'),
+      participants: document.getElementById('live-quiz-panel-participants'),
+      leaderboard: document.getElementById('live-quiz-panel-leaderboard')
+    };
     const menuButtons = Array.from(document.querySelectorAll('#menu-buttons button[data-target]'));
     const sections = Array.from(document.querySelectorAll('.section'));
     let currentUserName = '';
@@ -6555,6 +6595,19 @@ let cloudCourseAccessSyncInFlight = false;
       return currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
     }
 
+    function setLiveQuizTab(tabName) {
+      const valid = ['overview', 'questions', 'participants', 'leaderboard'];
+      const target = valid.includes(tabName) ? tabName : 'overview';
+      liveQuizTabButtons.forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.liveQuizTab === target);
+      });
+      Object.entries(liveQuizTabPanels).forEach(([key, panel]) => {
+        if (!panel) return;
+        panel.classList.toggle('hidden', key !== target);
+        panel.classList.toggle('active', key === target);
+      });
+    }
+
     function getLiveQuizQuestionDraftFromInputs() {
       const question = String(liveQuizQuestionInput ? liveQuizQuestionInput.value : '').trim();
       const options = [
@@ -6657,19 +6710,25 @@ let cloudCourseAccessSyncInFlight = false;
     }
 
     function renderLiveQuizPanel() {
-      if (!liveQuizHelp || !liveQuizCurrentTitle || !liveQuizCurrentMeta || !liveQuizCurrentProgress || !liveQuizJoinStatus || !liveQuizStartBtn || !liveQuizNextBtn || !liveQuizEndBtn || !liveQuizPlayerWrap || !liveQuizJoinBtn || !liveQuizOptionsForm || !liveQuizSubmitBtn || !liveQuizResult || !liveQuizParticipantsList || !liveQuizLeaderboard) return;
+      if (!liveQuizHelp || !liveQuizCurrentTitle || !liveQuizCurrentMeta || !liveQuizCurrentProgress || !liveQuizJoinStatus || !liveQuizSessionCode || !liveQuizStatParticipants || !liveQuizStatAnswered || !liveQuizStatQuestions || !liveQuizStatStatus || !liveQuizStartBtn || !liveQuizNextBtn || !liveQuizEndBtn || !liveQuizResetBtn || !liveQuizPlayerWrap || !liveQuizJoinBtn || !liveQuizOptionsForm || !liveQuizSubmitBtn || !liveQuizResult || !liveQuizParticipantsList || !liveQuizLeaderboard) return;
       const canHost = canCurrentUserHostLiveQuiz();
       liveQuizStartBtn.classList.toggle('hidden', !canHost);
       liveQuizNextBtn.classList.toggle('hidden', !canHost || !liveQuizState || !liveQuizState.id);
       liveQuizEndBtn.classList.toggle('hidden', !canHost || !liveQuizState || !liveQuizState.id);
+      liveQuizResetBtn.classList.toggle('hidden', !canHost);
       renderLiveQuizCourseOptions(liveQuizState && liveQuizState.courseName ? liveQuizState.courseName : '');
       renderLiveQuizDraftQuestions();
 
       if (!liveQuizState || !liveQuizState.id) {
+        liveQuizSessionCode.textContent = '------';
         liveQuizCurrentTitle.textContent = 'No live quiz';
         liveQuizCurrentMeta.textContent = '-';
         liveQuizCurrentProgress.textContent = '-';
         liveQuizJoinStatus.textContent = canHost ? 'You can host a quiz.' : 'Waiting for host to start a live quiz.';
+        liveQuizStatParticipants.textContent = '0';
+        liveQuizStatAnswered.textContent = '0';
+        liveQuizStatQuestions.textContent = String(liveQuizDraftQuestions.length);
+        liveQuizStatStatus.textContent = 'Lobby';
         liveQuizOptionsForm.innerHTML = '<p class="assignment-meta">No active live quiz.</p>';
         liveQuizJoinBtn.classList.add('hidden');
         liveQuizJoinBtn.disabled = true;
@@ -6686,10 +6745,20 @@ let cloudCourseAccessSyncInFlight = false;
       const totalQuestions = Array.isArray(liveQuizState.questions) ? liveQuizState.questions.length : 0;
       const currentIndex = Math.max(0, Math.min(Math.max(totalQuestions - 1, 0), Number(liveQuizState.currentQuestionIndex || 0)));
       const currentQuestion = totalQuestions ? liveQuizState.questions[currentIndex] : null;
+      const sessionCode = String(liveQuizState.id || '').replace(/^quiz-/i, '').slice(-6).toUpperCase().padStart(6, '0');
+      const participants = getLiveQuizParticipantsSorted();
+      const currentResponses = liveQuizState.responses && typeof liveQuizState.responses === 'object'
+        ? Object.values(liveQuizState.responses).filter((answerMap) => answerMap && typeof answerMap === 'object' && Object.prototype.hasOwnProperty.call(answerMap, currentIndex)).length
+        : 0;
+      liveQuizSessionCode.textContent = sessionCode;
       liveQuizCurrentTitle.textContent = liveQuizState.title || 'Live Quiz';
       liveQuizCurrentMeta.textContent = `${hostRoleLabel}: ${liveQuizState.host || '-'} | Course: ${liveQuizState.courseName || '-'} | Started: ${new Date(Number(liveQuizState.startedAt || Date.now())).toLocaleTimeString()}`;
       liveQuizCurrentProgress.textContent = totalQuestions ? `${currentIndex + 1} / ${totalQuestions}` : '-';
       liveQuizJoinStatus.textContent = decision.allowed ? 'You can join this live quiz.' : decision.message;
+      liveQuizStatParticipants.textContent = String(participants.length);
+      liveQuizStatAnswered.textContent = String(currentResponses);
+      liveQuizStatQuestions.textContent = String(totalQuestions);
+      liveQuizStatStatus.textContent = totalQuestions && currentIndex >= totalQuestions - 1 ? 'Final Question' : 'Live';
       liveQuizJoinBtn.classList.toggle('hidden', !decision.allowed);
       liveQuizJoinBtn.disabled = !decision.allowed;
 
@@ -6741,7 +6810,7 @@ let cloudCourseAccessSyncInFlight = false;
         liveQuizSubmitBtn.disabled = true;
       }
 
-      const participantsRows = getLiveQuizParticipantsSorted().map((entry) => {
+      const participantsRows = participants.map((entry) => {
         const when = entry.joinedAt ? new Date(entry.joinedAt).toLocaleTimeString() : '-';
         return `<li><strong>${escapeHtml(entry.email)}</strong><div class="assignment-meta">Joined: ${when}</div></li>`;
       }).join('');
@@ -9982,6 +10051,25 @@ function openDashboard(userName) {
         event.preventDefault();
       });
     }
+    liveQuizTabButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        setLiveQuizTab(button.dataset.liveQuizTab || 'overview');
+      });
+    });
+    if (liveQuizResetBtn) {
+      liveQuizResetBtn.addEventListener('click', async () => {
+        if (!canCurrentUserHostLiveQuiz()) return;
+        liveQuizDraftQuestions = [];
+        clearLiveQuizDraftInputs();
+        liveQuizState = null;
+        saveLiveQuizState(null);
+        await clearCloudLiveQuizState();
+        setLiveQuizTab('questions');
+        renderLiveQuizPanel();
+        liveQuizHelp.textContent = 'Live quiz and draft reset.';
+        liveQuizHelp.style.color = '#166534';
+      });
+    }
     if (liveQuizAddQuestionBtn) {
       liveQuizAddQuestionBtn.addEventListener('click', () => {
         const draft = getLiveQuizQuestionDraftFromInputs();
@@ -10044,6 +10132,7 @@ function openDashboard(userName) {
         liveQuizDraftQuestions = [];
         saveLiveQuizState(liveQuizState);
         const cloudSaved = await upsertCloudLiveQuizState(liveQuizState);
+        setLiveQuizTab('overview');
         renderLiveQuizPanel();
         if (cloudSaved || !isCloudAccountsConfigured()) {
           liveQuizHelp.textContent = `Live quiz started: ${title}`;
@@ -10089,6 +10178,7 @@ function openDashboard(userName) {
         liveQuizState.currentQuestionIndex = current + 1;
         saveLiveQuizState(liveQuizState);
         const cloudSaved = await upsertCloudLiveQuizState(liveQuizState);
+        setLiveQuizTab('overview');
         renderLiveQuizPanel();
         liveQuizHelp.textContent = cloudSaved || !isCloudAccountsConfigured()
           ? `Moved to question ${liveQuizState.currentQuestionIndex + 1}.`
@@ -10422,6 +10512,7 @@ function openDashboard(userName) {
       googleInitRetries += 1;
     }, 500);
 
+    setLiveQuizTab('overview');
     renderCourseViews();
     renderSubmittedAssignments();
     renderClassAssignmentsFeed();
