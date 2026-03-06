@@ -8084,7 +8084,8 @@ let cloudCourseAccessSyncInFlight = false;
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data || !data.ok || !data.answer) {
-          throw new Error(data && data.error ? data.error : `Request failed (${response.status})`);
+          const details = data && data.details ? ` (${String(data.details)})` : '';
+          throw new Error(data && data.error ? `${data.error}${details}` : `Request failed (${response.status})${details}`);
         }
         const assistantEntry = { role: 'assistant', text: String(data.answer).trim(), createdAt: Date.now() };
         currentCourseChatHistory = [...currentCourseChatHistory, assistantEntry].slice(-30);

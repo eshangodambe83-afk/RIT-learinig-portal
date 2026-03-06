@@ -67,8 +67,18 @@ module.exports = async function handler(req, res) {
     });
 
     if (!completionResponse.ok) {
-      const details = await completionResponse.text();
-      return res.status(502).json({ ok: false, error: 'OpenAI request failed', details });
+      const raw = await completionResponse.text();
+      let detailMessage = raw;
+      try {
+        const parsed = JSON.parse(raw || '{}');
+        detailMessage =
+          (parsed && parsed.error && parsed.error.message)
+          || (parsed && parsed.message)
+          || raw;
+      } catch (error) {
+        // keep raw response text
+      }
+      return res.status(502).json({ ok: false, error: 'OpenAI request failed', details: detailMessage });
     }
 
     const completionData = await completionResponse.json();
