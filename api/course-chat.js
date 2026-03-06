@@ -44,52 +44,45 @@ module.exports = async function handler(req, res) {
     }
 
     const openaiApiKey = String(process.env.OPENAI_API_KEY || '').trim();
-    if (!openaiApiKey) {
-      return res.status(503).json({ ok: false, error: 'OPENAI_API_KEY is not configured' });
-    }
-
     const model = String(process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
-    const recentHistory = await fetchChatHistory(userEmail, courseName, 14);
-    const messages = buildModelMessages(recentHistory, question, courseName, userRole);
+    const forceFaqOnly = String(process.env.RITP_FAQ_ONLY || '').trim().toLowerCase() === 'true';
+    let answer = '';
 
-    const completionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${openaiApiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.25,
-        max_tokens: 420,
-        messages
-      })
-    });
+    if (forceFaqOnly || !openaiApiKey) {
+      answer = buildFaqAnswer(question, courseName);
+    } else {
+      const recentHistory = await fetchChatHistory(userEmail, courseName, 14);
+      const messages = buildModelMessages(recentHistory, question, courseName, userRole);
 
-    if (!completionResponse.ok) {
-      const raw = await completionResponse.text();
-      let detailMessage = raw;
-      try {
-        const parsed = JSON.parse(raw || '{}');
-        detailMessage =
-          (parsed && parsed.error && parsed.error.message)
-          || (parsed && parsed.message)
-          || raw;
-      } catch (error) {
-        // keep raw response text
+      const completionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${openaiApiKey}`
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0.25,
+          max_tokens: 420,
+          messages
+        })
+      });
+
+      if (completionResponse.ok) {
+        const completionData = await completionResponse.json();
+        answer = String(
+          completionData && completionData.choices && completionData.choices[0] && completionData.choices[0].message
+            ? completionData.choices[0].message.content || ''
+            : ''
+        ).trim();
+      } else {
+        // If OpenAI is unavailable (quota, billing, etc.), gracefully fallback to FAQ bot.
+        answer = buildFaqAnswer(question, courseName);
       }
-      return res.status(502).json({ ok: false, error: 'OpenAI request failed', details: detailMessage });
     }
-
-    const completionData = await completionResponse.json();
-    const answer = String(
-      completionData && completionData.choices && completionData.choices[0] && completionData.choices[0].message
-        ? completionData.choices[0].message.content || ''
-        : ''
-    ).trim();
 
     if (!answer) {
-      return res.status(502).json({ ok: false, error: 'Assistant returned an empty response' });
+      answer = buildFaqAnswer(question, courseName);
     }
 
     // Best-effort persistence.
@@ -248,4 +241,85 @@ function buildModelMessages(history, question, courseName, userRole) {
     ...historyMessages,
     { role: 'user', content: question }
   ];
+}
+
+function buildFaqAnswer(question, courseName) {
+  const q = String(question || '').trim().toLowerCase();
+  const course = String(courseName || '').trim();
+
+  if (!q) {
+    return `Please ask a clear doubt for ${course || 'this course'}.`;
+  }
+
+  const has = (words) => words.some((word) => q.includes(word));
+
+  if (has(['ac current', 'alternating current', 'ac'])) {
+    return [
+      `In ${course || 'this course'}, AC means Alternating Current.`,
+      'AC changes direction periodically (usually sinusoidal).',
+      'Key points:',
+      '1. Frequency tells how fast direction changes (Hz).',
+      '2. RMS value is used for effective power calculations.',
+      '3. AC allows easy voltage transformation using transformers.'
+    ].join('\n');
+  }
+
+  if (has(['dc current', 'direct current', 'dc'])) {
+    return [
+      'DC means Direct Current.',
+      'It flows in one direction only and is commonly used in batteries/electronics.',
+      'For many circuits: V = I * R and power P = V * I.'
+    ].join('\n');
+  }
+
+  if (has(['ohm', 'resistance', 'v=i', 'ohm law', 'ohms law'])) {
+    return [
+      "Ohm's Law: V = I * R",
+      'Where V = voltage, I = current, R = resistance.',
+      'You can rearrange as I = V/R and R = V/I.'
+    ].join('\n');
+  }
+
+  if (has(['capacitor', 'capacitance'])) {
+    return [
+      'Capacitor basics:',
+      '1. Stores electrical energy in electric field.',
+      '2. Opposes sudden voltage change.',
+      '3. In AC, reactance Xc = 1/(2*pi*f*C).'
+    ].join('\n');
+  }
+
+  if (has(['inductor', 'inductance', 'coil'])) {
+    return [
+      'Inductor basics:',
+      '1. Stores energy in magnetic field.',
+      '2. Opposes sudden current change.',
+      '3. In AC, reactance Xl = 2*pi*f*L.'
+    ].join('\n');
+  }
+
+  if (has(['assignment', 'submit', 'submission', 'drive link'])) {
+    return [
+      'Assignment help:',
+      '1. Open the course assignment section.',
+      '2. Paste valid Google Drive link.',
+      '3. Ensure sharing permission is set (viewer).',
+      '4. Submit before due date.'
+    ].join('\n');
+  }
+
+  if (has(['quiz', 'test', 'mcq'])) {
+    return [
+      'Quiz tip:',
+      '1. Watch lecture fully first.',
+      '2. Note formulas/definitions.',
+      '3. Attempt MCQs after understanding concepts.'
+    ].join('\n');
+  }
+
+  return [
+    `I can help with ${course || 'course'} basics, formulas, assignments, and quiz doubts.`,
+    'Please ask in this format for best answer:',
+    '"Topic + what you did not understand + where you got stuck".'
+  ].join('\n');
 }
