@@ -668,6 +668,26 @@
       gap: 12px;
     }
 
+    .dashboard .navbar {
+      display: none !important;
+    }
+
+    .dashboard[data-active-section="dashboard"] .navbar {
+      display: flex !important;
+    }
+
+    .dashboard .navbar-float-cloud {
+      display: none !important;
+    }
+
+    .dashboard[data-active-section="dashboard"] .navbar-float-cloud {
+      display: block !important;
+    }
+
+    .dashboard:not([data-active-section="dashboard"]) .layout {
+      padding-top: calc(16px + env(safe-area-inset-top));
+    }
+
     .navbar .title {
       color: #0f172a;
       letter-spacing: -0.02em;
@@ -8463,6 +8483,9 @@ function openDashboard(userName) {
     function setActiveSection(target) {
       closeNotificationsPanel(false);
       const effectiveTarget = target;
+      if (dashboardScreen) {
+        dashboardScreen.setAttribute('data-active-section', effectiveTarget);
+      }
       if (effectiveTarget !== 'course-playlist' && playlistVideoPlayer && !playlistVideoPlayer.paused) {
         playlistVideoPlayer.pause();
       }
