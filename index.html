@@ -1855,7 +1855,8 @@
     }
 
     .search-profile-head {
-      display: flex;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto;
       align-items: center;
       gap: 8px;
       margin-bottom: 6px;
@@ -1895,8 +1896,17 @@
       flex: 1;
     }
 
-    .search-profile-head .role-badge-wrap {
-      flex-shrink: 0;
+    .search-role-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 4px;
+      min-width: 0;
+      max-width: 118px;
+    }
+
+    .search-role-badges .role-badge {
+      margin-left: 0;
     }
 
     .search-profile-actions {
@@ -9052,7 +9062,7 @@ let cloudCourseAccessSyncInFlight = false;
           <div class="search-profile-name">${escapeHtml(u.name)}</div>
           <div class="search-profile-handle">${escapeHtml(u.handle)}</div>
         </div>
-        ${getRoleBadgesHtml(u.roles)}
+        <div class="search-role-badges">${getRoleBadgesHtml(u.roles)}</div>
       </div>
       <div class="connect-meta">${escapeHtml(u.bio || 'No bio added yet.')}</div>
       <div class="search-profile-actions">
