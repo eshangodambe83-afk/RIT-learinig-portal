@@ -244,7 +244,8 @@ function buildModelMessages(history, question, courseName, userRole) {
 }
 
 function buildFaqAnswer(question, courseName) {
-  const q = String(question || '').trim().toLowerCase();
+  const qRaw = String(question || '').trim().toLowerCase();
+  const q = qRaw.replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
   const course = String(courseName || '').trim();
 
   if (!q) {
@@ -252,8 +253,16 @@ function buildFaqAnswer(question, courseName) {
   }
 
   const has = (words) => words.some((word) => q.includes(word));
+  const hasAnyToken = (tokens) => {
+    const parts = q.split(' ');
+    return tokens.some((token) => parts.includes(token));
+  };
 
-  if (has(['ac current', 'alternating current', 'ac'])) {
+  const asksDefinition = has([
+    'what is', 'define', 'meaning', 'explain', 'can you explain', 'matlab'
+  ]);
+
+  if (has(['ac current', 'alternating current']) || (hasAnyToken(['ac']) && asksDefinition)) {
     return [
       `In ${course || 'this course'}, AC means Alternating Current.`,
       'AC changes direction periodically (usually sinusoidal).',
@@ -264,7 +273,7 @@ function buildFaqAnswer(question, courseName) {
     ].join('\n');
   }
 
-  if (has(['dc current', 'direct current', 'dc'])) {
+  if (has(['dc current', 'direct current']) || (hasAnyToken(['dc']) && asksDefinition)) {
     return [
       'DC means Direct Current.',
       'It flows in one direction only and is commonly used in batteries/electronics.',
@@ -272,11 +281,58 @@ function buildFaqAnswer(question, courseName) {
     ].join('\n');
   }
 
-  if (has(['ohm', 'resistance', 'v=i', 'ohm law', 'ohms law'])) {
+  if (has(['ohm', 'resistance', 'v=i', 'ohm law', 'ohms law', 'ohm s law'])) {
     return [
       "Ohm's Law: V = I * R",
       'Where V = voltage, I = current, R = resistance.',
       'You can rearrange as I = V/R and R = V/I.'
+    ].join('\n');
+  }
+
+  if (has(['voltage', 'potential difference', 'pd'])) {
+    return [
+      'Voltage is electric potential difference between two points.',
+      'Unit: Volt (V).',
+      'Simple idea: Voltage is the "push" that drives current through a circuit.'
+    ].join('\n');
+  }
+
+  if (has(['current', 'ampere', 'amps'])) {
+    return [
+      'Current is the rate of flow of electric charge.',
+      'Unit: Ampere (A).',
+      'Formula link: I = Q / t and for resistive circuits I = V / R.'
+    ].join('\n');
+  }
+
+  if (has(['power', 'watt'])) {
+    return [
+      'Electrical power formulas:',
+      '1. P = V * I',
+      '2. P = I^2 * R',
+      '3. P = V^2 / R',
+      'Unit: Watt (W).'
+    ].join('\n');
+  }
+
+  if (has(['transformer', 'step up', 'step down'])) {
+    return [
+      'Transformer basics:',
+      '1. Works on mutual induction in AC systems.',
+      '2. Step-up: increases voltage, decreases current.',
+      '3. Step-down: decreases voltage, increases current.',
+      '4. Ideal relation: V1/V2 = N1/N2.'
+    ].join('\n');
+  }
+
+  if (has(['series circuit', 'parallel circuit', 'series and parallel'])) {
+    return [
+      'Series vs Parallel:',
+      '1. Series: same current, voltages divide.',
+      '2. Parallel: same voltage, currents divide.',
+      '3. Equivalent resistance:',
+      '   Series: R_eq = R1 + R2 + ...',
+      '   Parallel: 1/R_eq = 1/R1 + 1/R2 + ...'
     ].join('\n');
   }
 
@@ -308,7 +364,7 @@ function buildFaqAnswer(question, courseName) {
     ].join('\n');
   }
 
-  if (has(['quiz', 'test', 'mcq'])) {
+  if (has(['quiz', 'test', 'mcq', 'exam', 'viva'])) {
     return [
       'Quiz tip:',
       '1. Watch lecture fully first.',
@@ -318,8 +374,11 @@ function buildFaqAnswer(question, courseName) {
   }
 
   return [
-    `I can help with ${course || 'course'} basics, formulas, assignments, and quiz doubts.`,
-    'Please ask in this format for best answer:',
-    '"Topic + what you did not understand + where you got stuck".'
+    `I can help with ${course || 'course'} topics like AC/DC, Ohm law, voltage/current/power, transformer, capacitor, inductor, and assignments.`,
+    'Try asking one of these:',
+    '1. What is AC current?',
+    '2. Explain Ohm law with example.',
+    '3. Difference between series and parallel circuit.',
+    '4. Transformer step-up vs step-down.'
   ].join('\n');
 }
