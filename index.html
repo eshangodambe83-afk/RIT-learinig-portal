@@ -3845,7 +3845,7 @@
               </div>
               <div style="padding:14px;">
                 <iframe id="digital-class-frame" title="Digital Class Room" src="about:blank"
-                  allow="camera; microphone; fullscreen; display-capture"
+                  allow="camera; microphone; fullscreen; display-capture; autoplay"
                   style="width:100%; min-height:500px; border:1px solid rgba(148,163,184,0.35); border-radius:12px; background:#0f172a;"></iframe>
               </div>
             </article>
@@ -6000,7 +6000,7 @@ let cloudCourseAccessSyncInFlight = false;
       if (!digitalClassFrame) return;
       const safeRoom = normalizeDigitalClassRoom(room) || `ritp-live-${Date.now()}`;
       const displayName = encodeURIComponent((profilesByUser[normalizeEmail(currentUserName || '')] || {}).displayName || currentUserName || 'RITP User');
-      const jitsiUrl = `https://meet.jit.si/${safeRoom}#userInfo.displayName=\"${displayName}\"`;
+      const jitsiUrl = `https://meet.jit.si/${safeRoom}#userInfo.displayName=${displayName}&config.prejoinPageEnabled=false&config.disableDeepLinking=true`;
       digitalClassFrame.src = jitsiUrl;
     }
 
