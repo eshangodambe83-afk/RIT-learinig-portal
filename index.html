@@ -8448,9 +8448,12 @@ let cloudCourseAccessSyncInFlight = false;
           handleCourseAccessDecision(btn.dataset.course, btn.dataset.email, btn.dataset.action);
         });
       });
-      notificationsList.querySelectorAll('.notif-link').forEach((item) => {
-        item.addEventListener('click', (event) => {
-          if (event.target && event.target.closest('button')) return;
+      if (notificationsList) {
+        notificationsList.onclick = (event) => {
+          const targetEl = event && event.target ? event.target : null;
+          if (targetEl && targetEl.closest('button')) return;
+          const item = targetEl && targetEl.closest ? targetEl.closest('li') : null;
+          if (!item || !item.classList.contains('notif-link')) return;
           const targetSection = item.getAttribute('data-target-section') || '';
           const targetCourse = item.getAttribute('data-target-course') || '';
           if (targetSection === 'course-playlist' && targetCourse) {
@@ -8462,8 +8465,8 @@ let cloudCourseAccessSyncInFlight = false;
             setActiveSection(targetSection);
             closeNotificationsPanel(true);
           }
-        });
-      });
+        };
+      }
 
       let unread = visibleBasicNotifications.filter((item) => !item.read).length;
       if (currentUserRole === 'Admin') {
