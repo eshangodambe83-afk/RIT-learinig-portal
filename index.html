@@ -8280,6 +8280,22 @@ let cloudCourseAccessSyncInFlight = false;
       saveNotificationsClearedAtByUser();
     }
 
+    window.__ritpNotifClick = function __ritpNotifClick(event, el) {
+      if (event && event.target && event.target.closest && event.target.closest('button')) return;
+      if (!el) return;
+      const targetSection = el.getAttribute('data-target-section') || '';
+      const targetCourse = el.getAttribute('data-target-course') || '';
+      if (targetSection === 'course-playlist' && targetCourse) {
+        openCoursePlaylist(targetCourse);
+        closeNotificationsPanel(true);
+        return;
+      }
+      if (targetSection) {
+        setActiveSection(targetSection);
+        closeNotificationsPanel(true);
+      }
+    };
+
     function renderNotifications() {
       const isCourseAccessManager = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
       const clearedAt = getCurrentNotificationsClearedAt();
@@ -8396,11 +8412,12 @@ let cloudCourseAccessSyncInFlight = false;
         const targetSection = target.section ? `data-target-section=\"${target.section}\"` : '';
         const targetCourse = target.courseName ? `data-target-course=\"${escapeHtml(target.courseName)}\"` : '';
         const linkClass = target.section ? 'notif-link' : '';
+        const clickAttr = target.section ? 'onclick=\"window.__ritpNotifClick(event, this)\"' : '';
         if (item.type === 'role_request') {
           const showActions = currentUserRole === 'Admin' && item.status === 'pending';
           const statusLabel = item.status === 'approved' ? 'Approved' : item.status === 'rejected' ? 'Rejected' : 'Pending';
           const reviewed = item.reviewedBy ? ` | By: ${item.reviewedBy}` : '';
-          return `<li class="${item.status === 'pending' ? 'unread' : ''} ${linkClass}" ${targetSection} ${targetCourse}>
+          return `<li class="${item.status === 'pending' ? 'unread' : ''} ${linkClass}" ${targetSection} ${targetCourse} ${clickAttr}>
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time} | Status: ${statusLabel}${reviewed}</div>
             ${showActions ? `<div class="role-request-controls">
@@ -8410,7 +8427,7 @@ let cloudCourseAccessSyncInFlight = false;
           </li>`;
         }
         if (item.type === 'course_request') {
-          return `<li class="unread ${linkClass}" ${targetSection} ${targetCourse}>
+          return `<li class="unread ${linkClass}" ${targetSection} ${targetCourse} ${clickAttr}>
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time} | Status: Pending</div>
             <div class="role-request-controls">
@@ -8420,19 +8437,19 @@ let cloudCourseAccessSyncInFlight = false;
           </li>`;
         }
         if (item.type === 'course_result') {
-          return `<li class="${linkClass}" ${targetSection} ${targetCourse}>
+          return `<li class="${linkClass}" ${targetSection} ${targetCourse} ${clickAttr}>
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time}</div>
           </li>`;
         }
         if (item.type === 'assignment_posted') {
-          return `<li class="unread ${linkClass}" ${targetSection} ${targetCourse}>
+          return `<li class="unread ${linkClass}" ${targetSection} ${targetCourse} ${clickAttr}>
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time}</div>
           </li>`;
         }
 
-        return `<li class="${item.read ? '' : 'unread'} ${linkClass}" ${targetSection} ${targetCourse}>
+        return `<li class="${item.read ? '' : 'unread'} ${linkClass}" ${targetSection} ${targetCourse} ${clickAttr}>
           <strong>${item.text}</strong>
           <div class="notifications-meta">${item.time}</div>
         </li>`;
@@ -8449,23 +8466,7 @@ let cloudCourseAccessSyncInFlight = false;
         });
       });
       if (notificationsList) {
-        notificationsList.onclick = (event) => {
-          const targetEl = event && event.target ? event.target : null;
-          if (targetEl && targetEl.closest('button')) return;
-          const item = targetEl && targetEl.closest ? targetEl.closest('li') : null;
-          if (!item || !item.classList.contains('notif-link')) return;
-          const targetSection = item.getAttribute('data-target-section') || '';
-          const targetCourse = item.getAttribute('data-target-course') || '';
-          if (targetSection === 'course-playlist' && targetCourse) {
-            openCoursePlaylist(targetCourse);
-            closeNotificationsPanel(true);
-            return;
-          }
-          if (targetSection) {
-            setActiveSection(targetSection);
-            closeNotificationsPanel(true);
-          }
-        };
+        notificationsList.onclick = null;
       }
 
       let unread = visibleBasicNotifications.filter((item) => !item.read).length;
