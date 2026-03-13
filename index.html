@@ -8284,6 +8284,7 @@ let cloudCourseAccessSyncInFlight = false;
       const clearedAt = getCurrentNotificationsClearedAt();
       const getNotificationTarget = (item) => {
         if (!item || !item.type) return {};
+        const fallbackCourse = item.courseName || findCourseNameByHint(item.text || '');
         if (item.type === 'assignment_posted' && item.courseName) {
           return { section: 'course-playlist', courseName: item.courseName };
         }
@@ -8295,6 +8296,13 @@ let cloudCourseAccessSyncInFlight = false;
         }
         if (item.type === 'role_request') {
           return currentUserRole === 'Admin' ? { section: 'search' } : { section: 'profile' };
+        }
+        if (fallbackCourse) {
+          return { section: 'course-playlist', courseName: fallbackCourse };
+        }
+        const text = String(item.text || '').toLowerCase();
+        if (text.includes('dashboard') || text.includes('welcome')) {
+          return { section: 'dashboard' };
         }
         return {};
       };
