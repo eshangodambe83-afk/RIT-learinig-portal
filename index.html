@@ -2575,6 +2575,17 @@
       word-break: break-word;
     }
 
+    .notifications-list li.notif-link {
+      cursor: pointer;
+      transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+    }
+
+    .notifications-list li.notif-link:hover {
+      transform: translateY(-1px);
+      border-color: rgba(59, 130, 246, 0.45);
+      box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
+    }
+
     .notifications-list li.unread {
       border-color: #93c5fd;
       background: #eff6ff;
@@ -4732,8 +4743,14 @@
     // window.RITP_SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
     window.RITP_SUPABASE_URL = 'https://sqowewitayyhoorofwxp.supabase.co';
     window.RITP_SUPABASE_ANON_KEY = 'sb_publishable_07trEP-et16WU8RsY87aOQ_haDp6LWG';
+    // Optional Jitsi override for long-running self-hosted classrooms.
+    // Example:
+    // window.RITP_JITSI_BASE_URL = 'https://meet.yourdomain.com';
+    // window.RITP_JITSI_JWT = '';
     const SUPABASE_URL = String(window.RITP_SUPABASE_URL || '').trim();
     const SUPABASE_ANON_KEY = String(window.RITP_SUPABASE_ANON_KEY || '').trim();
+    const JITSI_BASE_URL = String(window.RITP_JITSI_BASE_URL || 'https://meet.jit.si').trim().replace(/\/+$/, '');
+    const JITSI_JWT = String(window.RITP_JITSI_JWT || '').trim();
     const SUPABASE_ACCOUNTS_TABLE = 'ritp_accounts';
 const SUPABASE_PROFILES_TABLE = 'ritp_profiles';
 const SUPABASE_SUGGESTIONS_TABLE = 'ritp_suggestions';
@@ -6648,7 +6665,10 @@ let cloudCourseAccessSyncInFlight = false;
       if (!digitalClassFrame) return;
       const safeRoom = normalizeDigitalClassRoom(room) || `ritp-live-${Date.now()}`;
       const displayName = encodeURIComponent((profilesByUser[normalizeEmail(currentUserName || '')] || {}).displayName || currentUserName || 'RITP User');
-      const jitsiUrl = `https://meet.jit.si/${safeRoom}#userInfo.displayName=${displayName}&config.prejoinPageEnabled=false&config.disableDeepLinking=true`;
+      const base = JITSI_BASE_URL || 'https://meet.jit.si';
+      const tokenPart = JITSI_JWT ? `?jwt=${encodeURIComponent(JITSI_JWT)}` : '';
+      const hashPart = `#userInfo.displayName=${displayName}&config.prejoinPageEnabled=false&config.disableDeepLinking=true`;
+      const jitsiUrl = `${base}/${safeRoom}${tokenPart}${hashPart}`;
       digitalClassFrame.src = jitsiUrl;
     }
 
@@ -8262,6 +8282,22 @@ let cloudCourseAccessSyncInFlight = false;
     function renderNotifications() {
       const isCourseAccessManager = currentUserRoles.includes('Teacher') || currentUserRoles.includes('HOD') || currentUserRoles.includes('Admin');
       const clearedAt = getCurrentNotificationsClearedAt();
+      const getNotificationTarget = (item) => {
+        if (!item || !item.type) return {};
+        if (item.type === 'assignment_posted' && item.courseName) {
+          return { section: 'course-playlist', courseName: item.courseName };
+        }
+        if (item.type === 'course_result' && item.courseName) {
+          return { section: 'course-playlist', courseName: item.courseName };
+        }
+        if (item.type === 'course_request' && item.courseName) {
+          return { section: 'course-playlist', courseName: item.courseName };
+        }
+        if (item.type === 'role_request') {
+          return currentUserRole === 'Admin' ? { section: 'search' } : { section: 'profile' };
+        }
+        return {};
+      };
       const roleItems = roleRequests
         .filter((req) => currentUserRole === 'Admin' || req.email === currentUserName)
         .slice()
@@ -8306,6 +8342,7 @@ let cloudCourseAccessSyncInFlight = false;
           courseItems.push({
             id: `${courseName}::${myEmail}::rejected`,
             type: 'course_result',
+            courseName,
             text: `${courseName}: access request rejected. Tap Join Again to request once more.`,
             time: record.reviewedAt[myEmail] ? new Date(record.reviewedAt[myEmail]).toLocaleString() : 'Now',
             status: 'rejected',
@@ -8328,6 +8365,7 @@ let cloudCourseAccessSyncInFlight = false;
           assignmentItems.push({
             id: `assignment::${task.id}::${myEmail}`,
             type: 'assignment_posted',
+            courseName: taskCourse,
             text: `New assignment in ${taskCourse}: ${task.title}`,
             time: new Date(assignedAt).toLocaleString(),
             createdAt: assignedAt
@@ -8345,11 +8383,15 @@ let cloudCourseAccessSyncInFlight = false;
       ];
 
       notificationsList.innerHTML = allItems.map((item) => {
+        const target = getNotificationTarget(item);
+        const targetSection = target.section ? `data-target-section=\"${target.section}\"` : '';
+        const targetCourse = target.courseName ? `data-target-course=\"${escapeHtml(target.courseName)}\"` : '';
+        const linkClass = target.section ? 'notif-link' : '';
         if (item.type === 'role_request') {
           const showActions = currentUserRole === 'Admin' && item.status === 'pending';
           const statusLabel = item.status === 'approved' ? 'Approved' : item.status === 'rejected' ? 'Rejected' : 'Pending';
           const reviewed = item.reviewedBy ? ` | By: ${item.reviewedBy}` : '';
-          return `<li class="${item.status === 'pending' ? 'unread' : ''}">
+          return `<li class="${item.status === 'pending' ? 'unread' : ''} ${linkClass}" ${targetSection} ${targetCourse}>
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time} | Status: ${statusLabel}${reviewed}</div>
             ${showActions ? `<div class="role-request-controls">
@@ -8359,7 +8401,7 @@ let cloudCourseAccessSyncInFlight = false;
           </li>`;
         }
         if (item.type === 'course_request') {
-          return `<li class="unread">
+          return `<li class="unread ${linkClass}" ${targetSection} ${targetCourse}>
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time} | Status: Pending</div>
             <div class="role-request-controls">
@@ -8369,19 +8411,19 @@ let cloudCourseAccessSyncInFlight = false;
           </li>`;
         }
         if (item.type === 'course_result') {
-          return `<li>
+          return `<li class="${linkClass}" ${targetSection} ${targetCourse}>
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time}</div>
           </li>`;
         }
         if (item.type === 'assignment_posted') {
-          return `<li class="unread">
+          return `<li class="unread ${linkClass}" ${targetSection} ${targetCourse}>
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time}</div>
           </li>`;
         }
 
-        return `<li class="${item.read ? '' : 'unread'}">
+        return `<li class="${item.read ? '' : 'unread'} ${linkClass}" ${targetSection} ${targetCourse}>
           <strong>${item.text}</strong>
           <div class="notifications-meta">${item.time}</div>
         </li>`;
@@ -8395,6 +8437,22 @@ let cloudCourseAccessSyncInFlight = false;
       notificationsList.querySelectorAll('.course-request-action-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           handleCourseAccessDecision(btn.dataset.course, btn.dataset.email, btn.dataset.action);
+        });
+      });
+      notificationsList.querySelectorAll('.notif-link').forEach((item) => {
+        item.addEventListener('click', (event) => {
+          if (event.target && event.target.closest('button')) return;
+          const targetSection = item.getAttribute('data-target-section') || '';
+          const targetCourse = item.getAttribute('data-target-course') || '';
+          if (targetSection === 'course-playlist' && targetCourse) {
+            openCoursePlaylist(targetCourse);
+            closeNotificationsPanel(true);
+            return;
+          }
+          if (targetSection) {
+            setActiveSection(targetSection);
+            closeNotificationsPanel(true);
+          }
         });
       });
 
