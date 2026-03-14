@@ -8413,6 +8413,9 @@ let cloudCourseAccessSyncInFlight = false;
         const targetCourse = target.courseName ? `data-target-course=\"${escapeHtml(target.courseName)}\"` : '';
         const linkClass = target.section ? 'notif-link' : '';
         const clickAttr = target.section ? 'onclick=\"window.__ritpNotifClick(event, this)\"' : '';
+        const showBtn = target.section
+          ? `<button type="button" class="video-open-btn notif-show-btn" data-target-section="${target.section}" data-target-course="${target.courseName || ''}">Show</button>`
+          : '';
         if (item.type === 'role_request') {
           const showActions = currentUserRole === 'Admin' && item.status === 'pending';
           const statusLabel = item.status === 'approved' ? 'Approved' : item.status === 'rejected' ? 'Rejected' : 'Pending';
@@ -8420,6 +8423,7 @@ let cloudCourseAccessSyncInFlight = false;
           return `<li class="${item.status === 'pending' ? 'unread' : ''} ${linkClass}" ${targetSection} ${targetCourse} ${clickAttr}>
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time} | Status: ${statusLabel}${reviewed}</div>
+            ${showBtn}
             ${showActions ? `<div class="role-request-controls">
               <button type="button" class="video-open-btn role-request-action-btn" data-id="${item.id}" data-action="approve">Approve</button>
               <button type="button" class="video-open-btn role-request-action-btn" data-id="${item.id}" data-action="reject">Reject</button>
@@ -8430,6 +8434,7 @@ let cloudCourseAccessSyncInFlight = false;
           return `<li class="unread ${linkClass}" ${targetSection} ${targetCourse} ${clickAttr}>
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time} | Status: Pending</div>
+            ${showBtn}
             <div class="role-request-controls">
               <button type="button" class="video-open-btn course-request-action-btn" data-course="${item.courseName}" data-email="${item.email}" data-action="approve">Approve</button>
               <button type="button" class="video-open-btn course-request-action-btn" data-course="${item.courseName}" data-email="${item.email}" data-action="reject">Reject</button>
@@ -8440,18 +8445,21 @@ let cloudCourseAccessSyncInFlight = false;
           return `<li class="${linkClass}" ${targetSection} ${targetCourse} ${clickAttr}>
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time}</div>
+            ${showBtn}
           </li>`;
         }
         if (item.type === 'assignment_posted') {
           return `<li class="unread ${linkClass}" ${targetSection} ${targetCourse} ${clickAttr}>
             <strong>${item.text}</strong>
             <div class="notifications-meta">${item.time}</div>
+            ${showBtn}
           </li>`;
         }
 
         return `<li class="${item.read ? '' : 'unread'} ${linkClass}" ${targetSection} ${targetCourse} ${clickAttr}>
           <strong>${item.text}</strong>
           <div class="notifications-meta">${item.time}</div>
+          ${showBtn}
         </li>`;
       }).join('') || '<li>No notifications yet.</li>';
 
@@ -8463,6 +8471,22 @@ let cloudCourseAccessSyncInFlight = false;
       notificationsList.querySelectorAll('.course-request-action-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           handleCourseAccessDecision(btn.dataset.course, btn.dataset.email, btn.dataset.action);
+        });
+      });
+      notificationsList.querySelectorAll('.notif-show-btn').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const targetSection = btn.getAttribute('data-target-section') || '';
+          const targetCourse = btn.getAttribute('data-target-course') || '';
+          if (targetSection === 'course-playlist' && targetCourse) {
+            openCoursePlaylist(targetCourse);
+            closeNotificationsPanel(true);
+            return;
+          }
+          if (targetSection) {
+            setActiveSection(targetSection);
+            closeNotificationsPanel(true);
+          }
         });
       });
       if (notificationsList) {
